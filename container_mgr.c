@@ -1,10 +1,10 @@
 #include <string.h>
 
-#include "esp_log.h"
+#include "port_logging.h"
 #include "esp_heap_caps.h"
 
 #include "kaos_types_shared.h"
-#include "unreliable_message_queue.h"
+#include "unreliable_channel.h"
 #include "wasm_export.h"
 #include "bh_platform.h"
 
@@ -12,7 +12,6 @@
 #include "kaos_monitor.h"
 #include "container_mgr.h"
 
-#include "test.h"
 
 #define KAOS_SETUP_STACK_SIZE CONFIG_KAOS_SETUP_STACK_SIZE
 #define KAOS_MAX_MODULE_N CONFIG_KAOS_MAX_MODULE_N
@@ -33,12 +32,12 @@ module_registry_t *get_registry_pool() {
 
 
 kaos_error_t destroy_channel(channel_t channel) {
-    return destroy_queue(channel.queue);
+    return destroy_channel_queue(channel.queue);
 }
 
 
 void print_channel(channel_t channel) {
-    ESP_LOGI(__FUNCTION__, "    %"PRIu8":%"PRIu32" %s", channel.service_id, channel.address, channel.type);
+    KAOS_LOGI(__FUNCTION__, "    %"PRIu8":%"PRIu32" %s", channel.service_id, channel.address, channel.type);
 }
 
 
@@ -81,7 +80,7 @@ static void unload_module(module_t module_handle) {
 
 static void set_module_handle(module_registry_t *registry, module_t module_handle) {
     if (!registry) {
-        ESP_LOGE(__FUNCTION__, "Registry is null");
+        KAOS_LOGE(__FUNCTION__, "Registry is null");
         return;
     }
     
@@ -93,7 +92,7 @@ static void set_module_handle(module_registry_t *registry, module_t module_handl
 
 static module_t get_module_handle(module_registry_t *registry) {
     if (!registry) {
-        ESP_LOGE(__FUNCTION__, "Registry is null");
+        KAOS_LOGE(__FUNCTION__, "Registry is null");
         return NULL;
     }
     
@@ -107,7 +106,7 @@ static module_t get_module_handle(module_registry_t *registry) {
 
 // static void set_registry_prev(module_registry_t *registry, module_registry_t *prev) {
 //     if (!registry) {
-//         ESP_LOGE(__FUNCTION__, "Registry is null");
+//         KAOS_LOGE(__FUNCTION__, "Registry is null");
 //         return;
 //     }
     
@@ -119,7 +118,7 @@ static module_t get_module_handle(module_registry_t *registry) {
 
 // module_registry_t *get_registry_prev(module_registry_t *registry) {
 //     if (!registry) {
-//         ESP_LOGE(__FUNCTION__, "Registry is null");
+//         KAOS_LOGE(__FUNCTION__, "Registry is null");
 //         return NULL;
 //     }
     
@@ -134,7 +133,7 @@ static module_t get_module_handle(module_registry_t *registry) {
 
 static void set_module_name(module_registry_t *registry, char *module_name) {
     if (!registry) {
-        ESP_LOGE(__FUNCTION__, "Registry is null");
+        KAOS_LOGE(__FUNCTION__, "Registry is null");
         return;
     }
     
@@ -150,7 +149,7 @@ static void set_module_name(module_registry_t *registry, char *module_name) {
 
 char *get_module_name(module_registry_t *registry) {
     if (!registry) {
-        ESP_LOGE(__FUNCTION__, "Registry is null");
+        KAOS_LOGE(__FUNCTION__, "Registry is null");
         return NULL;
     }
     
@@ -165,7 +164,7 @@ char *get_module_name(module_registry_t *registry) {
 
 static void set_module_inst(module_registry_t *registry, module_inst_t module_inst) {
     if (!registry) {
-        ESP_LOGE(__FUNCTION__, "Registry is null");
+        KAOS_LOGE(__FUNCTION__, "Registry is null");
         return;
     }
     
@@ -177,12 +176,12 @@ static void set_module_inst(module_registry_t *registry, module_inst_t module_in
 
 module_inst_t get_container_inst(module_registry_t *registry) {
     if (!registry) {
-        ESP_LOGE(__FUNCTION__, "Registry is null");
+        KAOS_LOGE(__FUNCTION__, "Registry is null");
         return NULL;
     }
     
     if (pthread_mutex_lock(&(registry->mutex))) {
-        ESP_LOGE(__FUNCTION__, "Lock error");
+        KAOS_LOGE(__FUNCTION__, "Lock error");
         return NULL;
     }
     
@@ -195,7 +194,7 @@ module_inst_t get_container_inst(module_registry_t *registry) {
 
 static void set_exec_env(module_registry_t *registry, exec_env_t exec_env) {
     if (!registry) {
-        ESP_LOGE(__FUNCTION__, "Registry is null");
+        KAOS_LOGE(__FUNCTION__, "Registry is null");
         return;
     }
     
@@ -208,7 +207,7 @@ static void set_exec_env(module_registry_t *registry, exec_env_t exec_env) {
 
 static exec_env_t get_exec_env(module_registry_t *registry) {
     if (!registry) {
-        ESP_LOGE(__FUNCTION__, "Registry is null");
+        KAOS_LOGE(__FUNCTION__, "Registry is null");
         return NULL;
     }
     
@@ -221,9 +220,9 @@ static exec_env_t get_exec_env(module_registry_t *registry) {
 }
 
 
-void set_signal_queue(module_registry_t *registry, queue_t to_container) {
+void set_signal_queue(module_registry_t *registry, queue_t *to_container) {
     if (!registry) {
-        ESP_LOGE(__FUNCTION__, "Registry is null");
+        KAOS_LOGE(__FUNCTION__, "Registry is null");
         return;
     }
     
@@ -233,14 +232,14 @@ void set_signal_queue(module_registry_t *registry, queue_t to_container) {
 }
 
 
-queue_t get_signal_queue_to_container(module_registry_t *registry) {
+queue_t *get_signal_queue_to_container(module_registry_t *registry) {
     if (!registry) {
-        ESP_LOGE(__FUNCTION__, "Registry is null");
+        KAOS_LOGE(__FUNCTION__, "Registry is null");
         return NULL;
     }
     
     pthread_mutex_lock(&registry->mutex);
-    queue_t queue = registry->signal_queue_to_container;
+    queue_t *queue = registry->signal_queue_to_container;
     pthread_mutex_unlock(&registry->mutex);
     return queue;
 }
@@ -340,12 +339,12 @@ static kaos_error_t update_module_config(module_registry_t *registry, module_con
     }
 
     if (new_module_config->source_buffer_size) {
-        ESP_LOGE(__FUNCTION__, "buffer size %"PRIu32"", new_module_config->source_buffer_size);
+        KAOS_LOGE(__FUNCTION__, "buffer size %"PRIu32"", new_module_config->source_buffer_size);
         if (registry->module_config.source_buffer) free(registry->module_config.source_buffer);
         registry->module_config.source_buffer_size = new_module_config->source_buffer_size;
 
         if (registry->module_config.source_buffer_size == new_module_config->source_buffer_size) {
-            ESP_LOGW(__FUNCTION__, "Check container buffer freshness - runtime cannot operate on previously used wasm source buffer");
+            KAOS_LOGW(__FUNCTION__, "Check container buffer freshness - runtime cannot operate on previously used wasm source buffer");
         }
         registry->module_config.source_buffer = calloc(1, new_module_config->source_buffer_size);
         if (!registry->module_config.source_buffer) {
@@ -366,7 +365,7 @@ static kaos_error_t update_module_config(module_registry_t *registry, module_con
 static kaos_error_t alloc_channel_field(channel_t **dest_field, channel_t *src_field, int16_t n_channels) {
      *dest_field = calloc(n_channels, sizeof(channel_t));
      if (!*dest_field) {
-         ESP_LOGE(__FUNCTION__, "Resouce %d memory allocation failed", n_channels);
+         KAOS_LOGE(__FUNCTION__, "Resouce %d memory allocation failed", n_channels);
          return KaosMemoryAllocationError;
      }
      memcpy(*dest_field, src_field, n_channels * sizeof(channel_t));
@@ -404,10 +403,10 @@ static kaos_error_t alloc_channel_field(channel_t **dest_field, channel_t *src_f
     }
  
     if (config->n_resources) {
-        ESP_LOGI(__FUNCTION__, "Allocating %d resources", config->n_resources);
+        KAOS_LOGI(__FUNCTION__, "Allocating %d resources", config->n_resources);
         resources = calloc(config->n_resources, sizeof(export_symbol_t));
         if (!resources) {
-            ESP_LOGE(__FUNCTION__, "Resouce memory allocation failed");
+            KAOS_LOGE(__FUNCTION__, "Resouce memory allocation failed");
             goto cleanup;
         }
         memcpy(resources, config->resources, config->n_resources * sizeof(export_symbol_t));
@@ -425,7 +424,7 @@ static kaos_error_t alloc_channel_field(channel_t **dest_field, channel_t *src_f
  
 cleanup:
     if (err) {
-        ESP_LOGE(__FUNCTION__, "Resouce memory allocation failed");
+        KAOS_LOGE(__FUNCTION__, "Resouce memory allocation failed");
         err = KaosMemoryAllocationError;
         free(identities);
         free(inputs);
@@ -473,8 +472,8 @@ interface_config_t get_interface_config(module_registry_t *registry) {
 
 
 // Timers are only accessed from monitor loop - access doesn't need to be synchronized
-kaos_timer_t get_timer(module_registry_t *registry, int timer_id) {    
-    kaos_timer_t timer = NULL;
+kaos_timer_handle_t *get_timer(module_registry_t *registry, int timer_id) {    
+    kaos_timer_handle_t *timer = NULL;
     
     pthread_mutex_lock(&registry->mutex);
     timer = registry->timers[timer_id];
@@ -485,7 +484,7 @@ kaos_timer_t get_timer(module_registry_t *registry, int timer_id) {
 
 
 // Timers are only accessed from monitor loop - access doesn't need to be synchronized
-void set_timer(module_registry_t *registry, kaos_timer_t handle, int timer_id) {
+void set_timer(module_registry_t *registry, kaos_timer_handle_t *handle, int timer_id) {
     pthread_mutex_lock(&registry->mutex);
     registry->timers[timer_id] = handle;
     pthread_mutex_unlock(&registry->mutex);
@@ -494,7 +493,7 @@ void set_timer(module_registry_t *registry, kaos_timer_t handle, int timer_id) {
 }
 
 
-kaos_error_t set_input_queue(module_registry_t *registry, service_id_t service_id, address_t address, char *type, queue_t queue) {
+kaos_error_t set_input_queue(module_registry_t *registry, service_id_t service_id, address_t address, char *type, queue_t *queue) {
     pthread_mutex_lock(&registry->mutex);
     channel_t *target_channel = fetch_channel(registry->intfc_config.inputs, registry->intfc_config.n_inputs, service_id, address, type);
     if (!target_channel) {
@@ -509,7 +508,7 @@ kaos_error_t set_input_queue(module_registry_t *registry, service_id_t service_i
 }
 
 
-kaos_error_t set_output_queue(module_registry_t *registry, service_id_t service_id, address_t address, char *type, queue_t queue) {
+kaos_error_t set_output_queue(module_registry_t *registry, service_id_t service_id, address_t address, char *type, queue_t *queue) {
     pthread_mutex_lock(&registry->mutex);
     channel_t *target_channel = fetch_channel(registry->intfc_config.outputs, registry->intfc_config.n_outputs, service_id, address, type);
     if (!target_channel) {
@@ -524,7 +523,7 @@ kaos_error_t set_output_queue(module_registry_t *registry, service_id_t service_
 }
 
 
-queue_t get_input_queue(module_registry_t *registry, service_id_t service_id, address_t address, char *type) {
+queue_t *get_input_queue(module_registry_t *registry, service_id_t service_id, address_t address, char *type) {
     pthread_mutex_lock(&registry->mutex);
     channel_t *target_channel = fetch_channel(registry->intfc_config.inputs, registry->intfc_config.n_inputs, service_id, address, type);
     if (!target_channel) {
@@ -532,14 +531,14 @@ queue_t get_input_queue(module_registry_t *registry, service_id_t service_id, ad
         return NULL;
     }
 
-    queue_t queue = target_channel->queue;
+    queue_t *queue = target_channel->queue;
     pthread_mutex_unlock(&registry->mutex);
 
     return queue;
 }
 
 
-queue_t get_output_queue(module_registry_t *registry, service_id_t service_id, address_t address, char *type) {
+queue_t *get_output_queue(module_registry_t *registry, service_id_t service_id, address_t address, char *type) {
     pthread_mutex_lock(&registry->mutex);
     channel_t *target_channel = fetch_channel(registry->intfc_config.outputs, registry->intfc_config.n_outputs, service_id, address, type);
     if (!target_channel) {
@@ -547,7 +546,7 @@ queue_t get_output_queue(module_registry_t *registry, service_id_t service_id, a
         return NULL;
     }
 
-    queue_t queue = target_channel->queue;
+    queue_t *queue = target_channel->queue;
     pthread_mutex_unlock(&registry->mutex);
 
     return queue;
@@ -583,7 +582,7 @@ static void free_interface_config(module_registry_t *registry) {
     }
 
     if (registry->intfc_config.resources) {
-        ESP_LOGE(__FUNCTION__, "Freeing %d resources", registry->intfc_config.n_resources);
+        KAOS_LOGE(__FUNCTION__, "Freeing %d resources", registry->intfc_config.n_resources);
         free(registry->intfc_config.resources);
         registry->intfc_config.resources = NULL;
         registry->intfc_config.resources = 0;
@@ -644,7 +643,7 @@ static kaos_error_t update_interface_config(module_registry_t *registry, interfa
 
     kaos_error_t err;
     if (new_config->n_identities != (int16_t) -1) {
-        // ESP_LOGI(__FUNCTION__, "Update identities");
+        // KAOS_LOGI(__FUNCTION__, "Update identities");
         channel_t *updated;
         err = update_channels(
             &updated,
@@ -660,7 +659,7 @@ static kaos_error_t update_interface_config(module_registry_t *registry, interfa
     }
 // TODO: REFACTOR
     if (new_config->n_inputs != (int16_t) -1) {
-        // ESP_LOGI(__FUNCTION__, "Update inputs");
+        // KAOS_LOGI(__FUNCTION__, "Update inputs");
         channel_t *updated;
         err = update_channels(
             &updated,
@@ -676,7 +675,7 @@ static kaos_error_t update_interface_config(module_registry_t *registry, interfa
     }
 
     if (new_config->n_outputs != (int16_t) -1) {
-        // ESP_LOGI(__FUNCTION__, "Update outputs");
+        // KAOS_LOGI(__FUNCTION__, "Update outputs");
         channel_t *updated;
         err = update_channels(
             &updated,
@@ -692,7 +691,7 @@ static kaos_error_t update_interface_config(module_registry_t *registry, interfa
     }
 
     if (new_config->n_resources != (int16_t) -1) {
-        // ESP_LOGI(__FUNCTION__, "Update resources");
+        // KAOS_LOGI(__FUNCTION__, "Update resources");
         registry->intfc_config.n_resources = new_config->n_resources;
 
         if (registry->intfc_config.resources) free(registry->intfc_config.resources);
@@ -729,15 +728,15 @@ static module_registry_t *create_new_registry(void) {
 
     int err;
     if ((err = pthread_mutexattr_init(&registry_pool[registry_i].mutex_attr))) {
-        ESP_LOGE(__FUNCTION__, "Mutexattr not created %d", err);
+        KAOS_LOGE(__FUNCTION__, "Mutexattr not created %d", err);
         return NULL;
     }
     if ((err = pthread_mutexattr_settype(&registry_pool[registry_i].mutex_attr, PTHREAD_MUTEX_RECURSIVE))) {
-        ESP_LOGE(__FUNCTION__, "Mutexattr not set %d", err);
+        KAOS_LOGE(__FUNCTION__, "Mutexattr not set %d", err);
         return NULL;
     }
     if ((err = pthread_mutex_init(&registry_pool[registry_i].mutex, &registry_pool[registry_i].mutex_attr)))  {
-        ESP_LOGE(__FUNCTION__, "Mutex not initalized: %d", err);
+        KAOS_LOGE(__FUNCTION__, "Mutex not initalized: %d", err);
         return NULL;
     }
 
@@ -749,11 +748,11 @@ void cancel_timers(module_registry_t *registry) {
         if (!(registry->timers[i])) continue; 
         
         if (ESP_OK != stop_timer(registry->timers[i])) {
-            ESP_LOGW(__FUNCTION__, "Timer not stopped %p", registry->timers[i]);
+            KAOS_LOGW(__FUNCTION__, "Timer not stopped %p", registry->timers[i]);
         }
         
         if (ESP_OK != delete_timer(registry->timers[i])) {
-            ESP_LOGE(__FUNCTION__, "Timer not deleted %p", registry->timers[i]);
+            KAOS_LOGE(__FUNCTION__, "Timer not deleted %p", registry->timers[i]);
         } 
     }
 }
@@ -761,7 +760,7 @@ void cancel_timers(module_registry_t *registry) {
 
 static kaos_error_t destroy_registry(module_registry_t *registry) {
     if (!registry) {
-        ESP_LOGE(__FUNCTION__, "Registry is null");
+        KAOS_LOGE(__FUNCTION__, "Registry is null");
         return KaosRegistryNotFoundError;
     }
     
@@ -786,7 +785,7 @@ static kaos_error_t destroy_registry(module_registry_t *registry) {
 
 module_registry_t *get_registry_by_handle(module_t module_handle) {
     if (!module_handle) {
-        ESP_LOGE(__FUNCTION__, "Module handle is null");
+        KAOS_LOGE(__FUNCTION__, "Module handle is null");
         return NULL;
     }
     
@@ -805,7 +804,7 @@ module_registry_t *get_registry_by_handle(module_t module_handle) {
 
 module_registry_t *get_registry_by_name(char *module_name) {
     if (!module_name) {
-        ESP_LOGE(__FUNCTION__, "Module name is null");
+        KAOS_LOGE(__FUNCTION__, "Module name is null");
         return NULL;
     }
     
@@ -858,9 +857,9 @@ module_registry_t *get_registry_by_identity(service_id_t service_id, address_t a
 }
 
 
-module_registry_t *get_registry_by_sig_handle(queue_t handle) {
+module_registry_t *get_registry_by_sig_handle(queue_t *handle) {
     if (!handle) {
-        ESP_LOGE(__FUNCTION__, "Signal handle is null");
+        KAOS_LOGE(__FUNCTION__, "Signal handle is null");
         return NULL;
     }
     
@@ -894,7 +893,7 @@ kaos_error_t init_runtime() {
     // int wamr_err = wasm_runtime_register_natives("env", kaos_native_symbols, 13);
 
     // if (!wamr_err) {
-    //     ESP_LOGE(MGR_TAG, "Error: Native symbols not registered");
+    //     KAOS_LOGE(MGR_TAG, "Error: Native symbols not registered");
     //     return KaosExportRegistrationError;
     // }
 
@@ -905,7 +904,7 @@ kaos_error_t init_runtime() {
 // TODO 
 // Terminate sets container trap. Once trap is set, execute_function returns and container is marked as suspended. This raises the module suspended event which destroys module instance and unloads the module.
 kaos_error_t suspend_module(module_registry_t *registry) {
-    ESP_LOGW(__FUNCTION__, "Suspending module %s", registry->intfc_config.identities);
+    KAOS_LOGW(__FUNCTION__, "Suspending module %s", registry->intfc_config.identities);
     // TODO: return error here
     if (!registry) {
         return KaosSuccess;
@@ -913,7 +912,7 @@ kaos_error_t suspend_module(module_registry_t *registry) {
 
     module_inst_t inst = get_container_inst(registry);
     if (!inst) {
-        ESP_LOGE(__FUNCTION__, "Container trap could not be set - module inst not found");
+        KAOS_LOGE(__FUNCTION__, "Container trap could not be set - module inst not found");
         return KaosRegistryNotFoundError;
     }
 
@@ -952,24 +951,24 @@ static kaos_error_t load_module(module_registry_t *registry) {
     interface_config_t interface = get_interface_config(registry);
     module_config_t config = get_module_config(registry);
 
-    ESP_LOGI(MGR_TAG, "Registering %d native symbols", interface.n_resources);
+    KAOS_LOGI(MGR_TAG, "Registering %d native symbols", interface.n_resources);
 
     if (interface.n_resources) {
         // TODO: per module native registration
         wamr_err = wasm_runtime_register_natives("env", interface.resources, interface.n_resources);
 
         if (!wamr_err) {
-        ESP_LOGE(MGR_TAG, "Error: Native symbols not registered");
+        KAOS_LOGE(MGR_TAG, "Error: Native symbols not registered");
         return KaosExportRegistrationError;
         }
     }
 // Need new src
     if (!heap_caps_check_integrity_all(true)) {
-        ESP_LOGE(MGR_TAG, "Heap integrity check failed before wasm_runtime_load");
+        KAOS_LOGE(MGR_TAG, "Heap integrity check failed before wasm_runtime_load");
         return KaosMemoryAllocationError;
     }
 
-    // ESP_LOGI(MGR_TAG, "Loading module from buffer %p of size %"PRIu32"", config.source_buffer, config.source_buffer_size);
+    // KAOS_LOGI(MGR_TAG, "Loading module from buffer %p of size %"PRIu32"", config.source_buffer, config.source_buffer_size);
 
     // TODO: Increasing buffer size to 3677, 3673, 3668, 3665,  bytes initiates seemingly randomg loading error, even though heap check passes (what sizes exactly set it off?)
 //    Succeed: 3666
@@ -985,11 +984,11 @@ static kaos_error_t load_module(module_registry_t *registry) {
                                         );
     
     if (!heap_caps_check_integrity_all(true)) {
-        ESP_LOGE(MGR_TAG, "Heap integrity check failed after wasm_runtime_load");
+        KAOS_LOGE(MGR_TAG, "Heap integrity check failed after wasm_runtime_load");
         return KaosMemoryAllocationError;
     }
     if (!module) {
-        ESP_LOGE(MGR_TAG, "Loading Error %p: %s\n", module, error_buf);
+        KAOS_LOGE(MGR_TAG, "Loading Error %p: %s\n", module, error_buf);
         return KaosModuleInitializationError;
     }
 
@@ -997,12 +996,12 @@ static kaos_error_t load_module(module_registry_t *registry) {
     // bool result = wasm_runtime_register_module(registry->module_name, module, error_buf, 128);
 
     // if (!result) {
-    //     ESP_LOGW(MGR_TAG, "Error: Module not registered");
+    //     KAOS_LOGW(MGR_TAG, "Error: Module not registered");
     //     return KaosModuleInitializationError;
     // }
 
     if (!heap_caps_check_integrity_all(true)) {
-        ESP_LOGE(MGR_TAG, "Heap integrity check failed after setting module handle");
+        KAOS_LOGE(MGR_TAG, "Heap integrity check failed after setting module handle");
         return KaosMemoryAllocationError;
     }
 
@@ -1012,7 +1011,7 @@ static kaos_error_t load_module(module_registry_t *registry) {
                                                          error_buf,
                                                          sizeof(error_buf));
     if (!module_inst) {
-        ESP_LOGE(MGR_TAG, "Instantiate error %p: %s\n", module_inst, error_buf);
+        KAOS_LOGE(MGR_TAG, "Instantiate error %p: %s\n", module_inst, error_buf);
         destroy_registry(registry);
         return KaosModuleInitializationError;
     }
@@ -1050,13 +1049,13 @@ kaos_error_t run_setup(module_registry_t *registry) {
     uint32_t output_p = wasm_runtime_module_dup_data(inst, (char *) container_outputs, interface.n_outputs * sizeof(container_channel_t));
 
     if (!(identity_p ^ (uint32_t) interface.n_identities) || !(input_p ^ (uint32_t) interface.n_inputs) || !(output_p^ (uint32_t) interface.n_inputs)) {
-        ESP_LOGE(__FUNCTION__, "Memory dup for setup unsuccessful");
+        KAOS_LOGE(__FUNCTION__, "Memory dup for setup unsuccessful");
         return KaosContainerMemoryAllocationError;
     }
 
     /* Verify heap integrity before handing received buffer to monitor */
     if (!heap_caps_check_integrity_all(true)) {
-        ESP_LOGE(MGR_TAG, "Heap corruption detected after interface setup");
+        KAOS_LOGE(MGR_TAG, "Heap corruption detected after interface setup");
         
         return KaosMemoryAllocationError;
     }
@@ -1089,7 +1088,7 @@ kaos_error_t init_module(module_registry_t **registry_dest, char *module_name, m
     module_registry_t *module_registry = NULL;
     module_registry = create_new_registry();
     if (!module_registry) {
-        ESP_LOGE(__FUNCTION__, "New registry not created");
+        KAOS_LOGE(__FUNCTION__, "New registry not created");
         return KaosModuleInitializationError;
     }
 
@@ -1099,40 +1098,40 @@ kaos_error_t init_module(module_registry_t **registry_dest, char *module_name, m
 
     /* Verify heap integrity before handing received buffer to monitor */
     if (!heap_caps_check_integrity_all(true)) {
-        ESP_LOGE(MGR_TAG, "Heap corruption detected after setting status");
+        KAOS_LOGE(MGR_TAG, "Heap corruption detected after setting status");
         
         return KaosMemoryAllocationError;
     }
     
     if ((err = set_module_config(module_registry, config))) {
-        ESP_LOGE(MGR_TAG, "Module configuration error");
+        KAOS_LOGE(MGR_TAG, "Module configuration error");
         destroy_registry(module_registry);
         return err;  
     } 
 
     /* Verify heap integrity before handing received buffer to monitor */
     if (!heap_caps_check_integrity_all(true)) {
-        ESP_LOGE(MGR_TAG, "Heap corruption detected after setting module config");
+        KAOS_LOGE(MGR_TAG, "Heap corruption detected after setting module config");
         
         return KaosMemoryAllocationError;
     }
 
     if ((err = set_interface_config(module_registry, interface))) {
-        ESP_LOGE(MGR_TAG, "Module interface configuration error");
+        KAOS_LOGE(MGR_TAG, "Module interface configuration error");
         destroy_registry(module_registry);
         return err;  
     } 
 
     /* Verify heap integrity before handing received buffer to monitor */
     if (!heap_caps_check_integrity_all(true)) {
-        ESP_LOGE(MGR_TAG, "Heap corruption detected after setting interface config");
+        KAOS_LOGE(MGR_TAG, "Heap corruption detected after setting interface config");
         
         return KaosMemoryAllocationError;
     }
 
-    queue_t sig_queue = init_sig_queue_to_container();
+    queue_t *sig_queue = init_sig_queue_to_container();
     if (!sig_queue) {
-        ESP_LOGE(MGR_TAG, "Signal queue init failed");
+        KAOS_LOGE(MGR_TAG, "Signal queue init failed");
         destroy_registry(module_registry);
         return KaosModuleInitializationError;
     }
@@ -1141,7 +1140,7 @@ kaos_error_t init_module(module_registry_t **registry_dest, char *module_name, m
 
     /* Verify heap integrity before handing received buffer to monitor */
     if (!heap_caps_check_integrity_all(true)) {
-        ESP_LOGE(MGR_TAG, "Heap corruption detected before loading module");
+        KAOS_LOGE(MGR_TAG, "Heap corruption detected before loading module");
         
         return KaosMemoryAllocationError;
     }
@@ -1154,7 +1153,7 @@ kaos_error_t init_module(module_registry_t **registry_dest, char *module_name, m
 
     /* Verify heap integrity before handing received buffer to monitor */
     if (!heap_caps_check_integrity_all(true)) {
-        ESP_LOGE(MGR_TAG, "Heap corruption detected after loading module");
+        KAOS_LOGE(MGR_TAG, "Heap corruption detected after loading module");
         
         // return KaosMemoryAllocationError;
     }
@@ -1164,7 +1163,7 @@ kaos_error_t init_module(module_registry_t **registry_dest, char *module_name, m
         destroy_registry(module_registry);
         return KaosModuleInitializationError;
     }
-    ESP_LOGI(MGR_TAG, "Setup done");
+    KAOS_LOGI(MGR_TAG, "Setup done");
     *registry_dest = module_registry;
 
 
@@ -1207,7 +1206,7 @@ uint32_t build_channel_set(channel_t *channel_dest, channel_t *inputs, uint32_t 
 kaos_error_t reinit_module(module_registry_t *registry, char *module_name, module_config_t *config, interface_config_t *interface) {
     kaos_error_t err;
 
-    // ESP_LOGI(__FUNCTION__, "Update interface config");
+    // KAOS_LOGI(__FUNCTION__, "Update interface config");
     print_interface(registry->intfc_config);
 
     err = update_interface_config(registry, interface);
@@ -1218,7 +1217,7 @@ kaos_error_t reinit_module(module_registry_t *registry, char *module_name, modul
 
     print_interface(registry->intfc_config);
 
-    // ESP_LOGI(__FUNCTION__, "Update module config");
+    // KAOS_LOGI(__FUNCTION__, "Update module config");
 
     print_config(registry->module_config);
     err = update_module_config(registry, config);
@@ -1230,12 +1229,12 @@ kaos_error_t reinit_module(module_registry_t *registry, char *module_name, modul
 
     set_thread_id(registry, pthread_self());
 
-    ESP_LOGI(__FUNCTION__, "Load");
+    KAOS_LOGI(__FUNCTION__, "Load");
 
     err = load_module(registry);
     if (err) return KaosModuleInitializationError;
 
-    ESP_LOGI(__FUNCTION__, "Run setup");
+    KAOS_LOGI(__FUNCTION__, "Run setup");
 
     err = run_setup(registry);
     if (err) {
@@ -1243,7 +1242,7 @@ kaos_error_t reinit_module(module_registry_t *registry, char *module_name, modul
         return KaosModuleInitializationError;
     }
 
-    ESP_LOGI(__FUNCTION__, "Done");
+    KAOS_LOGI(__FUNCTION__, "Done");
 
     return KaosSuccess;
 }
@@ -1254,14 +1253,14 @@ kaos_error_t execute_function(module_registry_t *registry, char *function_name, 
     wasm_function_inst_t func = wasm_runtime_lookup_function(module_inst, (char *) function_name);
 
     if (!func) {
-        ESP_LOGE(MGR_TAG, "Failed to lookup function %s", function_name);
+        KAOS_LOGE(MGR_TAG, "Failed to lookup function %s", function_name);
         return KaosModuleExecutionError;
     }
 
     exec_env_t exec_env;
     if (
         !(exec_env = wasm_runtime_create_exec_env(module_inst, op_stack_sz))) {
-        ESP_LOGE(MGR_TAG, "Failed to create exec_env");
+        KAOS_LOGE(MGR_TAG, "Failed to create exec_env");
         return KaosModuleExecutionError;
     }
 
@@ -1269,7 +1268,7 @@ kaos_error_t execute_function(module_registry_t *registry, char *function_name, 
     set_status(registry, RUNNING);
 
     if (!wasm_runtime_call_wasm(exec_env, func, arg_n, function_args)) {
-        ESP_LOGE(MGR_TAG, "Container %s function call error: %s\n", registry->module_name, wasm_runtime_get_exception(module_inst));
+        KAOS_LOGE(MGR_TAG, "Container %s function call error: %s\n", registry->module_name, wasm_runtime_get_exception(module_inst));
         set_status(registry, ERROR);
         destroy_exec_env(exec_env);
 
@@ -1297,39 +1296,39 @@ unsigned char __aligned(4) *copy_buffer(unsigned char *module_buffer, size_t buf
 
 
 void print_interface(interface_config_t interface) {
-    ESP_LOGI(__FUNCTION__, "Identities: %"PRIu16"", interface.n_identities);
+    KAOS_LOGI(__FUNCTION__, "Identities: %"PRIu16"", interface.n_identities);
     if (interface.n_identities != (int16_t) -1) {
         for (int i = 0; i < interface.n_identities; i++) {
-            ESP_LOGI(__FUNCTION__, "    service: %"PRIu8", address: %"PRIu32", type: %s\n", (interface.identities + i)->service_id, (interface.identities + i)->address, (interface.identities + i)->type);
+            KAOS_LOGI(__FUNCTION__, "    service: %"PRIu8", address: %"PRIu32", type: %s\n", (interface.identities + i)->service_id, (interface.identities + i)->address, (interface.identities + i)->type);
         }
     }
 
     if (interface.n_inputs != (int16_t) -1) {
-        ESP_LOGI(__FUNCTION__, "Inputs: %"PRIu16"", interface.n_inputs);
+        KAOS_LOGI(__FUNCTION__, "Inputs: %"PRIu16"", interface.n_inputs);
         for (int i = 0; i < interface.n_inputs; i++) {
-            ESP_LOGI(__FUNCTION__, "    service: %"PRIu8", address: %"PRIu32", type: %s\n", (interface.inputs + i)->service_id, (interface.inputs + i)->address, (interface.inputs + i)->type);
+            KAOS_LOGI(__FUNCTION__, "    service: %"PRIu8", address: %"PRIu32", type: %s\n", (interface.inputs + i)->service_id, (interface.inputs + i)->address, (interface.inputs + i)->type);
         }
     }
 
     if (interface.n_outputs != (int16_t) -1) {
-        ESP_LOGI(__FUNCTION__, "Outputs: %"PRIu16"", interface.n_outputs);
+        KAOS_LOGI(__FUNCTION__, "Outputs: %"PRIu16"", interface.n_outputs);
         for (int i = 0; i < interface.n_outputs; i++) {
-            ESP_LOGI(__FUNCTION__, "    service: %"PRIu8", address: %"PRIu32", type: %s\n", (interface.outputs + i)->service_id, (interface.outputs + i)->address, (interface.outputs + i)->type);
+            KAOS_LOGI(__FUNCTION__, "    service: %"PRIu8", address: %"PRIu32", type: %s\n", (interface.outputs + i)->service_id, (interface.outputs + i)->address, (interface.outputs + i)->type);
         }
     }
 
     if (interface.n_resources != (int16_t) -1) {
-        ESP_LOGI(__FUNCTION__, "Resources: %"PRIu16"", interface.n_resources);
+        KAOS_LOGI(__FUNCTION__, "Resources: %"PRIu16"", interface.n_resources);
         for (int i = 0; i < interface.n_resources; i++) {
-            ESP_LOGI(__FUNCTION__, "    symbol: %s\n", (interface.resources + i)->symbol);
+            KAOS_LOGI(__FUNCTION__, "    symbol: %s\n", (interface.resources + i)->symbol);
         }
     }
 }
 
 
 void print_config(module_config_t config) {
-    ESP_LOGI(__FUNCTION__, "Source buffer size: %"PRIu32"", config.source_buffer_size);
-    ESP_LOGI(__FUNCTION__, "Source buffer: %p", config.source_buffer);
-    ESP_LOGI(__FUNCTION__, "Heap size: %"PRIu32"", config.heap_size);
-    ESP_LOGI(__FUNCTION__, "Stack size: %"PRIu32"", config.stack_size);
+    KAOS_LOGI(__FUNCTION__, "Source buffer size: %"PRIu32"", config.source_buffer_size);
+    KAOS_LOGI(__FUNCTION__, "Source buffer: %p", config.source_buffer);
+    KAOS_LOGI(__FUNCTION__, "Heap size: %"PRIu32"", config.heap_size);
+    KAOS_LOGI(__FUNCTION__, "Stack size: %"PRIu32"", config.stack_size);
 }

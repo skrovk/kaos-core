@@ -4,12 +4,13 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "esp_log.h"
+#include "port_logging.h"
 
+#include "network.h"
 #include "container_mgr.h"
 #include "kaos_errors.h"
 #include "kaos_types_shared.h"
-#include "unreliable_message_queue.h"
+#include "unreliable_channel.h"
 
 
 #define KAOS_MAX_CONTAINER_QUEUE_ITEMS CONFIG_KAOS_MAX_CONTAINER_QUEUE_ITEMS
@@ -35,9 +36,8 @@
 // #endif
 
 static const char *TAG = "unreliable_queue";
-TaskHandle_t udp_client_handle = NULL;
 
-static kaos_error_t empty_queue(queue_t queue) {
+static kaos_error_t empty_queue(queue_t *queue) {
     message_t message_dest;
     while(receive_from_queue(queue, &message_dest, 0)) {
         free(message_dest.content);
@@ -47,7 +47,7 @@ static kaos_error_t empty_queue(queue_t queue) {
 }
 
 
-kaos_error_t destroy_queue(queue_t queue) {
+kaos_error_t destroy_channel_queue(queue_t *queue) {
     if (!queue) {
         return KaosQueueNotEstablished;
     }
@@ -58,10 +58,10 @@ kaos_error_t destroy_queue(queue_t queue) {
 }
 
 
-kaos_error_t create_queue(queue_t *queue) {
+kaos_error_t create_channel_queue(queue_t **queue) {
     *queue = create_queue(KAOS_MAX_CONTAINER_QUEUE_ITEMS, sizeof(message_t));
     if (!(*queue)) {
-        ESP_LOGE(TAG, "Queue not created");
+        KAOS_LOGE(TAG, "Queue not created");
         return KaosQueueNotEstablished;
     }
 
@@ -84,17 +84,17 @@ static kaos_error_t pack(uint8_t **dest, uint32_t *sz, message_t msg) {
 }
 
 // Use macros IN_QUEUE and OUT_QUEUE for mem_offset
-static kaos_error_t _get(queue_t queue, message_t *message_dest) {
+static kaos_error_t _get(queue_t *queue, message_t *message_dest) {
 
     if (!queue) {
-        ESP_LOGW(__FUNCTION__, "%s->%s:%d Queue has not been established", __FILE__, __FUNCTION__, __LINE__);
+        KAOS_LOGW(__FUNCTION__, "%s->%s:%d Queue has not been established", __FILE__, __FUNCTION__, __LINE__);
         return KaosQueueNotEstablished;
     }
 
-    // ESP_LOGE(__FUNCTION__, "Queue get");
+    // KAOS_LOGE(__FUNCTION__, "Queue get");
     if (!receive_from_queue(queue, message_dest, 0)) {
         // TODO: Uncomment
-        // ESP_LOGI(TAG, "%s: Queue %p empty", __FUNCTION__, queue);
+        // KAOS_LOGI(TAG, "%s: Queue %p empty", __FUNCTION__, queue);
         return KaosQueueEmptyError;
     }
 
@@ -104,7 +104,7 @@ static kaos_error_t _get(queue_t queue, message_t *message_dest) {
 // TODO: follow registry references and synchronize holding them (don't delete reference unless it's referenced 0 times)
 // Keep synchronized list of references and set them all to 0?
 uint32_t get(exec_env_t exec_env, service_id_t service_id, address_t container_address, char *type) {
-    ESP_LOGI(__FUNCTION__, "Queue get from %"PRIu8":%"PRIu32" %s", service_id, container_address, type);
+    KAOS_LOGI(__FUNCTION__, "Queue get from %"PRIu8":%"PRIu32" %s", service_id, container_address, type);
     message_t message;
     uint32_t buffer_size = 0;
     uint8_t *buffer = NULL;
@@ -114,39 +114,39 @@ uint32_t get(exec_env_t exec_env, service_id_t service_id, address_t container_a
 
     // TODO: RACE -> when container unexpectedly fails??
     pthread_mutex_lock(&registry->mutex);
-    queue_t queue = get_input_queue(registry, service_id, container_address, type);
+    queue_t *queue = get_input_queue(registry, service_id, container_address, type);
     kaos_error_t err = _get(queue, &message);
     pthread_mutex_unlock(&registry->mutex);
     if (err) return 0;
 
     err = pack(&buffer, &buffer_size, message);
     if (err) {
-        ESP_LOGE(__FUNCTION__, "Kaos error: %d, expected buffer size %"PRIu32"", err, buffer_size);
+        KAOS_LOGE(__FUNCTION__, "Kaos error: %d, expected buffer size %"PRIu32"", err, buffer_size);
         return 0;
     }
 
     // TODO: Why double free?
     free(message.content);
     uint32_t wasm_p = wasm_runtime_module_dup_data(module_inst, (char *) buffer, buffer_size);
-    if (!wasm_p) ESP_LOGE(__FUNCTION__, "Buffer allocation of %"PRIu32" bytes failed", buffer_size);
+    if (!wasm_p) KAOS_LOGE(__FUNCTION__, "Buffer allocation of %"PRIu32" bytes failed", buffer_size);
     free(buffer);
 
-    // ESP_LOGI(__FUNCTION__, "Queue get from %"PRIu8":%"PRIu32" %s", service_id, container_address, type);
+    // KAOS_LOGI(__FUNCTION__, "Queue get from %"PRIu8":%"PRIu32" %s", service_id, container_address, type);
 
     return wasm_p;
 }
 
 
-static kaos_error_t _put(queue_t queue, message_t *message) {
-    // ESP_LOGI(__FUNCTION__, "Send to %d", message.dest_address);
+static kaos_error_t _put(queue_t *queue, message_t *message) {
+    // KAOS_LOGI(__FUNCTION__, "Send to %d", message.dest_address);
     kaos_error_t err = KaosSuccess;
     if (!queue) {
-        ESP_LOGI(__FUNCTION__,  "%s->%d Queue flow has not been established", __FILE__, __LINE__);
+        KAOS_LOGI(__FUNCTION__,  "%s->%d Queue flow has not been established", __FILE__, __LINE__);
         return KaosQueueNotEstablished;
     }
 
     if (!send_to_queue(queue, message, 0)) {
-        ESP_LOGW(TAG, "%s: Queue %p full", __FUNCTION__, queue);
+        KAOS_LOGW(TAG, "%s: Queue %p full", __FUNCTION__, queue);
         return KaosQueueFullError;
     }
 
@@ -163,44 +163,44 @@ int32_t put(
     kaos_error_t err = KaosSuccess;
     module_registry_t *src_registry = get_registry_by_inst(wasm_runtime_get_module_inst(exec_env));
     if (!src_registry) {
-        ESP_LOGE(__FUNCTION__, "%s:%d Registry with identity %"PRIu8":%"PRIu32" not found", __FILE__, __LINE__, service_id, src_addr);
+        KAOS_LOGE(__FUNCTION__, "%s:%d Registry with identity %"PRIu8":%"PRIu32" not found", __FILE__, __LINE__, service_id, src_addr);
         return 1;
     }
 
-    queue_t queue;
+    queue_t *queue;
     pthread_mutex_lock(&src_registry->mutex);
     module_registry_t *dest_registry = get_registry_by_identity(service_id, dest_addr);
     module_registry_t *sig_registry = NULL;
     // TODO: Set new queue handle in channel entry
     if (!dest_registry) {
         queue = get_output_queue(src_registry, service_id, dest_addr, type);
-        // ESP_LOGI(__FUNCTION__, "Put in output queue %"PRIu8":%"PRIu32":%s", service_id, dest_addr, type);
+        // KAOS_LOGI(__FUNCTION__, "Put in output queue %"PRIu8":%"PRIu32":%s", service_id, dest_addr, type);
     }
     else {
         pthread_mutex_lock(&dest_registry->mutex);
         queue = get_input_queue(dest_registry, service_id, src_addr, type);
         sig_registry = dest_registry;
-        // ESP_LOGI(__FUNCTION__, "Put in input queue %"PRIu8":%"PRIu32":%s", service_id, dest_addr, type);
+        // KAOS_LOGI(__FUNCTION__, "Put in input queue %"PRIu8":%"PRIu32":%s", service_id, dest_addr, type);
     }
 
     if (!queue) {
-        err = create_queue(&queue);
+        err = create_channel_queue(&queue);
         if (err) {
-            ESP_LOGW(__FUNCTION__, "%s->%d Queue could not be established", __FILE__, __LINE__);
+            KAOS_LOGW(__FUNCTION__, "%s->%d Queue could not be established", __FILE__, __LINE__);
             return err;
         }
 
         if (!dest_registry) {
-            ESP_LOGD(__FUNCTION__, "Setting new output queue");
+            KAOS_LOGD(__FUNCTION__, "Setting new output queue");
             err = set_output_queue(src_registry, service_id, dest_addr, type, queue);
         } else {
-            ESP_LOGD(__FUNCTION__, "Setting new input queue");
+            KAOS_LOGD(__FUNCTION__, "Setting new input queue");
             err = set_input_queue(dest_registry, service_id, src_addr, type, queue);
         }
     }
 
     if (err) {
-        ESP_LOGW(__FUNCTION__, "Queue not set: %d", err);
+        KAOS_LOGW(__FUNCTION__, "Queue not set: %d", err);
         return err;
     }
 
@@ -221,19 +221,19 @@ int32_t put(
     };
 
     // memcpy(message.type, type, TYPE_SZ);
-    ESP_LOGI(__FUNCTION__, "Putting message from %d,%d to queue", service_id, src_addr);
+    KAOS_LOGI(__FUNCTION__, "Putting message from %d,%d to queue", service_id, src_addr);
     err = _put(queue, &message);
-    // TODO: Fix this
-    if (!err) xTaskNotifyGive(udp_client_handle);
 
-    if (sig_registry && uxQueueMessagesWaiting(queue) == 1) {
-        kaos_signal_msg_t signal_msg = {
-            .signal_type = KAOS_DATA_AVAILABLE,
-            .signal_id = 0,
-        };
-
-        sig_to_container(sig_registry, &signal_msg);
+    if (err) {
+        KAOS_LOGW(__FUNCTION__, "Put to queue failed: %d", err);
+        free(msg_content);
+        pthread_mutex_unlock(&src_registry->mutex);
+        if (dest_registry) pthread_mutex_unlock(&dest_registry->mutex);
+        return err;
     }
+    notify_and_signal(sig_registry, queue);
+    // TODO: Fix this
+    
 
     pthread_mutex_unlock(&src_registry->mutex);
     if (dest_registry) pthread_mutex_unlock(&dest_registry->mutex);
@@ -250,12 +250,12 @@ static kaos_error_t parse_container_message(uint8_t *buffer, message_t *dest, se
     memcpy(type, buffer + RMT_TYPE_OFFSET, TYPE_SZ);
     memcpy(&dest->content_len, buffer + RMT_DATA_SZ_OFFSET, sizeof(data_size_t));
 
-    ESP_LOGI(TAG, "Rcvd payload sz %"PRIu32"", (uint32_t) RMT_DATA_OFFSET + dest->content_len);
-    ESP_LOG_BUFFER_HEX(TAG, buffer, (uint32_t) RMT_DATA_OFFSET + dest->content_len);
+    KAOS_LOGI(TAG, "Rcvd payload sz %"PRIu32"", (uint32_t) RMT_DATA_OFFSET + dest->content_len);
+    // ESP_LOG_BUFFER_HEX(TAG, buffer, (uint32_t) RMT_DATA_OFFSET + dest->content_len);
 
     dest->content = calloc(1, dest->content_len);
     if (!dest->content) {
-        ESP_LOGW(__FUNCTION__, "Content allocation of %"PRIu32" failed", dest->content_len);
+        KAOS_LOGW(__FUNCTION__, "Content allocation of %"PRIu32" failed", dest->content_len);
         return KaosMemoryAllocationError;
     }
     memcpy(dest->content, buffer + RMT_DATA_OFFSET, dest->content_len);
@@ -279,31 +279,34 @@ kaos_error_t receive_container_payload(uint8_t *buffer) {
     // TODO: !!! Add type
     module_registry_t *registry = get_registry_by_identity(service_id, msg.dest_address);
     if (!registry) {
-        ESP_LOGW(__FUNCTION__, "No registry %"PRIu8":%"PRIu32" ", service_id, msg.dest_address);
+        KAOS_LOGW(__FUNCTION__, "No registry %"PRIu8":%"PRIu32" ", service_id, msg.dest_address);
         return KaosRegistryNotFoundError;
     }
 
-    queue_t queue = get_input_queue(registry, service_id, msg.src_address, type);
+    queue_t *queue = get_input_queue(registry, service_id, msg.src_address, type);
     if (!queue) {
-        ESP_LOGI(__FUNCTION__, "Creating new queue for %"PRIu8":%"PRIu32"", service_id, msg.src_address);
-        err = create_queue(&queue);
+        KAOS_LOGI(__FUNCTION__, "Creating new queue for %"PRIu8":%"PRIu32"", service_id, msg.src_address);
+        err = create_channel_queue(&queue);
         if (err) {
-            ESP_LOGE(__FUNCTION__, "Queue for %"PRIu8":%"PRIu32" not created", service_id, msg.src_address);
+            KAOS_LOGE(__FUNCTION__, "Queue for %"PRIu8":%"PRIu32" not created", service_id, msg.src_address);
             return err;
         }
 
         err = set_input_queue(registry, service_id, msg.src_address, type, queue);
         if (err) {
-            ESP_LOGE(__FUNCTION__, "Queue for %"PRIu8":%"PRIu32" not created: %d", service_id, msg.src_address, err);
+            KAOS_LOGE(__FUNCTION__, "Queue for %"PRIu8":%"PRIu32" not created: %d", service_id, msg.src_address, err);
             return err;
         }
     }
     
-    ESP_LOGI(__FUNCTION__, "Putting message from %d,%d to queue", service_id, msg.src_address);
-    ESP_LOGI(__FUNCTION__, "Data sz %d, data %d", msg.content_len, msg);
+    KAOS_LOGI(__FUNCTION__, "Putting message from %d,%d to queue", service_id, msg.src_address);
+    KAOS_LOGI(__FUNCTION__, "Data sz %d, data %d", msg.content_len, msg);
     err = _put(queue, &msg);
 
-    if (uxQueueMessagesWaiting(queue) == 1) {
+    uint32_t msgs_available;
+    messages_available(queue, &msgs_available);
+    // TODO: Why exactly one?
+    if (msgs_available == 1) {
         kaos_signal_msg_t signal_msg = {
             .signal_type = KAOS_DATA_AVAILABLE,
             .signal_id = 0,
@@ -330,7 +333,7 @@ void compose_container_message(message_t *msg, service_id_t *service_id, char *t
     free(msg->content);
     msg->content = payload_buffer;
     msg->content_len = payload_sz;
-    ESP_LOG_BUFFER_HEX(TAG, payload_buffer, payload_sz);
+    // ESP_LOG_BUFFER_HEX(TAG, payload_buffer, payload_sz);
 }
 
 
@@ -355,7 +358,7 @@ void validate_state(module_registry_t *to_be_destroyed) {
 // TODO: Race when adding/removing inputs from registries?
 static kaos_error_t get_next_payload_from_queue(message_t *msg, service_id_t *service_id) {
     for (int i = curr_channel; i < n_channels; i++) {
-        queue_t queue = channels[i].queue;
+        queue_t *queue = channels[i].queue;
         if (_get(queue, msg) == KaosSuccess) {
             compose_container_message(msg, &(channels[i].service_id), channels[i].type);
             *service_id = channels[i].service_id;
@@ -369,11 +372,11 @@ static kaos_error_t get_next_payload_from_queue(message_t *msg, service_id_t *se
 }
 
 kaos_error_t get_next_container_payload(message_t *msg, service_id_t *service_id) {
-    ESP_LOGI(__FUNCTION__, "Get next payload");
+    KAOS_LOGI(__FUNCTION__, "Get next payload");
     module_registry_t *registry_pool = get_registry_pool();
     pthread_mutex_lock(&payload_mutex);
 
-    ESP_LOGI(__FUNCTION__, "Current registry index: %d", curr_registry_i);
+    KAOS_LOGI(__FUNCTION__, "Current registry index: %d", curr_registry_i);
     for (curr_registry_i = curr_registry_i; curr_registry_i < KAOS_MAX_MODULE_N; curr_registry_i++) {
         module_registry_t *registry = registry_pool + curr_registry_i;
     

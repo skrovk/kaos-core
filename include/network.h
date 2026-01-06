@@ -1,10 +1,8 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/queue.h"
-
 #include "lwip/sockets.h"
+#include "port.h"
 #include "kaos_types_shared.h"
 #include "container_mgr.h"
 
@@ -29,5 +27,6 @@ void translation_table_init(channel_t *channels, uint8_t **ip_addr, uint32_t n_e
 // kaos_error_t send_to_log_server(service_msg_t *msg);
 // kaos_error_t get_log_server_msg(service_msg_t *dest);
 kaos_error_t service_put(service_msg_t *msg);
+kaos_error_t notify_and_signal(module_registry_t *sig_registry, queue_t *queue);
 
 #endif

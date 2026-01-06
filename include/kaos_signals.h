@@ -42,7 +42,7 @@ typedef struct kaos_signal_msg_t {
 
 
 bool is_response(kaos_signal_type_t signal);
-queue_t init_sig_queue_to_container(void);
+queue_t *init_sig_queue_to_container(void);
 void destroy_sig_queues(struct module_registry_t *registry);
 
 // TODO: Make this static

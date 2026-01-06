@@ -4,6 +4,7 @@
 #include <inttypes.h>
 #include <pthread.h>
 
+#include "port.h"
 #include "container_mgr.h"
 #include "kaos_types_shared.h"
 #include "kaos_signals.h"
@@ -43,7 +44,7 @@ typedef enum event_type_t {             // | event payload        | event payloa
     EVENT_OPERATION_STARTED,
     EVENT_OPERATION_DONE,               // | op_id_t              | sizeof(op_id_t)
     EVENT_OPERATION_ERROR,              // | op_id_t              | sizeof(op_id_t)
-    EVENT_OPERATION_TIMER_EXPIRED,      // | kaos_timer_t * | sizeof(kaos_timer_t *)
+    EVENT_OPERATION_TIMER_EXPIRED,      // | kaos_timer_handle_t * | sizeof(kaos_timer_handle_t *)
     
     EVENT_CONTAINER_LIVE,
     EVENT_CONTAINER_EXEC_TERMINATED,    // | module_registry_t *  | sizeof(module_registry_t *)

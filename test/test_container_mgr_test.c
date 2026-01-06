@@ -165,7 +165,7 @@ TEST_CASE("test_channel_lookup_set", "[container_mgr]") {
     kaos_error_t err = init_module(&reg, (uint8_t*) name, &config, &iface);
     TEST_ASSERT_EQUAL(KaosSuccess, err);
 
-    queue_t q = (queue_t)0x1;
+    queue_t *q = (queue_t)0x1;
     TEST_ASSERT_EQUAL(KaosSuccess, set_input_queue(reg, target_success.service_id, target_success.address, target_success.type, q));
     TEST_ASSERT_EQUAL_PTR(q, get_input_queue(reg, target_success.service_id, target_success.address, target_success.type));
     TEST_ASSERT_EQUAL_PTR(NULL, get_input_queue(reg, target_fail.service_id, target_fail.address, target_fail.type));
@@ -273,7 +273,7 @@ TEST_CASE("test_realloc_module_buffer", "[container_mgr]") {
     TEST_ASSERT(new_config.stack_size == cmp_config.stack_size);
     // TEST_ASSERT(memcmp(new_cfg.source_buffer, src2, sizeof(src2)) == 0);
     // TEST_ASSERT(new_cfg.source_buffer != old_cfg.source_buffer);
-    queue_t q = (queue_t)0x1;
+    queue_t *q = (queue_t)0x1;
     TEST_ASSERT_EQUAL(KaosChannelNotFoundError, set_input_queue(reg, target_success.service_id, target_success.address, target_success.type, q));
     TEST_ASSERT_EQUAL_PTR(NULL, get_input_queue(reg, target_success.service_id, target_success.address, target_success.type));
 

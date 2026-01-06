@@ -1,5 +1,5 @@
 #include "kaos_button.h"
-#include "esp_log.h"
+#include "port_logging.h"
 #include "esp_err.h"
 
 #include "kaos_monitor.h"
@@ -7,7 +7,7 @@
 
 
 void button_single_click_cb(void *arg, void *data) {
-        ESP_LOGI("button", "BUTTON_SINGLE_CLICK");
+        KAOS_LOGI("button", "BUTTON_SINGLE_CLICK");
         submit_event_from_ISR(EVENT_ISR, data, sizeof(isr_data_t)); 
 }
 
@@ -25,7 +25,7 @@ uint32_t register_button(wasm_exec_env_t exec_env, int32_t id) {
     button_handle_t gpio_btn = NULL;
     esp_err_t err = iot_button_new_gpio_device(&btn_cfg, &btn_gpio_cfg, &gpio_btn);
     if (NULL == gpio_btn) {
-        ESP_LOGE("button", "Button create failed");
+        KAOS_LOGE("button", "Button create failed");
         return 27;
     }
 
@@ -42,7 +42,7 @@ uint32_t register_button(wasm_exec_env_t exec_env, int32_t id) {
     // button_handle_t adc_btn = NULL;
     // esp_err_t ret = iot_button_new_adc_device(&btn_cfg, &btn_adc_cfg, &adc_btn);
     // if(NULL == adc_btn) {
-    //     ESP_LOGE(TAG, "Button create failed");
+    //     KAOS_LOGE(TAG, "Button create failed");
     // }
 
     // TODO: Destruction handling
@@ -53,7 +53,7 @@ uint32_t register_button(wasm_exec_env_t exec_env, int32_t id) {
     err = iot_button_register_cb(gpio_btn, BUTTON_SINGLE_CLICK, NULL, button_single_click_cb, (void *) b_isr_data);
 
     if (err != ESP_OK) {
-        ESP_LOGE("button", "Button register cb failed");
+        KAOS_LOGE("button", "Button register cb failed");
         return 27;
     }
 

@@ -2,17 +2,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <inttypes.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/queue.h"
-
-#include "esp_task_wdt.h"
-
 #include "esp_timer.h"
-#include "esp_heap_caps.h"
-#include "esp_log.h"
-#include "esp_err.h"
-#include "esp_random.h"
 #include "wasm_export.h"
 
 #include "cbor_parser.h"
@@ -23,9 +13,9 @@
 #include "network.h"
 #include "led.h"
 #include "kaos_button.h"
-#include "unreliable_message_queue.h"
+#include "unreliable_channel.h"
 
-
+#include "port_logging.h"
 
 #define KAOS_SUSPEND_RETRIES     CONFIG_KAOS_SUSPEND_RETRIES
 #define KAOS_SUSPEND_TIMEOUT     CONFIG_KAOS_SUSPEND_TIMEOUT
@@ -43,8 +33,8 @@ volatile UBaseType_t uxArraySize[2];
 //     // int heap_total = heap_caps_get_total_size(MALLOC_CAP_8BIT);
 //     // int heap_total_perc = heap_total;
 //     // int heap_sz = heap_caps_get_free_size(MALLOC_CAP_8BIT);
-//     // ESP_LOGE("MEASUREMENT", "Used heap (B, %%): %d, %f",  heap_total - heap_sz, ((double) heap_total - (double) heap_sz) /(double) heap_total_perc);
-//     // ESP_LOGE("MEASUREMENT", "%d: Used heap, total heap (B, B): %d, %d", milestone, heap_total - heap_sz, heap_total);
+//     // KAOS_LOGE("MEASUREMENT", "Used heap (B, %%): %d, %f",  heap_total - heap_sz, ((double) heap_total - (double) heap_sz) /(double) heap_total_perc);
+//     // KAOS_LOGE("MEASUREMENT", "%d: Used heap, total heap (B, B): %d, %d", milestone, heap_total - heap_sz, heap_total);
 
 //     // TaskStatus_t *pxTaskStatusArray;
 //     volatile UBaseType_t uxArraySize, x;
@@ -52,7 +42,7 @@ volatile UBaseType_t uxArraySize[2];
 
 //     /* Make sure the write buffer does not contain a string. */
 //     uxArraySize = uxTaskGetNumberOfTasks();
-//     // ESP_LOGE("MEASUREMENT", "%d: Tasks running: %d", milestone, uxArraySize);
+//     // KAOS_LOGE("MEASUREMENT", "%d: Tasks running: %d", milestone, uxArraySize);
 //     pxTaskStatusArray[ind] = pvPortMalloc( uxArraySize * sizeof( TaskStatus_t ) );
 
 //     if( pxTaskStatusArray[ind] == NULL ) {
@@ -73,10 +63,10 @@ volatile UBaseType_t uxArraySize[2];
 //         This will always be rounded down to the nearest integer.
 //         ulTotalRunTimeDiv100 has already been divided by 100. */
 //         ulStatsAsPercentage = pxTaskStatusArray[ind][ x ].ulRunTimeCounter / ulTotalRunTime;
-//         // ESP_LOGE(__FUNCTION__, "Task %s:  %lu %%", pxTaskStatusArray[ind][ x ].pcTaskName, ulStatsAsPercentage);
+//         // KAOS_LOGE(__FUNCTION__, "Task %s:  %lu %%", pxTaskStatusArray[ind][ x ].pcTaskName, ulStatsAsPercentage);
 
 //         if ((!strcmp(pxTaskStatusArray[ind][ x ].pcTaskName, "IDLE0")) || (!strcmp(pxTaskStatusArray[ind][ x ].pcTaskName, "IDLE1") != 0)) {
-//             // ESP_LOGE("MEASUREMENT", "Task runtime: %lu, %lu", pxTaskStatusArray[x].ulRunTimeCounter, ulTotalRunTime);
+//             // KAOS_LOGE("MEASUREMENT", "Task runtime: %lu, %lu", pxTaskStatusArray[x].ulRunTimeCounter, ulTotalRunTime);
 //             idle_task_total_runtime += pxTaskStatusArray[ind][ x ].ulRunTimeCounter;
 //         }
 
@@ -84,7 +74,7 @@ volatile UBaseType_t uxArraySize[2];
 //     }
 
 
-//         // ESP_LOGE("MEASUREMENT", "%d: Idle task runtime ([u], %%): %lu, %f", milestone, idle_task_total_runtime, (double) idle_task_total_runtime / ((double) 2 * (double) ulTotalRunTime));
+//         // KAOS_LOGE("MEASUREMENT", "%d: Idle task runtime ([u], %%): %lu, %f", milestone, idle_task_total_runtime, (double) idle_task_total_runtime / ((double) 2 * (double) ulTotalRunTime));
         
 //         /* The array is no longer needed, free the memory it consumes. */
 
@@ -165,9 +155,9 @@ void get_runtime_states(int ind) {
 
 void print_runtime_stats(void) {
     for (int i = 0; i < 2; i++) {
-        ESP_LOGE("MEASUREMENT", "%d: Tasks running at %d: %d", i, uxArraySize);
+        KAOS_LOGE("MEASUREMENT", "%d: Tasks running at %d: %d", i, uxArraySize);
         for (int j = 0; j < uxArraySize[i]; j++) {
-            ESP_LOGI(__FUNCTION__, "Task %s:  %lu %%", pxTaskStatusArray[i][ j ].pcTaskName, pxTaskStatusArray[i][ j ].ulRunTimeCounter);
+            KAOS_LOGI(__FUNCTION__, "Task %s:  %lu %%", pxTaskStatusArray[i][ j ].pcTaskName, pxTaskStatusArray[i][ j ].ulRunTimeCounter);
         }
     }
 }
@@ -279,7 +269,7 @@ static health_monitor_t monitor = {
     },
 };
 
-static QueueHandle_t main_event_queue;
+static queue_t *main_event_queue;
 
 // Initialize queues
 // TODO: Msg size limits
@@ -295,12 +285,12 @@ static kaos_error_t unpack_command(uint8_t *buffer, uint32_t buffer_sz, command_
     memset(msg, 0, sizeof(command_t));
     
     if (buffer_sz < (2 *sizeof(uint32_t))) {
-        ESP_LOGW(__FUNCTION__, "Invalid message: %"PRIu32" too short", buffer_sz);
+        KAOS_LOGW(__FUNCTION__, "Invalid message: %"PRIu32" too short", buffer_sz);
         return KaosInvalidCommandError;
     }
     memcpy(&(msg->op), buffer, sizeof(uint32_t));
     memcpy(&(msg->sz), buffer + sizeof(uint32_t), sizeof(uint32_t));
-    // ESP_LOGI(__FUNCTION__, "Msg data, Operation %"PRIu32", size %"PRIu32"", msg->op, msg->sz);
+    // KAOS_LOGI(__FUNCTION__, "Msg data, Operation %"PRIu32", size %"PRIu32"", msg->op, msg->sz);
 
     if (!msg->sz) {
         msg->buf = NULL;  // Ensure buf is NULL when sz is 0
@@ -310,7 +300,7 @@ static kaos_error_t unpack_command(uint8_t *buffer, uint32_t buffer_sz, command_
     // ESP_LOG_BUFFER_HEX(__FUNCTION__, buffer, msg->sz);
     msg->buf = (uint8_t *) calloc(1, msg->sz);
     if (!msg->buf) {
-        ESP_LOGW(__FUNCTION__, "Allocation failed, %"PRIu32", %"PRIu32"", msg->op, msg->sz);
+        KAOS_LOGW(__FUNCTION__, "Allocation failed, %"PRIu32", %"PRIu32"", msg->op, msg->sz);
         return KaosContainerMemoryAllocationError;
     }
 
@@ -329,7 +319,7 @@ static uint32_t xorshift32(uint32_t state) {
 
 // TODO: Change buffer to void *
 kaos_error_t submit_event(event_type_t event, void *buffer, uint32_t buffer_sz) {
-    ESP_LOGI(__FUNCTION__, "Submitting event %d", event);
+    KAOS_LOGI(__FUNCTION__, "Submitting event %d", event);
     event_msg_t event_msg = {
         .event = event,
         .buffer = buffer,
@@ -344,7 +334,7 @@ kaos_error_t submit_event(event_type_t event, void *buffer, uint32_t buffer_sz) 
     }
     
     if (!send_to_queue(main_event_queue, &event_msg, 0)) {
-        ESP_LOGE(__FUNCTION__, "Main event queue is full");
+        KAOS_LOGE(__FUNCTION__, "Main event queue is full");
         // TODO: increment n_main_events_dropped
         monitor.n_events_dropped++;
         return KaosQueueFullError;
@@ -391,7 +381,7 @@ static void *startup_container(void *arg) {
 
         /* Verify heap integrity before handing received buffer to monitor */
         if (!heap_caps_check_integrity_all(true)) {
-            ESP_LOGE(__FUNCTION__, "Heap corruption detected after network receive");
+            KAOS_LOGE(__FUNCTION__, "Heap corruption detected after network receive");
             return NULL;
         }
 
@@ -402,18 +392,18 @@ static void *startup_container(void *arg) {
 
     
 
-    ESP_LOGI(__FUNCTION__, "Load registry %p", exec_args->registry);
+    KAOS_LOGI(__FUNCTION__, "Load registry %p", exec_args->registry);
     // Measurement 2. Upon task initialization
     // get_runtime_stats(NULL, 2);
 
     if (err) {
-        ESP_LOGE(__FUNCTION__, "%s Initialization error %d", exec_args->name, err);
+        KAOS_LOGE(__FUNCTION__, "%s Initialization error %d", exec_args->name, err);
         submit_event(EVENT_CONTAINER_EXEC_TERMINATED, NULL, 0);
         return NULL;
     }
 
     if (!exec_args->registry) {
-        ESP_LOGW(__FUNCTION__, "Module not initialized");
+        KAOS_LOGW(__FUNCTION__, "Module not initialized");
         submit_event(EVENT_CONTAINER_EXEC_TERMINATED, NULL, 0);
         // TODO: free args and resources inside
         return NULL;
@@ -424,11 +414,11 @@ static void *startup_container(void *arg) {
     uint32_t return_arg[2] = {0};
     err = execute_function(exec_args->registry, "main_app", return_arg, 0, config.stack_size);
 
-    ESP_LOGI(__FUNCTION__, "main_app: returned %d,%d", return_arg[0], return_arg[1]);
+    KAOS_LOGI(__FUNCTION__, "main_app: returned %d,%d", return_arg[0], return_arg[1]);
 
     if (err) {
         set_status(exec_args->registry, ERROR);
-        ESP_LOGE(__FUNCTION__, "%s Execute error %d", exec_args->name, err);
+        KAOS_LOGE(__FUNCTION__, "%s Execute error %d", exec_args->name, err);
         submit_event(EVENT_CONTAINER_EXEC_TERMINATED, NULL, 0);
         return NULL;
     } else {
@@ -437,7 +427,7 @@ static void *startup_container(void *arg) {
     }
 
     if (!heap_caps_check_integrity_all(true)) {
-        ESP_LOGE(__FUNCTION__, "Heap integrity check failed before wasm_runtime_load");
+        KAOS_LOGE(__FUNCTION__, "Heap integrity check failed before wasm_runtime_load");
         return NULL;
     }
 
@@ -457,10 +447,10 @@ static void *startup_container(void *arg) {
 
 static kaos_error_t exec_container(exec_args_t *exec_args) {
     // TODO: check existing id container
-    ESP_LOGI(__FUNCTION__, "Loading container: %s", exec_args->name);
+    KAOS_LOGI(__FUNCTION__, "Loading container: %s", exec_args->name);
     exec_args_t *args = calloc(1, sizeof(exec_args_t));
     if (!args) {
-        ESP_LOGE(__FUNCTION__, "Exec args allocation failed");
+        KAOS_LOGE(__FUNCTION__, "Exec args allocation failed");
         return KaosMemoryAllocationError;
     }
     memcpy(args, exec_args, sizeof(exec_args_t));
@@ -498,7 +488,7 @@ static int match_exports(export_symbol_t *exports, int16_t n_exports) {
     for (int i = 0; i < n_exports; i++) {
         export_symbol_t *matched_export = match_export((char *) (exports + i)->symbol);
         if (!matched_export) {
-            ESP_LOGE(__FUNCTION__, "Module configuration symbol %s does not match any available symbols", (char *) (exports + i)->symbol);
+            KAOS_LOGE(__FUNCTION__, "Module configuration symbol %s does not match any available symbols", (char *) (exports + i)->symbol);
             return KaosModuleConfigError;
         }
 
@@ -544,7 +534,7 @@ typedef enum operation_slot_state_t {
 
 typedef struct op_ctx_t {
     operation_slot_state_t op_state;
-    kaos_timer_t timer;
+    kaos_timer_handle_t *timer;
     void (*state_transition_callback) (struct op_ctx_t* op_ctx, event_msg_t* event_msg);
     operation_state_t current_state;
     op_id_t op_id;
@@ -565,15 +555,16 @@ static int8_t add_operation(op_ctx_t op_ctx_config) {
             operations[i] = op_ctx_config;
             operations[i].op_state = SLOT_BUSY;
             operations[i].op_id = i;
+            operations[i].timer = NULL;  // Initialize timer pointer to NULL
 
-            ESP_LOGI(__FUNCTION__, "Add operation %d", i);
+            KAOS_LOGI(__FUNCTION__, "Add operation %d", i);
             submit_event(EVENT_OPERATION_STARTED, (void *) operations[i].op_id, sizeof(void *));
 
             return i;
         }
     }
     
-    ESP_LOGE(__FUNCTION__, "Operation limit reached");
+    KAOS_LOGE(__FUNCTION__, "Operation limit reached");
     return -1;
 }
 
@@ -585,24 +576,24 @@ static void remove_operation(op_id_t operation_index) {
 
 
 static void fail_op(op_ctx_t *op_ctx) {
-    ESP_LOGI(__FUNCTION__, "%d", op_ctx->op_id);
+    KAOS_LOGI(__FUNCTION__, "%d", op_ctx->op_id);
     op_ctx->current_state = STATE_OPERATION_DONE;
     void *buffer = (void *) op_ctx->op_id;
     
     if (submit_event(EVENT_OPERATION_ERROR, buffer, sizeof(op_id_t))) {
-        ESP_LOGE("kaos", "Event dropped (silent error) - Event cannot be submitted");
+        KAOS_LOGE("kaos", "Event dropped (silent error) - Event cannot be submitted");
     }
 
     // free(op_ctx->ctx_data)signal_msg;
 }
 
 static void complete_op(op_ctx_t *op_ctx) {
-    ESP_LOGI(__FUNCTION__, "%d", op_ctx->op_id);
+    KAOS_LOGI(__FUNCTION__, "%d", op_ctx->op_id);
     op_ctx->current_state = STATE_OPERATION_DONE;
     void *buffer = (void *) op_ctx->op_id;
 
     if (submit_event(EVENT_OPERATION_DONE, buffer, sizeof(op_id_t))) {
-        ESP_LOGE("kaos", "Event dropped (silent error) - Event cannot be submitted");
+        KAOS_LOGE("kaos", "Event dropped (silent error) - Event cannot be submitted");
     }
 
     // free(op_ctx->ctx_data);
@@ -642,7 +633,7 @@ static void load_state_transition(op_ctx_t* op_ctx, event_msg_t* event_msg) {
             break;
         }
         fail_op(op_ctx);
-        ESP_LOGE(__FUNCTION__, "Invalid transition with event %d in state %d", event_msg->event, op_ctx->current_state);
+        KAOS_LOGE(__FUNCTION__, "Invalid transition with event %d in state %d", event_msg->event, op_ctx->current_state);
         return;
     case EVENT_CONTAINER_LIVE:
         if (op_ctx->current_state == STATE_CONTAINER_LOAD) {
@@ -650,7 +641,7 @@ static void load_state_transition(op_ctx_t* op_ctx, event_msg_t* event_msg) {
             module_registry_t *target_registry = args->registry;
 
             if (((module_registry_t *) event_msg->buffer) == target_registry) {
-                ESP_LOGI(__FUNCTION__, "Module %s now live", args->name);
+                KAOS_LOGI(__FUNCTION__, "Module %s now live", args->name);
                 complete_op(op_ctx);
                 free_exec_args((exec_args_t *) op_ctx->ctx_data);
                 op_ctx->ctx_data = NULL;
@@ -663,7 +654,7 @@ static void load_state_transition(op_ctx_t* op_ctx, event_msg_t* event_msg) {
             module_registry_t *target_registry = args->registry;
 
             if (((module_registry_t *) event_msg->buffer) == target_registry) {
-                ESP_LOGI(__FUNCTION__, "Module %s execution terminated before live", args->name);
+                KAOS_LOGI(__FUNCTION__, "Module %s execution terminated before live", args->name);
                 fail_op(op_ctx);
                 destroy_module(args->registry);
                 free_exec_args((exec_args_t *)op_ctx->ctx_data);
@@ -683,11 +674,11 @@ static void load_state_transition(op_ctx_t* op_ctx, event_msg_t* event_msg) {
         break;
     case STATE_CONTAINER_LOAD:
         exec_args_t *args = (exec_args_t *) op_ctx->ctx_data;
-        ESP_LOGI(__FUNCTION__, "Container %s load", args->name);
+        KAOS_LOGI(__FUNCTION__, "Container %s load", args->name);
         err = exec_container(args);
 
         if (err) {
-            ESP_LOGE(__FUNCTION__, "Container execution failed, operation error");
+            KAOS_LOGE(__FUNCTION__, "Container execution failed, operation error");
             fail_op(op_ctx);
             free_exec_args((exec_args_t *)op_ctx->ctx_data);
             op_ctx->ctx_data = NULL;
@@ -695,7 +686,7 @@ static void load_state_transition(op_ctx_t* op_ctx, event_msg_t* event_msg) {
         } 
         break;
     default:
-        ESP_LOGE(__FUNCTION__, "Invalid state %d", op_ctx->current_state);
+        KAOS_LOGE(__FUNCTION__, "Invalid state %d", op_ctx->current_state);
         fail_op(op_ctx);
         free_exec_args((exec_args_t *)op_ctx->ctx_data);
         op_ctx->ctx_data = NULL;
@@ -705,7 +696,7 @@ static void load_state_transition(op_ctx_t* op_ctx, event_msg_t* event_msg) {
 
 
 static void suspend_timer_expired(void *arg) {
-    ESP_LOGE(__FUNCTION__, "Timer expired");
+    KAOS_LOGE(__FUNCTION__, "Timer expired");
     submit_event(EVENT_OPERATION_TIMER_EXPIRED, arg, sizeof(op_id_t));
 }
 
@@ -721,7 +712,7 @@ static void suspend_state_transition(op_ctx_t* op_ctx, event_msg_t* event_msg) {
         
         fail_op(op_ctx);
         // free_exec_args(op_ctx->ctx_data);
-        ESP_LOGE(__FUNCTION__, "Invalid transition with event %d in state %d", event_msg->event, op_ctx->current_state);
+        KAOS_LOGE(__FUNCTION__, "Invalid transition with event %d in state %d", event_msg->event, op_ctx->current_state);
         break;
     case EVENT_OPERATION_TIMER_EXPIRED:
         if (op_ctx->current_state == STATE_SUSPEND_AWAIT_ACTION) {
@@ -731,20 +722,20 @@ static void suspend_state_transition(op_ctx_t* op_ctx, event_msg_t* event_msg) {
         
         fail_op(op_ctx);
         // free_exec_args(op_ctx->ctx_data);
-        ESP_LOGE(__FUNCTION__, "Invalid transition with event %d in state %d", event_msg->event, op_ctx->current_state);
+        KAOS_LOGE(__FUNCTION__, "Invalid transition with event %d in state %d", event_msg->event, op_ctx->current_state);
         break;
     case EVENT_CONTAINER_EXEC_TERMINATED:
         // TODO: add information about voluntary/forced termination to context?
         if (op_ctx->timer) {
             err = stop_timer(op_ctx->timer);
             if (err) {
-                ESP_LOGE(__FUNCTION__, "Timer stop error %d", err);
+                KAOS_LOGE(__FUNCTION__, "Timer stop error %d", err);
                 fail_op(op_ctx);
                 return;
             }
             err = delete_timer(op_ctx->timer);
             if (err) {
-                ESP_LOGE(__FUNCTION__, "Timer delete error %d", err);
+                KAOS_LOGE(__FUNCTION__, "Timer delete error %d", err);
                 fail_op(op_ctx);
                 return;
             }
@@ -752,22 +743,22 @@ static void suspend_state_transition(op_ctx_t* op_ctx, event_msg_t* event_msg) {
         
         if (op_ctx->current_state == STATE_SUSPEND_AWAIT_ACTION) {
             op_ctx->current_state = STATE_SUSPEND_CLEANUP;
-            ESP_LOGI(__FUNCTION__, "Container surrendered to termination willingly");
+            KAOS_LOGI(__FUNCTION__, "Container surrendered to termination willingly");
             break;
         }
 
         if (op_ctx->current_state == STATE_SUSPEND_AWAIT_TRAP) {
             // TODO: Add differen tmessage for different outcome
             op_ctx->current_state = STATE_SUSPEND_CLEANUP;
-            ESP_LOGW(__FUNCTION__, "Container terminated by force");
+            KAOS_LOGW(__FUNCTION__, "Container terminated by force");
             break;
         } 
 
         fail_op(op_ctx);
-        ESP_LOGE(__FUNCTION__, "Invalid transition with event %d in state %d", event_msg->event, op_ctx->current_state);
+        KAOS_LOGE(__FUNCTION__, "Invalid transition with event %d in state %d", event_msg->event, op_ctx->current_state);
         return;
     default: 
-        // ESP_LOGE(__FUNCTION__, "Invalid event %d", op_ctx->current_state);
+        // KAOS_LOGE(__FUNCTION__, "Invalid event %d", op_ctx->current_state);
         // fail_op(op_ctx);
         // free_exec_args((exec_args_t *)op_ctx->ctx_data);
         return;
@@ -783,19 +774,16 @@ static void suspend_state_transition(op_ctx_t* op_ctx, event_msg_t* event_msg) {
         if (get_status(args->registry) != RUNNING) {
             submit_event(EVENT_CONTAINER_EXEC_TERMINATED, NULL, 0);
             op_ctx->current_state = STATE_SUSPEND_AWAIT_ACTION;
-            ESP_LOGI(__FUNCTION__, "Module not running, cannot suspend");
+            KAOS_LOGI(__FUNCTION__, "Module not running, cannot suspend");
             break;
         }
         // Set timer to termination delay, add event with callback to event queue to execute suspend and to add response about completion to server
-            const kaos_timer_args_t oneshot_timer_args = (const kaos_timer_args_t) {
-            .callback = &suspend_timer_expired,
-            .arg = (void *) op_ctx->op_id,
-            .name = "suspend"
-        };
+        kaos_timer_args_t *oneshot_timer_args = kaos_timer_args_init(&suspend_timer_expired, (void *) op_ctx->op_id, "suspend");
         // TODO: Handle error
-        esp_err_t esp_err =  create_timer(&oneshot_timer_args, &(op_ctx->timer));
+        esp_err_t esp_err =  create_timer(&(op_ctx->timer), oneshot_timer_args);
+        kaos_timer_args_free(oneshot_timer_args);
         if (esp_err != ESP_OK) {
-            ESP_LOGE(__FUNCTION__, "ESP Timer error %d", esp_err);
+            KAOS_LOGE(__FUNCTION__, "ESP Timer error %d", esp_err);
             fail_op(op_ctx);
             free_exec_args((exec_args_t *)op_ctx->ctx_data);
             op_ctx->ctx_data = NULL;
@@ -804,7 +792,7 @@ static void suspend_state_transition(op_ctx_t* op_ctx, event_msg_t* event_msg) {
 
         esp_err = start_timer(op_ctx->timer, KAOS_SUSPEND_TIMEOUT, 0);
         if (esp_err != ESP_OK) {
-            ESP_LOGE(__FUNCTION__, "ESP Timer error %d", esp_err);
+            KAOS_LOGE(__FUNCTION__, "ESP Timer error %d", esp_err);
             fail_op(op_ctx);
             free_exec_args((exec_args_t *)op_ctx->ctx_data);
             op_ctx->ctx_data = NULL;
@@ -816,7 +804,7 @@ static void suspend_state_transition(op_ctx_t* op_ctx, event_msg_t* event_msg) {
             fail_op(op_ctx);
             free_exec_args((exec_args_t *)op_ctx->ctx_data);
             op_ctx->ctx_data = NULL;
-            ESP_LOGE(__FUNCTION__, "Missing context in" );
+            KAOS_LOGE(__FUNCTION__, "Missing context in" );
             break;
         }
 
@@ -836,15 +824,17 @@ static void suspend_state_transition(op_ctx_t* op_ctx, event_msg_t* event_msg) {
             fail_op(op_ctx);
             free_exec_args((exec_args_t *)op_ctx->ctx_data);
             op_ctx->ctx_data = NULL;
-            ESP_LOGE(__FUNCTION__, "Missing context in" );
+            KAOS_LOGE(__FUNCTION__, "Missing context in" );
         }
-        ESP_LOGI(__FUNCTION__, "Timer expired, suspending module by force");
+        KAOS_LOGI(__FUNCTION__, "Timer expired, suspending module by force");
+        delete_timer(op_ctx->timer);
+
         err = suspend_module(registry);
         if (err) {
             fail_op(op_ctx);
             free_exec_args((exec_args_t *)op_ctx->ctx_data);
             op_ctx->ctx_data = NULL;
-            ESP_LOGE(__FUNCTION__, "Module trap could not be set");
+            KAOS_LOGE(__FUNCTION__, "Module trap could not be set");
         }
 
         op_ctx->current_state = STATE_SUSPEND_AWAIT_TRAP;
@@ -859,7 +849,7 @@ static void suspend_state_transition(op_ctx_t* op_ctx, event_msg_t* event_msg) {
             fail_op(op_ctx);
             free_exec_args((exec_args_t *)op_ctx->ctx_data);
             op_ctx->ctx_data = NULL;
-            ESP_LOGE(__FUNCTION__, "Missing context in %s");
+            KAOS_LOGE(__FUNCTION__, "Missing context in %s");
         }
 
         suspend_module_cleanup(registry);
@@ -870,7 +860,7 @@ static void suspend_state_transition(op_ctx_t* op_ctx, event_msg_t* event_msg) {
         // TODO: Add differen tmessage for different outcome based on event
 
     default:
-        ESP_LOGE(__FUNCTION__, "Invalid state %s", op_ctx->current_state);
+        KAOS_LOGE(__FUNCTION__, "Invalid state %s", op_ctx->current_state);
         fail_op(op_ctx);
         free_exec_args((exec_args_t *)op_ctx->ctx_data);
         op_ctx->ctx_data = NULL;
@@ -887,7 +877,7 @@ static void reload_state_transition(op_ctx_t* op_ctx, event_msg_t* event_msg) {
         }
         
         fail_op(op_ctx);
-        ESP_LOGE(__FUNCTION__, "Invalid transition with event %d in state %d", event_msg->event, op_ctx->current_state);
+        KAOS_LOGE(__FUNCTION__, "Invalid transition with event %d in state %d", event_msg->event, op_ctx->current_state);
         return;
     case EVENT_OPERATION_DONE:   
         op_ctx->await_id = -1;  
@@ -902,18 +892,18 @@ static void reload_state_transition(op_ctx_t* op_ctx, event_msg_t* event_msg) {
         } 
             
         fail_op(op_ctx);
-        ESP_LOGE(__FUNCTION__, "Invalid transition with event %d in state %d", event_msg->event, op_ctx->current_state);
+        KAOS_LOGE(__FUNCTION__, "Invalid transition with event %d in state %d", event_msg->event, op_ctx->current_state);
         return;
     // Only can catch the event for child operation id?
     case EVENT_OPERATION_ERROR:
         op_ctx->await_id = -1;  
         fail_op(op_ctx);
         if(op_ctx->current_state == STATE_AWAIT_CHILD) { 
-            ESP_LOGE(__FUNCTION__, "Disappointed parent error: Operation failed due to child failure");
+            KAOS_LOGE(__FUNCTION__, "Disappointed parent error: Operation failed due to child failure");
             return;
         }
 
-        ESP_LOGE(__FUNCTION__, "Invalid transition with event %d in state %d", event_msg->event, op_ctx->current_state);
+        KAOS_LOGE(__FUNCTION__, "Invalid transition with event %d in state %d", event_msg->event, op_ctx->current_state);
         return;
         //  resolve dependent operations -> what if it has failed by now?
         // cancel operation  
@@ -954,10 +944,10 @@ static void reload_state_transition(op_ctx_t* op_ctx, event_msg_t* event_msg) {
             break;
         case STATE_CHILD_ERROR:
             fail_op(op_ctx);
-            ESP_LOGE(__FUNCTION__, "Disappointed parent error: Operation error due to child failure");
+            KAOS_LOGE(__FUNCTION__, "Disappointed parent error: Operation error due to child failure");
             break;
         default:
-            ESP_LOGE(__FUNCTION__, "Invalid state %s", op_ctx->current_state);
+            KAOS_LOGE(__FUNCTION__, "Invalid state %s", op_ctx->current_state);
             fail_op(op_ctx);
             free_exec_args((exec_args_t *)op_ctx->ctx_data);
             break;
@@ -976,18 +966,18 @@ static void destroy_state_transition(op_ctx_t* op_ctx, event_msg_t* event_msg) {
         }
         
         fail_op(op_ctx);
-        ESP_LOGE(__FUNCTION__, "Invalid transition with event %d in state %d", event_msg->event, op_ctx->current_state);
+        KAOS_LOGE(__FUNCTION__, "Invalid transition with event %d in state %d", event_msg->event, op_ctx->current_state);
         return;
     case EVENT_OPERATION_ERROR:
     // Where is error information encoded
         op_ctx->await_id = -1;
         fail_op(op_ctx);
         if(op_ctx->current_state == STATE_AWAIT_CHILD) { 
-            ESP_LOGE(__FUNCTION__, "Disappointed parent error: Operation failed due to child failure");
+            KAOS_LOGE(__FUNCTION__, "Disappointed parent error: Operation failed due to child failure");
             return;
         }
 
-        ESP_LOGE(__FUNCTION__, "Invalid transition with event %d in state %d", event_msg->event, op_ctx->current_state);
+        KAOS_LOGE(__FUNCTION__, "Invalid transition with event %d in state %d", event_msg->event, op_ctx->current_state);
         return;
     case EVENT_OPERATION_DONE:
         op_ctx->await_id = -1;
@@ -997,11 +987,11 @@ static void destroy_state_transition(op_ctx_t* op_ctx, event_msg_t* event_msg) {
         }
 
         fail_op(op_ctx);
-        ESP_LOGE(__FUNCTION__, "Invalid transition with event %d in state %d", event_msg->event, op_ctx->current_state);
+        KAOS_LOGE(__FUNCTION__, "Invalid transition with event %d in state %d", event_msg->event, op_ctx->current_state);
         return;
     default:
         // fail_op(op_ctx);
-        // ESP_LOGE(__FUNCTION__, "Invalid transition with event %d in state %d", event_msg->event, op_ctx->current_state);
+        // KAOS_LOGE(__FUNCTION__, "Invalid transition with event %d in state %d", event_msg->event, op_ctx->current_state);
         return;
     }
 
@@ -1027,21 +1017,21 @@ static void destroy_state_transition(op_ctx_t* op_ctx, event_msg_t* event_msg) {
         exec_args_t *args = (exec_args_t *) op_ctx->ctx_data;
         module_registry_t *registry = args->registry;
 
-        ESP_LOGI(__FUNCTION__, "Destroying module %s", registry->module_name);
+        KAOS_LOGI(__FUNCTION__, "Destroying module %s", registry->module_name);
         destroy_module(registry);
 
         module_registry_t *reg = get_registry_by_name(args->name);  // Should be NULL now
         if (reg) {
-            ESP_LOGE(__FUNCTION__, "Module %s destruction failed", args->name);
+            KAOS_LOGE(__FUNCTION__, "Module %s destruction failed", args->name);
             fail_op(op_ctx);
             free_exec_args((exec_args_t *)op_ctx->ctx_data);
             break;
         }
-        ESP_LOGI(__FUNCTION__, "Module %s destroyed", args->name);
+        KAOS_LOGI(__FUNCTION__, "Module %s destroyed", args->name);
         complete_op(op_ctx);
         break;
     default:
-        ESP_LOGE(__FUNCTION__, "Invalid state %s", op_ctx->current_state);
+        KAOS_LOGE(__FUNCTION__, "Invalid state %s", op_ctx->current_state);
         fail_op(op_ctx);
         free_exec_args((exec_args_t *)op_ctx->ctx_data);
         break;
@@ -1049,13 +1039,13 @@ static void destroy_state_transition(op_ctx_t* op_ctx, event_msg_t* event_msg) {
 }
 
 static void test_state_transition(op_ctx_t* op_ctx, event_msg_t* event_msg) {
-    ESP_LOGE(__FUNCTION__, "Test operation %d success", op_ctx->op_id);
+    KAOS_LOGE(__FUNCTION__, "Test operation %d success", op_ctx->op_id);
     complete_op(op_ctx);
 }
 
 
 static kaos_error_t process_command(op_ctx_t* op_ctx, msg_data_t *data) {
-    // ESP_LOGI(__FUNCTION__, "Process message of type %"PRIu32"", msg->op);
+    // KAOS_LOGI(__FUNCTION__, "Process message of type %"PRIu32"", msg->op);
     command_t command;
     kaos_error_t err = KaosSuccess;
     command.op = LoadNewModule;
@@ -1072,14 +1062,14 @@ static kaos_error_t process_command(op_ctx_t* op_ctx, msg_data_t *data) {
         };
 
     if (err) {
-        ESP_LOGW(__FUNCTION__, "Invalid command");
+        KAOS_LOGW(__FUNCTION__, "Invalid command");
         return err;
     }
 
     // TODO: Improve memory management
     exec_args_t *args = calloc(1, sizeof(exec_args_t));
     if (!args) {
-        ESP_LOGE(__FUNCTION__, "Failed to allocate exec_args");
+        KAOS_LOGE(__FUNCTION__, "Failed to allocate exec_args");
         if (command.buf) free(command.buf);
         return KaosMemoryAllocationError;
     }
@@ -1087,7 +1077,7 @@ static kaos_error_t process_command(op_ctx_t* op_ctx, msg_data_t *data) {
     kaos_error_t result;
 
     // if ((result = parse_monitor_message(command.buf, command.sz, &(args->config), &(args->interface), &(args->name)))) {
-    //     ESP_LOGW(__FUNCTION__, "Message parsing failed");
+    //     KAOS_LOGW(__FUNCTION__, "Message parsing failed");
     //     if (command.buf) free(command.buf);  // Free the allocated buffer
     //     free_exec_args(args);
     //     return result;
@@ -1095,21 +1085,21 @@ static kaos_error_t process_command(op_ctx_t* op_ctx, msg_data_t *data) {
 
     /* Verify heap integrity before handing received buffer to monitor */
     if (!heap_caps_check_integrity_all(true)) {
-        ESP_LOGE(__FUNCTION__, "Heap corruption detected after network receive");
+        KAOS_LOGE(__FUNCTION__, "Heap corruption detected after network receive");
         return KaosMemoryAllocationError;
     }
 
     char *test_name = "test";
     args->name = (char *) calloc(1, strlen(test_name) + 1);
     if (!args->name) {
-        ESP_LOGE(__FUNCTION__, "Failed to allocate args->name");
+        KAOS_LOGE(__FUNCTION__, "Failed to allocate args->name");
         if (command.buf) free(command.buf);
         free_exec_args(args);
         return KaosMemoryAllocationError;
     }
     strncpy(args->name, test_name, strlen(test_name));
     args->name[strlen(test_name)] = '\0';
-    ESP_LOGI(__FUNCTION__, "Module name: %s", args->name);
+    KAOS_LOGI(__FUNCTION__, "Module name: %s", args->name);
     // print_interface(args->interface);
     // print_config(args->config);
 
@@ -1127,13 +1117,13 @@ static kaos_error_t process_command(op_ctx_t* op_ctx, msg_data_t *data) {
     switch (command.op) {
     case LoadNewModule:
         if (registry) {
-            ESP_LOGW(__FUNCTION__, "Registry conflict with name %s: module already exists", args->name);
+            KAOS_LOGW(__FUNCTION__, "Registry conflict with name %s: module already exists", args->name);
             free_exec_args(args);
             return KaosRegistryNameConflictError;
         }
 
         // if ((result = validate_load(args))) {
-        //     ESP_LOGW(__FUNCTION__, "Load error: %d", result);
+        //     KAOS_LOGW(__FUNCTION__, "Load error: %d", result);
         //     free_exec_args(args);
         //     return result;
         // }
@@ -1144,13 +1134,13 @@ static kaos_error_t process_command(op_ctx_t* op_ctx, msg_data_t *data) {
         args->registry = registry;
 
         if ((result = validate_reload(args))) {
-            ESP_LOGW(__FUNCTION__, "Reload error: %d", result);
+            KAOS_LOGW(__FUNCTION__, "Reload error: %d", result);
             free_exec_args(args);
             return result;
         }
 
         if (!registry) {
-            ESP_LOGW(__FUNCTION__, "Registry with name %s not found", args->name);
+            KAOS_LOGW(__FUNCTION__, "Registry with name %s not found", args->name);
             free_exec_args(args);
 
             return KaosRegistryNotFoundError;
@@ -1160,7 +1150,7 @@ static kaos_error_t process_command(op_ctx_t* op_ctx, msg_data_t *data) {
         break;
     case SuspendModule:
         if (!registry) {
-            ESP_LOGW(__FUNCTION__, "Registry with name %s not found", args->name);
+            KAOS_LOGW(__FUNCTION__, "Registry with name %s not found", args->name);
             free_exec_args(args);
             return KaosRegistryNotFoundError;
         }
@@ -1169,7 +1159,7 @@ static kaos_error_t process_command(op_ctx_t* op_ctx, msg_data_t *data) {
         break;
     case DestroyModule:
         if (!registry) {
-            ESP_LOGW(__FUNCTION__, "Registry with name %s not found", args->name);
+            KAOS_LOGW(__FUNCTION__, "Registry with name %s not found", args->name);
             free_exec_args(args);
             return KaosRegistryNotFoundError;
         }
@@ -1178,15 +1168,15 @@ static kaos_error_t process_command(op_ctx_t* op_ctx, msg_data_t *data) {
         op_ctx->state_transition_callback = &destroy_state_transition;
         
         // Measurement 5. After container eliminated
-        // ESP_LOGE_shutting down
+        // KAOS_LOGE_shutting down
         // get_runtime_stats(NULL, 5);
         break;
     case TestModule:
-        ESP_LOGW(__FUNCTION__, "Test module string: %s", args->name);
+        KAOS_LOGW(__FUNCTION__, "Test module string: %s", args->name);
         op_ctx->state_transition_callback = &test_state_transition;
         break;
     default:
-        ESP_LOGE(__FUNCTION__, "Message invalid");
+        KAOS_LOGE(__FUNCTION__, "Message invalid");
         free_exec_args(args);
         return KaosInvalidCommandError;
     }
@@ -1203,12 +1193,12 @@ static void op_error(op_ctx_t *op_ctx, char *content) {
     };
     kaos_error_t err = service_put(&msg);
     if (err) {
-        ESP_LOGE(__FUNCTION__, "Operation outcome message not submitted for sending %d", err);
+        KAOS_LOGE(__FUNCTION__, "Operation outcome message not submitted for sending %d", err);
         fail_op(op_ctx);
         return;
     }
 
-    ESP_LOGI(__FUNCTION__, "Complete operation");
+    KAOS_LOGI(__FUNCTION__, "Complete operation");
     complete_op(op_ctx);
 }
 
@@ -1223,14 +1213,14 @@ static void orchestrator_message_state_transition(op_ctx_t* op_ctx, event_msg_t*
         }
         
         fail_op(op_ctx);
-        ESP_LOGE(__FUNCTION__, "Invalid transition with event %d in state %d", event_msg->event, op_ctx->current_state);
+        KAOS_LOGE(__FUNCTION__, "Invalid transition with event %d in state %d", event_msg->event, op_ctx->current_state);
         return;
     case EVENT_OPERATION_DONE:    
         // Should only be submitted by the child operation
         if ((op_ctx->current_state == STATE_AWAIT_CHILD)) {
             esp_err_t err = stop_timer(op_ctx->timer);
             if (err) {
-                ESP_LOGE(__FUNCTION__, "Timer stop error %d", err);
+                KAOS_LOGE(__FUNCTION__, "Timer stop error %d", err);
                 fail_op(op_ctx);
                 return;
             } 
@@ -1239,7 +1229,7 @@ static void orchestrator_message_state_transition(op_ctx_t* op_ctx, event_msg_t*
         } 
             
         fail_op(op_ctx);
-        ESP_LOGE(__FUNCTION__, "Invalid transition with event %d in state %d", event_msg->event, op_ctx->current_state);
+        KAOS_LOGE(__FUNCTION__, "Invalid transition with event %d in state %d", event_msg->event, op_ctx->current_state);
         return;
     // Only can catch the event for child operation id?
     case EVENT_OPERATION_ERROR:
@@ -1259,7 +1249,7 @@ static void orchestrator_message_state_transition(op_ctx_t* op_ctx, event_msg_t*
         op_ctx_t child_op_ctx;
         kaos_error_t err = process_command(&child_op_ctx, (msg_data_t *) op_ctx->ctx_data);
         if (err) {
-            ESP_LOGE(__FUNCTION__, "Invalid command");
+            KAOS_LOGE(__FUNCTION__, "Invalid command");
             op_error(op_ctx, "Invalid command");
             
             break;
@@ -1273,22 +1263,20 @@ static void orchestrator_message_state_transition(op_ctx_t* op_ctx, event_msg_t*
             break;
         }
 
-        // ESP_LOGE(__FUNCTION__, "Await child %d", op_ctx->await_id);
+        // KAOS_LOGE(__FUNCTION__, "Await child %d", op_ctx->await_id);
 
         op_ctx->current_state = STATE_AWAIT_CHILD;   
         // TODO: set timer for child operation?
-        const kaos_timer_args_t oneshot_timer_args = (const kaos_timer_args_t) {
-            .callback = &suspend_timer_expired,
-            .arg = (void *) op_ctx->op_id,
-            .name = "operation_timeout"
-        };
-        
-        // TODO: Handle error
-        esp_err_t esp_err =  create_timer(&oneshot_timer_args, &(op_ctx->timer));
+
+        kaos_timer_args_t *oneshot_timer_args = kaos_timer_args_init(&suspend_timer_expired, (void *) op_ctx->op_id, "operation_timeout");
+        esp_err_t esp_err =  create_timer(&(op_ctx->timer), oneshot_timer_args);
+        kaos_timer_args_free(oneshot_timer_args);
         if (esp_err != ESP_OK) {
             op_error(op_ctx, "Timer error");
             // Child should free exec args
             free_exec_args((exec_args_t *)op_ctx->ctx_data);
+            free(op_ctx->timer);
+            op_ctx->timer = NULL;
             break;
         }
 
@@ -1302,29 +1290,31 @@ static void orchestrator_message_state_transition(op_ctx_t* op_ctx, event_msg_t*
 
         break; 
     case STATE_CHILD_DONE:  
-        ESP_LOGI(__FUNCTION__, "Child succeeded");
+        KAOS_LOGI(__FUNCTION__, "Child succeeded");
         content = "Operation carried out successfully";
     case STATE_CHILD_ERROR:
         if (timer_is_active(op_ctx->timer)) {
             esp_err = stop_timer(op_ctx->timer);
             if (esp_err) {
-                ESP_LOGE(__FUNCTION__, "Timer stop error %d", esp_err);
+                KAOS_LOGE(__FUNCTION__, "Timer stop error %d", esp_err);
                 op_error(op_ctx, "Timer error");
                 return;
             } 
         }
         esp_err = delete_timer(op_ctx->timer);
         if (esp_err) {
-            ESP_LOGE(__FUNCTION__, "Timer delete error %d", esp_err);
+            KAOS_LOGE(__FUNCTION__, "Timer delete error %d", esp_err);
             op_error(op_ctx, "Timer error");
             return;
         }
+        free(op_ctx->timer);
+        op_ctx->timer = NULL;
 
         op_ctx->await_id = -1;
         
         // TODO: Construct message
         if (!content) {
-            ESP_LOGI(__FUNCTION__, "Child failed");
+            KAOS_LOGI(__FUNCTION__, "Child failed");
             content = "Operation failed";
         }
         service_msg_t msg = (service_msg_t) {
@@ -1333,16 +1323,16 @@ static void orchestrator_message_state_transition(op_ctx_t* op_ctx, event_msg_t*
         };
         err = service_put(&msg);
         if (err) {
-            ESP_LOGE(__FUNCTION__, "Operation outcome message not submitted for sending %d", err);
+            KAOS_LOGE(__FUNCTION__, "Operation outcome message not submitted for sending %d", err);
             fail_op(op_ctx);
             break;
         }
 
-        ESP_LOGI(__FUNCTION__, "Complete operation");
+        KAOS_LOGI(__FUNCTION__, "Complete operation");
         complete_op(op_ctx);
         break;
     default:
-        ESP_LOGE(__FUNCTION__, "Invalid state %d", op_ctx->current_state);
+        KAOS_LOGE(__FUNCTION__, "Invalid state %d", op_ctx->current_state);
         fail_op(op_ctx);
         break;
     }
@@ -1350,22 +1340,22 @@ static void orchestrator_message_state_transition(op_ctx_t* op_ctx, event_msg_t*
 
 void handle_signal(kaos_signal_msg_t *signal_msg) {
     if (!is_response(signal_msg->signal_type)) {
-        ESP_LOGW(__FUNCTION__, "Not a response");
+        KAOS_LOGW(__FUNCTION__, "Not a response");
         return;
     }
 
     // TODO: data memory handling
     switch (signal_msg->signal_type ^ 1) {
     case (KAOS_SIGNAL_TERMINATE):
-        ESP_LOGW(__FUNCTION__, "Container acknowledged termination signal %d", signal_msg->signal_id);
+        KAOS_LOGW(__FUNCTION__, "Container acknowledged termination signal %d", signal_msg->signal_id);
         release_signal_id(signal_msg->signal_id);
         break;
     default:
-        ESP_LOGE(__FUNCTION__, "Event response %d not handled");
+        KAOS_LOGE(__FUNCTION__, "Event response %d not handled");
         break;
     }
 
-    ESP_LOGE(__FUNCTION__, "Event %d not handled");
+    KAOS_LOGE(__FUNCTION__, "Event %d not handled");
 }
 
 static void handle_isr_event(isr_data_t *isr_data) {
@@ -1376,7 +1366,7 @@ static void handle_isr_event(isr_data_t *isr_data) {
     
     kaos_error_t err =  sig_to_container(isr_data->registry, &signal_msg);
     if (err) {
-        ESP_LOGE(__FUNCTION__, "%d, ISR signal could not be sent to container", err);
+        KAOS_LOGE(__FUNCTION__, "%d, ISR signal could not be sent to container", err);
     }
 }
 
@@ -1389,7 +1379,7 @@ static void monitor_loop(void) {
         
         if (!receive_from_queue(main_event_queue, &event_msg, 10)) {
         // if (!receive_from_queue(main_event_queue, &event_msg, 50000 / portTICK_PERIOD_MS)) {
-            // ESP_LOGE(__FUNCTION__, "nothing");
+            // KAOS_LOGE(__FUNCTION__, "nothing");
             continue;
         };
        
@@ -1417,7 +1407,7 @@ static void monitor_loop(void) {
             monitor.event_q_latency.mean_vals[next] = timestamp;
             monitor.event_q_latency.next = (next++) % N_MOVING_AVG_SAMPLES;
         }
-        ESP_LOGI(__FUNCTION__, "Handle event %d", event_msg.event);
+        KAOS_LOGI(__FUNCTION__, "Handle event %d", event_msg.event);
 
         op_id_t target_id;
         switch (event_msg.event) {
@@ -1440,11 +1430,11 @@ static void monitor_loop(void) {
                 // TODO: Error handling for timer expiry, for now just log
                 // TODO: Extract timer from context
                 delete_timer(operations[target_id].ctx_data); // signal timer here, needs signal id
-                ESP_LOGI(__FUNCTION__, "Signal timer expired");
+                KAOS_LOGI(__FUNCTION__, "Signal timer expired");
                 break;
             // Operation completion expiry timer has expired
             case EVENT_OPERATION_TIMER_EXPIRED:
-                ESP_LOGI(__FUNCTION__, "Operation timer expired");
+                KAOS_LOGI(__FUNCTION__, "Operation timer expired");
             case EVENT_OPERATION_STARTED:
             // TODO: Implement special case for signal and operation timer - container timers are higher importance
                 target_id = (op_id_t) event_msg.buffer;
@@ -1471,7 +1461,7 @@ static void monitor_loop(void) {
                     }
                 }
 
-                ESP_LOGI(__FUNCTION__, "Remove operation %d", target_id);
+                KAOS_LOGI(__FUNCTION__, "Remove operation %d", target_id);
                 remove_operation(target_id);
                 break;
             case EVENT_MSG_RECEIVED:
@@ -1491,7 +1481,7 @@ static void monitor_loop(void) {
                 op_id_t op_id = add_operation(op_ctx);
                 if (op_id < 0) {
                     // Free allocated memory on error
-                    ESP_LOGE(__FUNCTION__, "No free operation slots");
+                    KAOS_LOGE(__FUNCTION__, "No free operation slots");
                     free(data->buffer);
                     free(data);
                 }
@@ -1512,13 +1502,13 @@ static void monitor_loop(void) {
 }
 
 kaos_error_t kaos_run(void) {
-    esp_log_level_set("*", ESP_LOG_DEBUG);
+    // esp_log_level_set("*", ESP_LOG_DEBUG);
 // #if KAOS_MEASUREMENTS_ENABLE 
 //     esp_log_level_set("*", ESP_LOG_ERROR);
 // #endif /* KAOS_MEASUREMENTS_ENABLE */
 
 
-    esp_task_wdt_deinit();
+    // esp_task_wdt_deinit();
     memset(&monitor, 0, sizeof(health_monitor_t));
     memset(operations, 0, sizeof(op_ctx_t) * OPERATION_N);
 

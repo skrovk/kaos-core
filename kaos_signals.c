@@ -3,7 +3,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
-#include "esp_log.h"
+#include "port_logging.h"
 
 
 #include "container_mgr.h"
@@ -41,7 +41,7 @@ static signal_id_t assign_signal_id(void) {
             if (!(signal_id_pool[i] & (1u << j))) {
                 signal_id_pool[i] = signal_id_pool[i] | (int32_t) (1u << j);
                 signal_id_t id = (i << SEGMENT_SHIFT_SZ) + j;
-                ESP_LOGI(__FUNCTION__, "Assigned id %d", id);
+                KAOS_LOGI(__FUNCTION__, "Assigned id %d", id);
                 return id;
             }
         }
@@ -56,7 +56,7 @@ kaos_error_t release_signal_id(signal_id_t signal_id) {
         signal_id_pool[signal_id >> SEGMENT_SHIFT_SZ] = pool_segment ^ (1u << segment_id);  
         return 0;
     }
-    ESP_LOGE(__FUNCTION__, "Signal id not in pool");
+    KAOS_LOGE(__FUNCTION__, "Signal id not in pool");
     return -1;
 }
 
@@ -66,13 +66,13 @@ bool is_response(kaos_signal_type_t signal) {
 }
 
 
-queue_t init_sig_queue_to_container(void) {
+queue_t *init_sig_queue_to_container(void) {
     return create_queue(KAOS_SIG_QUEUE_SIZE, sizeof(kaos_signal_msg_t));
 }
 
 
 void destroy_sig_queues(module_registry_t *registry) {
-    queue_t queue = get_signal_queue_to_container(registry);
+    queue_t *queue = get_signal_queue_to_container(registry);
     if (queue) delete_queue(queue);
 }
 
@@ -86,7 +86,7 @@ void signal_timer_expired(void *arg) {
 // Send signal to container signal queue. Sets the signal_id field in kaos_signal_msg_t structure at signal_msg
 kaos_error_t sig_to_container(module_registry_t *registry, kaos_signal_msg_t *signal_msg) {
     if (!registry) {
-        ESP_LOGW(TAG, "%s: Module registry not found", __FUNCTION__);
+        KAOS_LOGW(TAG, "%s: Module registry not found", __FUNCTION__);
         return 1;
     }
 
@@ -95,7 +95,7 @@ kaos_error_t sig_to_container(module_registry_t *registry, kaos_signal_msg_t *si
     }
     
     if (!send_to_queue(get_signal_queue_to_container(registry), signal_msg, TIMEOUT_QUEUE / portTICK_PERIOD_MS)) {
-        ESP_LOGW(TAG, "%s: Signal queue for module %s full", __FUNCTION__, get_module_name(registry));
+        KAOS_LOGW(TAG, "%s: Signal queue for module %s full", __FUNCTION__, get_module_name(registry));
         return KaosQueueFullError;
     }
 
@@ -124,7 +124,7 @@ signal_id_t sig_to_kaos(exec_env_t exec_env, int32_t signal_type, signal_id_t si
     module_inst_t module_inst = wasm_runtime_get_module_inst(exec_env);
     module_registry_t *registry = get_registry_by_inst(module_inst);
     if (!registry) {
-        ESP_LOGW(TAG, "%s: Module registry not found", __FUNCTION__);
+        KAOS_LOGW(TAG, "%s: Module registry not found", __FUNCTION__);
         return -1;
     }
 
@@ -147,7 +147,7 @@ signal_id_t sig_to_kaos(exec_env_t exec_env, int32_t signal_type, signal_id_t si
 
     //  esp_err_t err = start_timer(timer_handle, KAOS_SUSPEND_TIMEOUT, 0);
     // if (esp_err != ESP_OK) {
-    //     ESP_LOGE(__FUNCTION__, "ESP Timer error %d", esp_err);
+    //     KAOS_LOGE(__FUNCTION__, "ESP Timer error %d", esp_err);
     //     return KaosTimerError;
     // }
 
@@ -166,18 +166,18 @@ int64_t sig_from_kaos(exec_env_t exec_env, int32_t blocking) {
     module_inst_t module_inst = wasm_runtime_get_module_inst(exec_env);
     module_registry_t *registry = get_registry_by_inst(module_inst);
     if (!registry) {
-        ESP_LOGW(TAG, "%s: Module registry not found", __FUNCTION__);
+        KAOS_LOGW(TAG, "%s: Module registry not found", __FUNCTION__);
         return 0;
     }
     kaos_signal_msg_t signal_msg;
     //blocking call on signal queue 
     if (blocking) {
         if (!receive_from_queue(get_signal_queue_to_container(registry), &signal_msg, portMAX_DELAY)) {
-            ESP_LOGI(TAG, "%s: Signal queue for module %s empty", __FUNCTION__, get_module_name(registry));
+            KAOS_LOGI(TAG, "%s: Signal queue for module %s empty", __FUNCTION__, get_module_name(registry));
             return 0;
         }
     } else if (!receive_from_queue(get_signal_queue_to_container(registry), &signal_msg, TIMEOUT_QUEUE / portTICK_PERIOD_MS)) {
-        ESP_LOGI(TAG, "%s: Signal queue for module %s empty", __FUNCTION__, get_module_name(registry));
+        KAOS_LOGI(TAG, "%s: Signal queue for module %s empty", __FUNCTION__, get_module_name(registry));
         return 0;
     }
 

@@ -1,25 +1,23 @@
-#ifndef UNRELIABLE_MESSAGE_QUEUE_H
-#define UNRELIABLE_MESSAGE_QUEUE_H
+#ifndef UNRELIABLE_CHANNEL_H
+#define UNRELIABLE_CHANNEL_H
 
 #include <inttypes.h>
 #include <stdio.h>
 #include "pthread.h"
 
 #include "lwip/sockets.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/queue.h"
 
+#include "port.h"
 #include "wasm_export.h"
 #include "wamr_wrap.h"
 #include "kaos_errors.h"
 #include "kaos_types_shared.h"
 
 
-typedef QueueHandle_t queue_t;
 struct module_registry_t;
 
-kaos_error_t create_queue(queue_t *queue);
-kaos_error_t destroy_queue(queue_t queue);
+kaos_error_t create_channel_queue(queue_t **queue);
+kaos_error_t destroy_channel_queue(queue_t *queue);
 uint32_t get(exec_env_t exec_env, service_id_t service_id, address_t container_address, char *type);
 int32_t put(
     exec_env_t exec_env,

@@ -12,6 +12,7 @@ typedef enum kaos_error_t {
     KaosOperationIncomplete,
     // Errors
     KaosError,
+    KaosTaskCreationError,
     KaosTimerError,
     KaosRuntimeError,
     KaosInvalidCommandError,

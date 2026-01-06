@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "esp_log.h"
+#include "port_logging.h"
 
 #include "cbor_parser.h"
 #include "kaos_errors.h"
@@ -96,7 +96,7 @@ static CborError parse_string(CborValue *value, uint8_t **dest, uint32_t max_sz)
     CborError err;
 
     err = cbor_value_dup_text_string(value, &buf, &n, value);
-    // ESP_LOGI(__FUNCTION__, "name size: %d", n);
+    // KAOS_LOGI(__FUNCTION__, "name size: %d", n);
     if (err) return err;
 
     if (n > max_sz) {
@@ -234,7 +234,7 @@ static CborError parse_buffer(CborValue *value, uint8_t **source_buffer, uint32_
     if (err != CborNoError) return err;
 
     if (sz == 0 || sz > (size_t) KAOS_SOURCE_BUFFER_MAX_SZ) {
-        ESP_LOGE(__FUNCTION__, "Source buffer size %zu exceeds max size %d", sz, KAOS_SOURCE_BUFFER_MAX_SZ);
+        KAOS_LOGE(__FUNCTION__, "Source buffer size %zu exceeds max size %d", sz, KAOS_SOURCE_BUFFER_MAX_SZ);
         return CborErrorTooManyItems;
     }
 
@@ -290,7 +290,7 @@ static CborError parse_iterative(CborValue *curr_item, module_config_t *module_c
                 err = parse_channels(curr_item, &(interface_config->identities), &(interface_config->n_identities));
                 if (err) return err;
             } else if (strcasecmp(buf, RESOURCES) == 0) {
-                // ESP_LOGE(__FUNCTION__, "Resources configured");
+                // KAOS_LOGE(__FUNCTION__, "Resources configured");
                 resources_configured = true;
                 err = parse_resources(curr_item, &(interface_config->resources), &(interface_config->n_resources));
                 if (err) return err;
@@ -303,11 +303,11 @@ static CborError parse_iterative(CborValue *curr_item, module_config_t *module_c
                 err = parse_buffer(curr_item, &(module_config->source_buffer), &(module_config->source_buffer_size));
                 if (err) return err;
             } else if (strcasecmp(buf, STACK_SIZE) == 0) {
-                // ESP_LOGI(PARSER, STACK_SIZE);
+                // KAOS_LOGI(PARSER, STACK_SIZE);
                 err = parse_uint(curr_item, &(module_config->stack_size));
                 if (err) return err;
             } else if (strcasecmp(buf, HEAP_SIZE) == 0) {
-                // ESP_LOGI(PARSER, HEAP_SIZE);
+                // KAOS_LOGI(PARSER, HEAP_SIZE);
                 err = parse_uint(curr_item, &(module_config->heap_size));
                 if (err) return err;
             } else if (strcasecmp(buf, TEST) == 0) {
@@ -355,7 +355,7 @@ kaos_error_t parse_monitor_message(uint8_t *buf, uint32_t buf_sz, module_config_
     if (!resources_configured) module_interface->n_resources = (int16_t) -1;
 
     if (err) {
-        ESP_LOGE(PARSER, "CBOR parsing failure at offset %d: %s\n",
+        KAOS_LOGE(PARSER, "CBOR parsing failure at offset %d: %s\n",
                 it.source.ptr - buf, cbor_error_string(err));
         return KaosModuleConfigError;
     }

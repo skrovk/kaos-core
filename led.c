@@ -1,7 +1,7 @@
 #include "led.h"
 
 #include "esp_timer.h"
-#include "esp_log.h"
+#include "port_logging.h"
 
 void delay(wasm_exec_env_t exec_env, int time) {
     vTaskDelay(time / portTICK_PERIOD_MS);
@@ -9,7 +9,7 @@ void delay(wasm_exec_env_t exec_env, int time) {
 
 int claim_red(wasm_exec_env_t exec_env) {
     gpio_set_level(RED_PIN, HIGH);
-    // ESP_LOGE("LATENCY_MEASUREMENT_END", "%lli", get_time_us());
+    // KAOS_LOGE("LATENCY_MEASUREMENT_END", "%lli", get_time_us());
     return 0;
 }
 
@@ -25,7 +25,7 @@ int claim_green(wasm_exec_env_t exec_env) {
 
 int surrender_red(wasm_exec_env_t exec_env) {
     gpio_set_level(RED_PIN, LOW);
-    // ESP_LOGE("LATENCY_MEASUREMENT_END", "%lli", get_time_us());
+    // KAOS_LOGE("LATENCY_MEASUREMENT_END", "%lli", get_time_us());
     return 0;
 }
 

@@ -4,12 +4,13 @@ idf_component_register(
             "cbor_parser.c"
             "cbor_composer"
             "network.c"
-            "unreliable_message_queue.c"
+            "unreliable_channel.c"
             "kaos_monitor.c"
             "kaos_signals.c"
             "led.c"
             "kaos_button.c"
-        INCLUDE_DIRS "include"
+            "port/port_xtensa.c"
+        INCLUDE_DIRS "include" "port/include"
         REQUIRES wamr
         PRIV_REQUIRES nvs_flash tinycbor esp_wifi esp_driver_gpio esp_timer button
 )

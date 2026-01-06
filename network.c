@@ -16,7 +16,7 @@
 #include "esp_system.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
-#include "esp_log.h"
+#include "port_logging.h"
 #include "nvs_flash.h"
 #include "esp_netif.h"
 #include "esp_timer.h"
@@ -31,7 +31,7 @@
 #include <lwip/netdb.h>
 
 #include "kaos_errors.h"
-#include "unreliable_message_queue.h"
+#include "unreliable_channel.h"
 #include "kaos_types_shared.h"
 #include "kaos_monitor.h"
 
@@ -68,7 +68,7 @@
 static const char *TAG = "network";
 /* FreeRTOS event group to signal when we are connected*/
 static EventGroupHandle_t s_wifi_event_group;
-static service_queue_t log_server_queue;
+static queue_t * log_server_queue;
 
 /* The event group allows multiple bits for each event, but we only care about two events:
  * - we are connected to the AP with an IP
@@ -113,7 +113,7 @@ static kaos_error_t get_translation_entry(struct sockaddr_in *sock_addr, service
         return KaosSuccess;
     }
 
-    ESP_LOGW(TAG, "Translation for address %"PRIu8":%"PRIu32" not found", flow, addr);
+    KAOS_LOGW(TAG, "Translation for address %"PRIu8":%"PRIu32" not found", flow, addr);
     return KaosContainerLocationNotFoundError;
 }
 
@@ -133,7 +133,7 @@ static esp_err_t KAOS_set_dns_server(esp_netif_t *netif, uint32_t addr, esp_neti
 static void config_set_static_ip(esp_netif_t *netif)
 {
     if (esp_netif_dhcpc_stop(netif) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to stop dhcp client");
+        KAOS_LOGE(TAG, "Failed to stop dhcp client");
         return;
     }
     esp_netif_ip_info_t ip;
@@ -142,10 +142,10 @@ static void config_set_static_ip(esp_netif_t *netif)
     ip.netmask.addr = ipaddr_addr(KAOS_STATIC_NETMASK_ADDR);
     ip.gw.addr = ipaddr_addr(KAOS_STATIC_GW_ADDR);
     if (esp_netif_set_ip_info(netif, &ip) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to set ip info");
+        KAOS_LOGE(TAG, "Failed to set ip info");
         return;
     }
-    ESP_LOGD(TAG, "Success to set static ip: %s, netmask: %s, gw: %s", KAOS_STATIC_IP_SELF, KAOS_STATIC_NETMASK_ADDR, KAOS_STATIC_GW_ADDR);
+    KAOS_LOGD(TAG, "Success to set static ip: %s, netmask: %s, gw: %s", KAOS_STATIC_IP_SELF, KAOS_STATIC_NETMASK_ADDR, KAOS_STATIC_GW_ADDR);
     ESP_ERROR_CHECK(KAOS_set_dns_server(netif, ipaddr_addr(KAOS_MAIN_DNS_SERVER), ESP_NETIF_DNS_MAIN));
     ESP_ERROR_CHECK(KAOS_set_dns_server(netif, ipaddr_addr(KAOS_BACKUP_DNS_SERVER), ESP_NETIF_DNS_BACKUP));
 }
@@ -162,14 +162,14 @@ static void event_handler(void* arg, esp_event_base_t event_base,
         if (s_retry_num < 100) {
             esp_wifi_connect();
             s_retry_num++;
-            ESP_LOGI(TAG, "retry to connect to the AP");
+            KAOS_LOGI(TAG, "retry to connect to the AP");
         } else {
             xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
         }
-        ESP_LOGI(TAG,"connect to the AP fail");
+        KAOS_LOGI(TAG,"connect to the AP fail");
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
-        ESP_LOGI(TAG, "static ip:" IPSTR, IP2STR(&event->ip_info.ip));
+        KAOS_LOGI(TAG, "static ip:" IPSTR, IP2STR(&event->ip_info.ip));
         s_retry_num = 0;
         xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
     }
@@ -222,7 +222,7 @@ static void wifi_init_sta(void)
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
     ESP_ERROR_CHECK(esp_wifi_start() );
 
-    ESP_LOGI(TAG, "wifi_init_sta finished.");
+    KAOS_LOGI(TAG, "wifi_init_sta finished.");
 
     /* Waiting until either the connection is established (WIFI_CONNECTED_BIT) or connection failed for the maximum
      * number of re-tries (WIFI_FAIL_BIT). The bits are set by event_handler() (see above) */
@@ -235,13 +235,13 @@ static void wifi_init_sta(void)
     /* xEventGroupWaitBits() returns the bits before the call returned, hence we can test which event actually
      * happened. */
     if (bits & WIFI_CONNECTED_BIT) {
-        ESP_LOGI(TAG, "connected to ap SSID:%s password:%s",
+        KAOS_LOGI(TAG, "connected to ap SSID:%s password:%s",
                  KAOS_WIFI_SSID, KAOS_WIFI_PASS);
     } else if (bits & WIFI_FAIL_BIT) {
-        ESP_LOGI(TAG, "Failed to connect to SSID:%s, password:%s",
+        KAOS_LOGI(TAG, "Failed to connect to SSID:%s, password:%s",
                  KAOS_WIFI_SSID, KAOS_WIFI_PASS);
     } else {
-        ESP_LOGE(TAG, "UNEXPECTED EVENT");
+        KAOS_LOGE(TAG, "UNEXPECTED EVENT");
     }
 #ifdef CONFIG_KAOS_STATIC_DNS_RESOLVE_TEST
     struct addrinfo *address_info;
@@ -252,17 +252,17 @@ static void wifi_init_sta(void)
 
     int res = getaddrinfo(KAOS_RESOLVE_DOMAIN, NULL, &hints, &address_info);
     if (res != 0 || address_info == NULL) {
-        ESP_LOGE(TAG, "couldn't get hostname for :%s: "
+        KAOS_LOGE(TAG, "couldn't get hostname for :%s: "
                       "getaddrinfo() returns %d, addrinfo=%p", KAOS_RESOLVE_DOMAIN, res, address_info);
     } else {
         if (address_info->ai_family == AF_INET) {
             struct sockaddr_in *p = (struct sockaddr_in *)address_info->ai_addr;
-            ESP_LOGI(TAG, "Resolved IPv4 address: %s", ipaddr_ntoa((const ip_addr_t*)&p->sin_addr.s_addr));
+            KAOS_LOGI(TAG, "Resolved IPv4 address: %s", ipaddr_ntoa((const ip_addr_t*)&p->sin_addr.s_addr));
         }
 #if CONFIG_LWIP_IPV6
         else if (address_info->ai_family == AF_INET6) {
             struct sockaddr_in6 *p = (struct sockaddr_in6 *)address_info->ai_addr;
-            ESP_LOGI(TAG, "Resolved IPv6 address: %s", ip6addr_ntoa((const ip6_addr_t*)&p->sin6_addr));
+            KAOS_LOGI(TAG, "Resolved IPv6 address: %s", ip6addr_ntoa((const ip6_addr_t*)&p->sin6_addr));
         }
 #endif
     }
@@ -289,16 +289,16 @@ static kaos_error_t create_service_queue() {
 kaos_error_t service_put(service_msg_t *msg) {
     uint8_t *buffer = calloc(1, msg->buffer_sz);
     if (!buffer) {
-        ESP_LOGE(__FUNCTION__, "Memory allocation error");
+        KAOS_LOGE(__FUNCTION__, "Memory allocation error");
         return KaosMemoryAllocationError;
     }
 
     memcpy(buffer, msg->buffer, msg->buffer_sz);
     msg->buffer = buffer;
-        // ESP_LOGI(__FUNCTION__, "Send to %d", message.dest_address);
+        // KAOS_LOGI(__FUNCTION__, "Send to %d", message.dest_address);
     if (!send_to_queue(log_server_queue, msg, 0)) {
         // TODO: Add module name if implemented
-        ESP_LOGW(TAG, "%s: Service queue full.", __FUNCTION__);
+        KAOS_LOGW(TAG, "%s: Service queue full.", __FUNCTION__);
         return KaosQueueFullError;
     }
 
@@ -308,7 +308,7 @@ kaos_error_t service_put(service_msg_t *msg) {
 
 static kaos_error_t service_get(service_msg_t *message_dest) {
     if (!receive_from_queue(log_server_queue, message_dest, 0)) {
-        ESP_LOGI(TAG, "%s: Service queue empty", __FUNCTION__);
+        KAOS_LOGI(TAG, "%s: Service queue empty", __FUNCTION__);
         return KaosNothingToReceive;
     }
 
@@ -328,36 +328,36 @@ static kaos_error_t receive_from_server(const int sock) {
     // do {
     //     if (total_len >= rx_buff_sz) {
     //         rx_buff_sz *= 2;
-    //         ESP_LOGI(__FUNCTION__, "Realloc buffer to %"PRIu32" bytes", rx_buff_sz);
+    //         KAOS_LOGI(__FUNCTION__, "Realloc buffer to %"PRIu32" bytes", rx_buff_sz);
     //         receive_buffer = realloc(receive_buffer, rx_buff_sz);
 
     //         if (!receive_buffer) {
-    //             ESP_LOGE(__FUNCTION__, "Can't allocate %"PRIu32" bytes for buffer", rx_buff_sz - total_len);
+    //             KAOS_LOGE(__FUNCTION__, "Can't allocate %"PRIu32" bytes for buffer", rx_buff_sz - total_len);
     //             return KaosMemoryAllocationError;
     //         }
     //         memset(receive_buffer + total_len, 0, rx_buff_sz - total_len);
-    //         // ESP_LOGI(__FUNCTION__, "Set mem to zero");
+    //         // KAOS_LOGI(__FUNCTION__, "Set mem to zero");
     //     }
 
     //     memcpy(receive_buffer + (total_len - len), _rx_buffer, len);
     //     len = recv(sock, _rx_buffer, INIT_RX_BUF_SZ, 0);
 
     //     if (len < 0) {
-    //         ESP_LOGE(TAG, "Error occurred during receiving: errno %d", errno);
+    //         KAOS_LOGE(TAG, "Error occurred during receiving: errno %d", errno);
     //         free(receive_buffer);
     //         return KaosTCPRecvError;
     //     } else if (len == 0) {
-    //         ESP_LOGW(TAG, "Stream done");
+    //         KAOS_LOGW(TAG, "Stream done");
     //     } else {
     //         total_len += (uint32_t) len;
-    //         ESP_LOGI(TAG, "Received %d bytes, total %"PRIu32"", len, total_len);
+    //         KAOS_LOGI(TAG, "Received %d bytes, total %"PRIu32"", len, total_len);
     //     }
     // } while (len > 0);
 
     // for (;;) {
     //     len = recv(sock, _rx_buffer, sizeof(_rx_buffer), 0);
     //     if (len < 0) {
-    //         ESP_LOGE(TAG, "Error occurred during receiving: errno %d", errno);
+    //         KAOS_LOGE(TAG, "Error occurred during receiving: errno %d", errno);
     //         free(receive_buffer);
     //         return KaosTCPRecvError;
     //     } else if (len == 0) {
@@ -372,7 +372,7 @@ static kaos_error_t receive_from_server(const int sock) {
     //         return KaosMemoryAllocationError;
     //     }
     //     if (total_len + (uint32_t)len > KAOS_SOURCE_BUFFER_MAX_SZ) {
-    //         ESP_LOGE(TAG, "Incoming message too large: %"PRIu32, total_len + (uint32_t)len);
+    //         KAOS_LOGE(TAG, "Incoming message too large: %"PRIu32, total_len + (uint32_t)len);
     //         free(receive_buffer);
     //         return KaosMemoryAllocationError;
     //     }
@@ -387,7 +387,7 @@ static kaos_error_t receive_from_server(const int sock) {
     //         }
     //         uint8_t *tmp = realloc(receive_buffer, new_sz);
     //         if (!tmp) {
-    //             ESP_LOGE(__FUNCTION__, "Can't allocate %"PRIu32" bytes for buffer", new_sz);
+    //             KAOS_LOGE(__FUNCTION__, "Can't allocate %"PRIu32" bytes for buffer", new_sz);
     //             free(receive_buffer); /* keep expected behavior: free old buffer */
     //             return KaosMemoryAllocationError;
     //         }
@@ -400,7 +400,7 @@ static kaos_error_t receive_from_server(const int sock) {
     //     /* append just-read chunk */
     //     memcpy(receive_buffer + total_len, _rx_buffer, (size_t)len);
     //     total_len += (uint32_t)len;
-    //     ESP_LOGI(__FUNCTION__, "Received %d bytes, total %"PRIu32"", len, total_len);
+    //     KAOS_LOGI(__FUNCTION__, "Received %d bytes, total %"PRIu32"", len, total_len);
     // }
 
     
@@ -408,7 +408,7 @@ static kaos_error_t receive_from_server(const int sock) {
     /* sane maximum to protect against runaway allocations */
 
     if (!heap_caps_check_integrity_all(true)) {
-        ESP_LOGE(TAG, "Heap corruption detected before network receive");
+        KAOS_LOGE(TAG, "Heap corruption detected before network receive");
         free(receive_buffer);
         return KaosMemoryAllocationError;
     }
@@ -416,7 +416,7 @@ static kaos_error_t receive_from_server(const int sock) {
     for (;;) {
         len = recv(sock, _rx_buffer, sizeof(_rx_buffer), 0);
         if (len < 0) {
-            ESP_LOGE(TAG, "Error occurred during receiving: errno %d", errno);
+            KAOS_LOGE(TAG, "Error occurred during receiving: errno %d", errno);
             free(receive_buffer);
             return KaosTCPRecvError;
         }
@@ -435,7 +435,7 @@ static kaos_error_t receive_from_server(const int sock) {
             return KaosMemoryAllocationError;
         }
         if (total_len + (uint32_t)len > (uint32_t) KAOS_SOURCE_BUFFER_MAX_SZ) {
-            ESP_LOGE(TAG, "Incoming message too large: %"PRIu32, total_len + (uint32_t)len);
+            KAOS_LOGE(TAG, "Incoming message too large: %"PRIu32, total_len + (uint32_t)len);
             free(receive_buffer);
             return KaosMemoryAllocationError;
         }
@@ -449,7 +449,7 @@ static kaos_error_t receive_from_server(const int sock) {
             }
             uint8_t *tmp = realloc(receive_buffer, new_sz);
             if (!tmp) {
-                ESP_LOGE(__FUNCTION__, "Can't allocate %"PRIu32" bytes for buffer", new_sz - total_len);
+                KAOS_LOGE(__FUNCTION__, "Can't allocate %"PRIu32" bytes for buffer", new_sz - total_len);
                 free(receive_buffer);
                 return KaosMemoryAllocationError;
             }
@@ -457,18 +457,18 @@ static kaos_error_t receive_from_server(const int sock) {
             memset(tmp + rx_buff_sz, 0, new_sz - rx_buff_sz);
             receive_buffer = tmp;
             rx_buff_sz = new_sz;
-            ESP_LOGI(__FUNCTION__, "Realloc buffer to %"PRIu32" bytes", rx_buff_sz);
+            KAOS_LOGI(__FUNCTION__, "Realloc buffer to %"PRIu32" bytes", rx_buff_sz);
         }
 
         /* append the just-received chunk */
         memcpy(receive_buffer + total_len, _rx_buffer, (size_t)len);
         total_len += (uint32_t)len;
-        ESP_LOGI(__FUNCTION__, "Received %d bytes, total %"PRIu32"", len, total_len);
+        KAOS_LOGI(__FUNCTION__, "Received %d bytes, total %"PRIu32"", len, total_len);
     }
 
     /* Verify heap integrity before handing received buffer to monitor */
     if (!heap_caps_check_integrity_all(true)) {
-        ESP_LOGE(TAG, "Heap corruption detected just after network receive");
+        KAOS_LOGE(TAG, "Heap corruption detected just after network receive");
         free(receive_buffer);
         return KaosMemoryAllocationError;
     }
@@ -487,7 +487,7 @@ static int send_to_server(const int sock, service_msg_t msg) {
     while (((to_write = msg.buffer_sz - total_written) > 0)) {
         int written = send(sock, msg.buffer + total_written, to_write, 0);
         if (written < 0) {
-            ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
+            KAOS_LOGE(TAG, "Error occurred during sending: errno %d", errno);
             // Failed to retransmit, giving up
             return KaosTCPSendError;
         }
@@ -522,36 +522,36 @@ static void tcp_client_task(void *pvParameters) {
             vTaskDelay(3000 / portTICK_PERIOD_MS);
             sock =  socket(addr_family, SOCK_STREAM, ip_protocol);
             if (sock < 0) {
-                ESP_LOGE(__FUNCTION__, "Unable to create socket: errno %d", errno);
+                KAOS_LOGE(__FUNCTION__, "Unable to create socket: errno %d", errno);
                 break;
             }
-            ESP_LOGI(TAG, "Socket created, connecting to %s:%d", host_ip, PORT);
+            KAOS_LOGI(TAG, "Socket created, connecting to %s:%d", host_ip, PORT);
 
             int err = connect(sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
             if (err != 0) {
-                ESP_LOGE(__FUNCTION__, "TCP Socket unable to connect: errno %d", errno);
+                KAOS_LOGE(__FUNCTION__, "TCP Socket unable to connect: errno %d", errno);
                 break;
             }
-            ESP_LOGI(__FUNCTION__, "Successfully connected");
+            KAOS_LOGI(__FUNCTION__, "Successfully connected");
                 
             
             while (1) {
                 // Block on service queue with a timeout to allow other tasks to run
                 if (receive_from_queue(log_server_queue, &service_msg, 50) == pdTRUE) {
-                    ESP_LOGI(__FUNCTION__, "Send message to orchestrator");
+                    KAOS_LOGI(__FUNCTION__, "Send message to orchestrator");
                     int err = send(sock, service_msg.buffer, service_msg.buffer_sz, 0);
                     if (err < 0) {
-                        ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
+                        KAOS_LOGE(TAG, "Error occurred during sending: errno %d", errno);
                         break;
                     }
                     free(service_msg.buffer); // Free the buffer after sending
-                    ESP_LOGI(__FUNCTION__, "Message sent");
+                    KAOS_LOGI(__FUNCTION__, "Message sent");
                 }
             }
         }
 
         if (sock != -1) {
-            ESP_LOGE(TAG, "Shutting down socket and restarting...");
+            KAOS_LOGE(TAG, "Shutting down socket and restarting...");
             shutdown(sock, 0);
             close(sock);
         }
@@ -596,7 +596,7 @@ static void tcp_server_task(void *pvParameters)
 
     int listen_sock = socket(addr_family, SOCK_STREAM, ip_protocol);
     if (listen_sock < 0) {
-        ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
+        KAOS_LOGE(TAG, "Unable to create socket: errno %d", errno);
         vTaskDelete(NULL);
         return;
     }
@@ -608,31 +608,31 @@ static void tcp_server_task(void *pvParameters)
     setsockopt(listen_sock, IPPROTO_IPV6, IPV6_V6ONLY, &opt, sizeof(opt));
 #endif
 
-    ESP_LOGI(TAG, "Socket created");
+    KAOS_LOGI(TAG, "Socket created");
 
     int err = bind(listen_sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
     if (err != 0) {
-        ESP_LOGE(TAG, "Socket unable to bind: errno %d", errno);
-        ESP_LOGE(TAG, "IPPROTO: %d", addr_family);
+        KAOS_LOGE(TAG, "Socket unable to bind: errno %d", errno);
+        KAOS_LOGE(TAG, "IPPROTO: %d", addr_family);
         goto CLEAN_UP;
     }
-    ESP_LOGI(TAG, "Socket bound, port %d", SERVICE_PORT);
+    KAOS_LOGI(TAG, "Socket bound, port %d", SERVICE_PORT);
 
     err = listen(listen_sock, 1);
     if (err != 0) {
-        ESP_LOGE(TAG, "Error occurred during listen: errno %d", errno);
+        KAOS_LOGE(TAG, "Error occurred during listen: errno %d", errno);
         goto CLEAN_UP;
     }
 
     int sock;
     while (1) {
-        ESP_LOGI(TAG, "Socket listening");
+        KAOS_LOGI(TAG, "Socket listening");
 
         struct sockaddr_storage source_addr; // Large enough for both IPv4 or IPv6
         socklen_t addr_len = sizeof(source_addr);
         sock = accept(listen_sock, (struct sockaddr *)&source_addr, &addr_len);
         if (sock < 0) {
-            ESP_LOGE(TAG, "Unable to accept connection: errno %d", errno);
+            KAOS_LOGE(TAG, "Unable to accept connection: errno %d", errno);
             break;
         }
 
@@ -652,7 +652,7 @@ static void tcp_server_task(void *pvParameters)
             inet6_ntoa_r(((struct sockaddr_in6 *)&source_addr)->sin6_addr, addr_str, sizeof(addr_str) - 1);
         }
 #endif
-        ESP_LOGI(TAG, "Socket accepted ip address: %s", addr_str);
+        KAOS_LOGI(TAG, "Socket accepted ip address: %s", addr_str);
         receive_from_server(sock);
     }
 
@@ -674,32 +674,32 @@ static kaos_error_t send_payload(int sock, uint32_t *payload_n) {
 
 
         for (int i = *payload_n; i > 0; i--) {
-            ESP_LOGI(TAG, "Get payload");
+            KAOS_LOGI(TAG, "Get payload");
             if ((err = get_next_container_payload(&msg, &service_id)) > KaosNothingToSend) return err;
 
             struct sockaddr_in dest_addr;
-            // ESP_LOGI(__FUNCTION__, "Get translation entry");
+            // KAOS_LOGI(__FUNCTION__, "Get translation entry");
             if (get_translation_entry(&dest_addr, service_id, msg.dest_address)) {
                 free(msg.content);
-                ESP_LOGE(__FUNCTION__, "Container %"PRIu8":%"PRIu32" location not found, message dropped", service_id, msg.dest_address);
+                KAOS_LOGE(__FUNCTION__, "Container %"PRIu8":%"PRIu32" location not found, message dropped", service_id, msg.dest_address);
                 continue;
             }
-            // ESP_LOGI(TAG, "Translation entry of container entry %"PRIu8":%"PRIu32": %s", service_id, msg.dest_address, inet_ntop( AF_INET, &(dest_addr.sin_addr), ip_str, INET_ADDRSTRLEN ));
+            // KAOS_LOGI(TAG, "Translation entry of container entry %"PRIu8":%"PRIu32": %s", service_id, msg.dest_address, inet_ntop( AF_INET, &(dest_addr.sin_addr), ip_str, INET_ADDRSTRLEN ));
 
             char ip_str[INET_ADDRSTRLEN];
             inet_ntoa_r(dest_addr.sin_addr, ip_str, sizeof(ip_str));
-            ESP_LOGI(TAG, "Client sending to %s:%d", ip_str, PORT);
+            KAOS_LOGI(TAG, "Client sending to %s:%d", ip_str, PORT);
             int err = sendto(sock, msg.content, msg.content_len, 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
             free(msg.content);
 
             if (err < 0) {
-                ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
+                KAOS_LOGE(TAG, "Error occurred during sending: errno %d", errno);
                 // TODO: Upon sending error, message is lost - should it be dropped? 
                 return KaosUDPSendError;
             }
 
 
-            ESP_LOGI(TAG, "Message sent to %s", ip_str);
+            KAOS_LOGI(TAG, "Message sent to %s", ip_str);
         }
         
         *payload_n = ulTaskNotifyTake(1, portMAX_DELAY);
@@ -718,16 +718,16 @@ static void udp_client_task(void *pvParameters) {
         int sock = socket(addr_family, SOCK_DGRAM, ip_protocol);
 
         if (sock < 0) {
-            ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
+            KAOS_LOGE(TAG, "Unable to create socket: errno %d", errno);
             break;
         }
     
         kaos_error_t err = send_payload(sock, &payload_n);
         // TODO: Handle kaos UDP error (try to resend?, currently dropped)
-        ESP_LOGE(TAG, "KAOS UDP error %d", err);
+        KAOS_LOGE(TAG, "KAOS UDP error %d", err);
         
         if (sock != -1) {
-            ESP_LOGE(TAG, "Shutting down socket and restarting...");
+            KAOS_LOGE(TAG, "Shutting down socket and restarting...");
             shutdown(sock, 0);
             close(sock);
         }
@@ -759,10 +759,10 @@ static void udp_server_task(void *pvParameters) {
 
         int sock = socket(addr_family, SOCK_DGRAM, ip_protocol);
         if (sock < 0) {
-            ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
+            KAOS_LOGE(TAG, "Unable to create socket: errno %d", errno);
             break;
         }
-        ESP_LOGI(TAG, "Socket created");
+        KAOS_LOGI(TAG, "Socket created");
 
 #if defined(CONFIG_KAOS_IPV4) && defined(CONFIG_KAOS_IPV6)
         if (addr_family == AF_INET6) {
@@ -776,22 +776,22 @@ static void udp_server_task(void *pvParameters) {
 
         int err = bind(sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
         if (err < 0) {
-            ESP_LOGE(TAG, "Socket unable to bind: errno %d", errno);
+            KAOS_LOGE(TAG, "Socket unable to bind: errno %d", errno);
         }
-        ESP_LOGI(TAG, "Socket bound, port %d", PORT);
+        KAOS_LOGI(TAG, "Socket bound, port %d", PORT);
 
         for (;;) {
             vTaskDelay(500 / portTICK_PERIOD_MS);
             char rx_buffer[128] = {0};
 
-            ESP_LOGI(TAG, "Server waiting for data");
+            KAOS_LOGI(TAG, "Server waiting for data");
             struct sockaddr_storage source_addr; // Large enough for both IPv4 or IPv6
             socklen_t socklen = sizeof(source_addr);
             int len = recvfrom(sock, rx_buffer, sizeof(rx_buffer) - 1, 0, (struct sockaddr *)&source_addr, &socklen);
-            // ESP_LOGE("LATENCY_MEASUREMENT_START us", "%lli", get_time_us());
+            // KAOS_LOGE("LATENCY_MEASUREMENT_START us", "%lli", get_time_us());
             // Error occurred during receiving
             if (len < 0) {
-                ESP_LOGE(TAG, "recvfrom failed: errno %d", errno);
+                KAOS_LOGE(TAG, "recvfrom failed: errno %d", errno);
                 break;
             }
             // Data received
@@ -806,18 +806,18 @@ static void udp_server_task(void *pvParameters) {
             }
 
             rx_buffer[len] = 0; // Null-terminate whatever we received and treat like a string...
-            ESP_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
+            KAOS_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
             // ESP_LOG_BUFFER_HEX(TAG, rx_buffer, len);
 
             // int err = sendto(sock, rx_buffer, len, 0, (struct sockaddr *)&source_addr, sizeof(source_addr));
             // if (err < 0) {
-            //     ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
+            //     KAOS_LOGE(TAG, "Error occurred during sending: errno %d", errno);
             //     break;
             // }
         }
 
         if (sock != -1) {
-            ESP_LOGE(TAG, "Shutting down socket and restarting...");
+            KAOS_LOGE(TAG, "Shutting down socket and restarting...");
             shutdown(sock, 0);
             close(sock);
         }
@@ -833,9 +833,28 @@ kaos_error_t get_log_server_msg(service_msg_t *dest) {
     return service_get(dest);
 }
 
+task_handle_t *udp_client_handle = NULL;
+
+kaos_error_t notify_and_signal(module_registry_t *sig_registry, queue_t *queue) {
+    kaos_error_t err;
+    notify_task_give(udp_client_handle);
+    
+    uint32_t msgs_available;
+    messages_available(queue, &msgs_available);
+    if (sig_registry && (msgs_available == 1)) {
+        kaos_signal_msg_t signal_msg = {
+            .signal_type = KAOS_DATA_AVAILABLE,
+            .signal_id = 0,
+        };
+
+        sig_to_container(sig_registry, &signal_msg);
+    }
+
+    return KaosSuccess;
+}
+
 // TODO: establish receive queue
 // int get_from_log_server()
-extern TaskHandle_t udp_client_handle;
 
 kaos_error_t start_server(void) {
     esp_err_t ret = nvs_flash_init();
@@ -845,7 +864,7 @@ kaos_error_t start_server(void) {
     }
     ESP_ERROR_CHECK(ret);
 
-    ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
+    KAOS_LOGI(TAG, "ESP_WIFI_MODE_STA");
     wifi_init_sta();
     // ESP_ERROR_CHECK(esp_netif_init());
     // ESP_ERROR_CHECK(esp_event_loop_create_default());
@@ -858,14 +877,14 @@ kaos_error_t start_server(void) {
     }
 
 #ifdef CONFIG_KAOS_IPV4
-    xTaskCreate(udp_server_task, "udp_server", 4096, (void*)AF_INET, 5, NULL);
+    create_task(udp_server_task, "udp_server", 4096, (void*)AF_INET, 5, NULL);
 #endif
 #ifdef CONFIG_KAOS_IPV6
-    xTaskCreate(udp_server_task, "udp_server", 4096, (void*)AF_INET6, 5, NULL);
+    create_task(udp_server_task, "udp_server", 4096, (void*)AF_INET6, 5, NULL);
 #endif
-    xTaskCreate(udp_client_task, "udp_client", 4096, NULL, 5, &udp_client_handle);
-    xTaskCreate(tcp_server_task, "tcp_server", 4096, (void*)AF_INET, 5, NULL);
-    xTaskCreate(tcp_client_task, "tcp_client", 4096, NULL, 5, NULL);
+    create_task(udp_client_task, "udp_client", 4096, NULL, 5, &udp_client_handle);
+    create_task(tcp_server_task, "tcp_server", 4096, (void*)AF_INET, 5, NULL);
+    create_task(tcp_client_task, "tcp_client", 4096, NULL, 5, NULL);
 
     return KaosSuccess;
 }

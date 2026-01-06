@@ -4,10 +4,9 @@
 #include <inttypes.h>
 #include <pthread.h>
 
-#include "esp_timer.h"
-
+#include "port.h"
 #include "wamr_wrap.h"
-#include "unreliable_message_queue.h"
+#include "unreliable_channel.h"
 #include "kaos_signals.h"
 
 #define OK 0
@@ -40,7 +39,7 @@ typedef struct channel_t {
     service_id_t service_id;
     address_t address;
     char type[TYPE_SZ];
-    queue_t queue;
+    queue_t *queue;
 } channel_t;
 
 
@@ -74,6 +73,7 @@ typedef enum status_t {
     ERROR,
 } status_t;
 
+
 typedef struct module_registry_t {
     pthread_mutex_t mutex;
     pthread_mutexattr_t mutex_attr;
@@ -83,8 +83,8 @@ typedef struct module_registry_t {
     exec_env_t exec_env;
     module_config_t module_config;
     interface_config_t intfc_config;
-    queue_t signal_queue_to_container;
-    kaos_timer_t timers[KAOS_MODULE_TIMERS_N];
+    queue_t *signal_queue_to_container;
+    kaos_timer_handle_t **timers;
     status_t status;
     pthread_t thread_id;
 } module_registry_t;
@@ -101,26 +101,26 @@ module_registry_t *get_registry_by_name(char *module_name);
 module_registry_t *get_registry_by_handle(module_t module_handle);
 module_registry_t *get_registry_by_inst(module_inst_t module_inst);
 module_registry_t *get_registry_by_identity(service_id_t service_id, address_t address);
-module_registry_t *get_registry_by_sig_handle(queue_t handle);
+module_registry_t *get_registry_by_sig_handle(queue_t *handle);
 
 int assign_timer_id(module_registry_t *registry);
 kaos_error_t release_timer_id(module_registry_t *registry, int timer_id);
 
-kaos_timer_t get_timer(module_registry_t *registry, int timer_id);
-void set_timer(module_registry_t *registry, kaos_timer_t handle, int timer_id);
+kaos_timer_handle_t *get_timer(module_registry_t *registry, int timer_id);
+void set_timer(module_registry_t *registry, kaos_timer_handle_t *handle, int timer_id);
 kaos_error_t destroy_channel(channel_t channel);
 void print_channel(channel_t channel);
 channel_t *fetch_channel(channel_t *channels, int16_t n_channels, service_id_t service_id, address_t address, char *type);
 char *get_module_name(module_registry_t *registry);
-void set_signal_queue(module_registry_t *registry, queue_t to_container);
-queue_t get_signal_queue_to_container(module_registry_t *registry);
+void set_signal_queue(module_registry_t *registry, queue_t *to_container);
+queue_t *get_signal_queue_to_container(module_registry_t *registry);
 void set_status(module_registry_t *registry, status_t status);
 status_t get_status(module_registry_t *registry);
 module_inst_t get_container_inst(module_registry_t *registry);
-kaos_error_t set_input_queue(module_registry_t *registry, service_id_t service_id, address_t address, char *type, queue_t queue);
-kaos_error_t set_output_queue(module_registry_t *registry, service_id_t service_id, address_t address, char *type, queue_t queue);
-queue_t get_input_queue(module_registry_t *registry, service_id_t service_id, address_t address, char *type);
-queue_t get_output_queue(module_registry_t *registry, service_id_t service_id, address_t address, char *type);
+kaos_error_t set_input_queue(module_registry_t *registry, service_id_t service_id, address_t address, char *type, queue_t *queue);
+kaos_error_t set_output_queue(module_registry_t *registry, service_id_t service_id, address_t address, char *type, queue_t *queue);
+queue_t *get_input_queue(module_registry_t *registry, service_id_t service_id, address_t address, char *type);
+queue_t *get_output_queue(module_registry_t *registry, service_id_t service_id, address_t address, char *type);
 module_config_t get_module_config(module_registry_t *registry);
 interface_config_t get_interface_config(module_registry_t *registry);
 void set_thread_id(module_registry_t *registry, pthread_t thread_id);
