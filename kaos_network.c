@@ -387,7 +387,7 @@ static kaos_error_t send_payload(int sock, uint32_t *payload_n) {
             KAOS_LOGI(TAG, "Message sent to %s", ip_str);
         }
         
-        *payload_n = ulTaskNotifyTake(1, portMAX_DELAY);
+        *payload_n = notify_task_take(true);
     }
 }
 

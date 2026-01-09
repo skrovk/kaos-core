@@ -26,6 +26,14 @@ kaos_error_t create_task(void callback(void *), char *name, uint32_t stack_depth
     return KaosSuccess;
 }
 
+kaos_error_t notify_task_take(bool blocking) {
+    if (blocking) {
+        ulTaskNotifyTake(1, portMAX_DELAY);
+    } else {
+        ulTaskNotifyTake(1, 0);
+    }
+    return KaosSuccess;
+}
 
 kaos_error_t notify_task_give(task_handle_t *task_handle) {
     xTaskNotifyGive(task_handle->handle);

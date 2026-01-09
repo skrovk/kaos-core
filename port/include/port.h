@@ -11,6 +11,7 @@ typedef struct kaos_timer kaos_timer_handle_t;
 typedef struct kaos_timer_args kaos_timer_args_t;
 
 kaos_error_t create_task(void callback(void *), char *name, uint32_t stack_depth, void *arg, uint32_t priority, task_handle_t **out_handle);
+kaos_error_t notify_task_take(bool blocking);
 kaos_error_t notify_task_give(task_handle_t *task_handle);
 
 queue_t *create_queue(uint32_t queue_length, uint32_t item_size);
