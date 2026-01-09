@@ -10,13 +10,6 @@
 #include "esp_log.h"
 
 
-#ifndef KAOS_LOGI
-#define KAOS_LOGI(tag, ...) ESP_LOGI(tag, __VA_ARGS__)
-#define KAOS_LOGE(tag, ...) ESP_LOGE(tag, __VA_ARGS__)
-#define KAOS_LOGW(tag, ...) ESP_LOGW(tag, __VA_ARGS__)
-#define KAOS_LOGD(tag, ...) ESP_LOGD(tag, __VA_ARGS__)
-#endif
-
 struct queue {QueueHandle_t queue; };
 struct kaos_timer { esp_timer_handle_t timer; };
 struct task_handle { TaskHandle_t handle; };

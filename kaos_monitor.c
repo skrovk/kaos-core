@@ -1502,13 +1502,6 @@ static void monitor_loop(void) {
 }
 
 kaos_error_t kaos_run(void) {
-    // esp_log_level_set("*", ESP_LOG_DEBUG);
-// #if KAOS_MEASUREMENTS_ENABLE 
-//     esp_log_level_set("*", ESP_LOG_ERROR);
-// #endif /* KAOS_MEASUREMENTS_ENABLE */
-
-
-    // esp_task_wdt_deinit();
     memset(&monitor, 0, sizeof(health_monitor_t));
     memset(operations, 0, sizeof(op_ctx_t) * OPERATION_N);
 
@@ -1516,7 +1509,6 @@ kaos_error_t kaos_run(void) {
     monitor.event_q_latency.next = 0;
     monitor.event_q_latency.avg = 0;
 
-    
     char *ip_addr[2];
     *ip_addr = calloc(1, strlen(KAOS_STATIC_IP_A) + 1);
     *(ip_addr + 1) = calloc(1, strlen(KAOS_STATIC_IP_B) + 1);
@@ -1524,7 +1516,6 @@ kaos_error_t kaos_run(void) {
     strcpy(*ip_addr, KAOS_STATIC_IP_A);
     strcpy(*(ip_addr + 1), KAOS_STATIC_IP_B);
 
-    // device A
     channel_t channels[] = {
         {
             .service_id = 1,
@@ -1536,11 +1527,11 @@ kaos_error_t kaos_run(void) {
         }
     };
 
-    translation_table_init(channels, (uint8_t **) ip_addr, 2);
     init_registry_pool();
     start_server();
 
     init_monitor(1024);
+    // TODO: Expose this as set of callbacks for hardware setup from kaos_run?
     setup_LED();
     init_runtime();
 
