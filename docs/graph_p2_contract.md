@@ -1,5 +1,7 @@
 # P2 contracts, admission and artifact transfer
 
+Terminology: [shared glossary](graph_operation_glossary.md).
+
 Implemented on 7 October 2026 against the [system plan](graph_operation_implementation_plan.md). This document specifies the bounded P2 implementation and its interfaces. P3–P6 remain responsible for runtime and endpoint execution, commit/activation/startup decisions, and complete distributed operation state machines. Artifact validation alone never establishes node READY or STARTED.
 
 The selected approach extends the existing admission pool. A second generic registry was considered and rejected because it would duplicate identity, capacity and rollback state. O is a separate Python implementation in `../sim_env/sim_env/orchestrator.py`; it does not run K's protocol transitions. CoAP and CBOR are small fixed-profile implementations shared by host and ESP32. The vendored unicoap implementation depends on RIOT networking, event and timer infrastructure; adapting that stack would add more machinery than these bounded interfaces. No external C codec allocation or reassembly is hidden from the resource ledger.
@@ -103,10 +105,12 @@ The immutable authorized request fixes exact object identities and owners: node 
 | 2 | Start dispatched | 2 | ACTIVE observed |
 | 4 | STARTED accepted | 4 | Failure observed |
 | 8 | Whole-scope cleanup selected | 8 | Owner cleanup selected |
-| 16 | Cleanup cutoff with missing closure | 16 | Owner quiescent |
+| 16 | Cleanup cutoff with missing closure | 16 | Owner stopped |
 | 32 | Historical addition success | 32 | Owner CLEANED |
 | | | 64 | Runtime exit observed |
 | | | 128 | Applicable allowance expired |
+
+**Owner stopped** (`CORE_OBJECT_STOPPED`, bit 16) means new work and accesses for the indexed object are blocked, and all in-flight execution, callbacks and tracked accesses have ended. The hosting device can continue running other objects. Owned resources may still await reclamation. **Owner CLEANED** additionally requires releasing the object's owned resources, associations and reservations. A stop request, runtime exit or timeout alone proves neither state. The evidence prerequisites are `CLEANED ⇒ STOPPED ⇒ CLEANUP selected`; the execution service must establish each fact before reporting it. See the [lifecycle glossary](graph_operation_glossary.md#lifecycle-and-outcomes).
 
 Object facts are emitted only when at least one new fact is added, so each object has at most eight advances after revision zero. Aggregate publication occurs only for a new object snapshot or one of six history facts. With at most nine objects, `8*9+6=78` advances fit an unsigned 8-bit revision. Initial removal CLEANUP belongs to revision zero. Revisions cannot exceed their cumulative fact counts. Repeats, retries, queries, storage ACKs and ordinary diagnostics do not consume revisions. This bound is a contract on future P3–P6 publishers: additional report-changing facts require updating the schema and its admission proof before enabling them.
 

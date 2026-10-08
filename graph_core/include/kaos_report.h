@@ -11,10 +11,14 @@
 #define CORE_OWNER_REPORT_KIND 10
 
 /* Monotone historical facts, not present permission or a substitute for the
- * operation engine's identity, issued-work, deadline and execution guards. */
+ * operation engine's identity, issued-work, deadline and execution guards.
+ * STOPPED: new work/access is blocked and all in-flight execution, callbacks
+ * and tracked accesses have ended. Owned resources may remain allocated.
+ * CLEANED additionally requires release of owned resources and associations.
+ * These facts concern the indexed object, not the whole hosting device. */
 enum {
     CORE_OBJECT_READY = 1, CORE_OBJECT_ACTIVE = 2, CORE_OBJECT_FAILED = 4,
-    CORE_OBJECT_CLEANUP = 8, CORE_OBJECT_QUIESCENT = 16,
+    CORE_OBJECT_CLEANUP = 8, CORE_OBJECT_STOPPED = 16,
     CORE_OBJECT_CLEANED = 32, CORE_OBJECT_EXITED = 64, CORE_OBJECT_EXPIRED = 128
 };
 enum {

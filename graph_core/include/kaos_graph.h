@@ -94,7 +94,8 @@ typedef struct {
 bool core_action_issue(core_action *action, core_lifetime *owner, core_access *out);
 /* False means do not execute. If closure won, publishes CANCELLED; stale or
  * repeated starts have no effect. A successful begin registers execution;
- * later closure requires cancellation/quiescence of that executing worker. */
+ * later closure requires cancellation and confirmed stopping of that
+ * executing worker. */
 bool core_action_begin(core_action *action, core_access token);
 bool core_action_complete(core_action *action, core_access token, core_work_result result);
 /* Acceptance releases the access, not the owner's resources. A successful

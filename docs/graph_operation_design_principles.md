@@ -1,5 +1,7 @@
 # Graph operation design principles
 
+Terminology: [shared glossary](graph_operation_glossary.md).
+
 Derived on 2 October 2026 from the agreed answers to [Q01–Q07](graph_operation_design_questions.md). These principles summarize the reasoning behind those decisions and guide later choices; they do not introduce additional requirements or settle unanswered questions. The question document remains the detailed decision record, including provisional choices and accepted limitations.
 
 Here, O is the orchestrator, Kc coordinates an operation, and Ki is a participating device's KaOS. A device may perform both KaOS roles. The DB is the designated evidence/log collector.

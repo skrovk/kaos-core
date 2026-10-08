@@ -172,7 +172,7 @@ static void local_cleanup(core_admission_record *record)
                            same_binding(&endpoint->binding, binding);
             }
             if (!present) observe(record, object, CORE_OBJECT_CLEANUP |
-                                                  CORE_OBJECT_QUIESCENT | CORE_OBJECT_CLEANED);
+                                                  CORE_OBJECT_STOPPED | CORE_OBJECT_CLEANED);
         }
     }
     if (!record->endpoint_only && node_operation(scope->kind)) {
@@ -187,7 +187,7 @@ static void local_cleanup(core_admission_record *record)
                        admission.nodes[i].instance.value == scope->instance.value;
         }
         if (!present) observe(record, 0, CORE_OBJECT_CLEANUP |
-                                         CORE_OBJECT_QUIESCENT | CORE_OBJECT_CLEANED);
+                                         CORE_OBJECT_STOPPED | CORE_OBJECT_CLEANED);
     }
 }
 

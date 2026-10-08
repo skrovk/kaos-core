@@ -1,5 +1,7 @@
 # Common graph operation design principles
 
+Terminology: [shared glossary](graph_operation_glossary.md).
+
 Synthesis of the agreed [implementation answers](graph_operation_design_questions.md). Provisional choices, accepted limitations and unanswered details retain their status in that decision record.
 
 1. **Choose the smallest sufficient mechanism.** Build for the research experiments and six-operation baseline. Reuse existing identities, removal operations and standard transport; qualify WAMR before considering replacement. Add abstractions, metadata or stronger services only when a concrete requirement justifies their cost. Validate the baseline before extending it. ([Q03](graph_operation_design_questions.md#q03), [Q08–Q10](graph_operation_design_questions.md#q08), [Q17–Q19](graph_operation_design_questions.md#q17), [Q22–Q23](graph_operation_design_questions.md#q22))

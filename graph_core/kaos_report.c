@@ -21,8 +21,8 @@ static bool object_valid(core_object_report object)
     const unsigned f = object.facts;
     return object.revision <= fact_count(f) && ((object.revision == 0) == (f == 0)) &&
         (!(f & CORE_OBJECT_ACTIVE) || (f & CORE_OBJECT_READY)) &&
-        (!(f & CORE_OBJECT_QUIESCENT) || (f & CORE_OBJECT_CLEANUP)) &&
-        (!(f & CORE_OBJECT_CLEANED) || (f & CORE_OBJECT_QUIESCENT));
+        (!(f & CORE_OBJECT_STOPPED) || (f & CORE_OBJECT_CLEANUP)) &&
+        (!(f & CORE_OBJECT_CLEANED) || (f & CORE_OBJECT_STOPPED));
 }
 
 static bool valid(const core_report *r)

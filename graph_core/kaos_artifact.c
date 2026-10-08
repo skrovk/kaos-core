@@ -178,7 +178,7 @@ void core_artifact_cancel(core_artifact *artifact)
 {
     if (artifact->access.owner != NULL) {
         if (!core_access_release(artifact->access.owner, artifact->access)) {
-            return; /* A failed release never claims access quiescence. */
+            return; /* A failed release never claims that accesses have stopped. */
         }
         artifact->access = (core_access){0};
     }

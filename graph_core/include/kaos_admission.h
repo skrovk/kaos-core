@@ -198,7 +198,8 @@ core_admit_result core_endpoint_submit(core_admission *pool, uint64_t coordinato
                                        const core_admission_record **out);
 /* Original coordinator may cancel issued ADD scope without a new O operation.
  * Install its fence/report capacity even if PREPARE has not arrived. Existing
- * resources are closed, never freed before quiescence. Subsequent phase work
+ * resources are closed, never freed before all relevant work and accesses
+ * have stopped. Subsequent phase work
  * must observe cleanup_selected. Repeating cancellation resets no deadline. */
 core_admit_result core_endpoint_cancel(core_admission *pool, uint64_t coordinator,
                                        const uint8_t *data, size_t size,
@@ -217,7 +218,7 @@ const core_admission_record *core_admission_find(const core_admission *pool,
  * a newly added edge. */
 bool core_admission_establish_node(core_admission *pool, core_instance_id instance);
 /* P2 failure/removal handoff: close exactly local resources in this immutable
- * scope, suppressing subsequent access. Workers still must quiesce/complete;
+ * scope, suppressing subsequent access. Workers still must stop or complete;
  * these functions neither free allocations nor assert protocol CLEANED. */
 bool core_admission_close_scope(core_admission *pool, core_op_id id);
 bool core_admission_release_endpoints(core_admission *pool, core_op_id creating_id);
