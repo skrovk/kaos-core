@@ -1,8 +1,0 @@
-area,catalogue_refs,implementation,scope_and_remaining_work
-shared_build,BASE01,kaos_graph.c and CMakeLists.txt,Same C source in isolated host and ESP-IDF component; no legacy patch; physical board qualification pending
-identity,ID11,go_next_op_id,Distinct operation and instance types and nonwrapping sequence only; wire identities and O authorization pending
-time,MGMT06 MGMT07,go_duration_us and go_deadline and go_before_deadline,Checked microsecond arithmetic and strict equality boundary only; operation deadlines and timer scheduling pending
-ownership,ID09 LIFE01 LIFE03 LIFE09 RES01,go_lifetime and go_access,Caller-owned stable records with bounded nonreused access tickets and byte accounting; real allocations and service synchronization pending
-actions,LIFE04 LIFE08 RES03 OBS02 OBS06,go_action,Separate issue execute complete accept barriers with reserved completion mailbox; no runtime or protocol evidence acceptance yet
-model,Q14,Lifetime.tla,Finite single-owner foundation model with two action slots and three tickets and two resource units; fairness assumes worker return and control service; full Q14 implementation model pending
-package,P0 P1,initial foundation slice,P0 contracts and WAMR/transport qualification pending; P1 not complete; no six-operation or hardware conformance claim

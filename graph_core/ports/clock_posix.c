@@ -3,7 +3,7 @@
 
 #include <time.h>
 
-bool go_clock_now(uint64_t *out_us)
+bool core_clock_now(uint64_t *out_us)
 {
     struct timespec now;
     if (clock_gettime(CLOCK_MONOTONIC, &now) != 0 || now.tv_sec < 0) {
