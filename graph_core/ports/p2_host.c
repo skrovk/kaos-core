@@ -80,12 +80,8 @@ static void token_bytes(uint64_t value, uint8_t out[8])
 
 static void observe(core_admission_record *record, uint8_t object, uint8_t facts)
 {
-    core_object_report prior = record->evidence.objects[object];
-    facts |= prior.facts;
-    if (facts != prior.facts) {
-        (void)core_report_observe(&record->evidence, object,
-                                  (uint8_t)(prior.revision + 1), facts);
-    }
+    (void)core_report_observe(&record->evidence, object,
+                              record->evidence.objects[object] | facts);
 }
 
 static bool node_operation(uint8_t kind)

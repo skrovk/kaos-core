@@ -315,6 +315,65 @@ void core_coap_exchange_cancel(core_coap_exchange *exchange)
     exchange->active = false;
 }
 
+bool core_coap_options_supported(const core_coap_message *message,
+                                 const uint16_t *singletons, size_t count)
+{
+    for (size_t i = 0; i < message->option_count; ++i) {
+        const uint16_t number = message->options[i].number;
+        bool supported = false;
+        for (size_t j = 0; j < count; ++j) supported |= number == singletons[j];
+        if (!supported) {
+            if (number & 1u) return false; /* unknown critical option */
+            continue;
+        }
+        for (size_t j = 0; j < i; ++j)
+            if (message->options[j].number == number) return false;
+    }
+    return true;
+}
+
+bool core_coap_reply(const core_coap_message *request, uint8_t code,
+                     uint16_t content_format, const uint8_t *body, size_t size,
+                     const core_coap_option *block,
+                     uint8_t *out, size_t capacity, size_t *written)
+{
+    uint8_t format[4];
+    const size_t format_size = core_coap_uint(content_format, format);
+    core_coap_message response = {.type = CORE_COAP_ACK, .code = code,
+        .message_id = request->message_id, .token_size = request->token_size,
+        .payload = body, .payload_size = size};
+    if (request->token_size > sizeof(response.token)) return false;
+    memcpy(response.token, request->token, request->token_size);
+    if (size) response.options[response.option_count++] =
+        (core_coap_option){CORE_COAP_CONTENT_FORMAT, format, format_size};
+    if (block != NULL) response.options[response.option_count++] = *block;
+    return core_coap_encode(&response, out, capacity, written);
+}
+
+bool core_coap_reset(uint16_t message_id, uint8_t *out,
+                     size_t capacity, size_t *written)
+{
+    const core_coap_message reset = {.type = CORE_COAP_RST, .message_id = message_id};
+    return core_coap_encode(&reset, out, capacity, written);
+}
+
+bool core_coap_cache_replay(const core_coap_cache *cache, uint64_t peer,
+                            uint16_t message_id, uint64_t now_us,
+                            uint8_t *out, size_t capacity, size_t *written)
+{
+    for (size_t i = 0; i < CORE_COAP_CACHE_SIZE; ++i) {
+        const core_coap_cached_response *entry = &cache->entries[i];
+        if (entry->occupied && entry->peer == peer &&
+            entry->message_id == message_id && now_us < entry->expires_us) {
+            if (capacity < entry->response_size) return false;
+            memcpy(out, entry->response, entry->response_size);
+            *written = entry->response_size;
+            return true;
+        }
+    }
+    return false;
+}
+
 core_coap_cache_result core_coap_cache_reserve(core_coap_cache *cache,
                                                uint64_t peer, uint16_t message_id,
                                                uint64_t now_us,

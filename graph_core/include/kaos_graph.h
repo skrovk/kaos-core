@@ -10,6 +10,9 @@
  * under one short local lock, including access admission versus closure.
  * Never hold that lock across worker execution, allocation, or waits. */
 
+/* Shared CBOR schema for requests, queries, reports and storage ACKs. */
+#define CORE_SCHEMA_VERSION 3
+
 /* Shared protocol identities received from O; K does not allocate them. */
 typedef struct { uint64_t value; } core_op_id;
 typedef struct { uint64_t value; } core_instance_id;

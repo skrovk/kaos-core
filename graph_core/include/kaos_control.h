@@ -18,7 +18,7 @@ typedef struct {
 /* Zero initialize with .admission pointing to a configured stable pool.
  * POST /graph accepts a typed operation; POST /prepare reserves remote
  * endpoints under the coordinator; POST /cancel selects original-addition
- * cleanup at an owner; POST /query takes [1,7,opId,h''].
+ * cleanup at an owner; POST /query takes [3,7,opId,h''].
  * All bodies are application/cbor (60). Multipart submission requires Size1
  * and a nonempty Request-Tag; one inbound bulk body is retained at a time.
  * /cancel is unsegmented (every supported body fits one datagram), allowing

@@ -20,7 +20,6 @@
 #define CORE_MAX_PAYLOAD_BYTES 256
 #define CORE_MAX_QUEUE_MESSAGES 4
 #define CORE_ENDPOINT_BYTES (CORE_MAX_PAYLOAD_BYTES * CORE_MAX_QUEUE_MESSAGES)
-#define CORE_SCHEMA_VERSION 1
 #define CORE_MAX_REQUEST_BYTES 1024
 #define CORE_MAX_ARTIFACT_REF_BYTES 32
 #define CORE_MAX_CONFIGURATION_BYTES 64
@@ -79,7 +78,7 @@ typedef struct {
 
 /* Exact immutable scope, ordered node (when present), then source/destination
  * endpoint of each listed binding. Creation IDs of additions equal opId.
- * Ports/dynamic apply only to node additions; predicate to ADD_NODE.
+ * Ports apply only to node additions; predicate to ADD_NODE.
  * Removal allowance is in allowance_us; addition cleanup has its own field.
  * Remote descriptors are O-authorized: each remote owner still independently
  * validates its own registry/ports and reserves before local preparation. */
@@ -88,7 +87,6 @@ typedef struct {
     uint8_t channel_count;
     uint8_t port_count;
     uint8_t object_count;
-    bool dynamic_ports;
     uint64_t logical_node_id;
     uint64_t coordinator;
     core_instance_id instance;
@@ -106,7 +104,6 @@ typedef struct {
     uint64_t logical_node_id;
     core_port ports[CORE_MAX_PORTS];
     uint8_t port_count;
-    bool dynamic_ports;
     bool established;
     bool occupied;
 } core_reserved_node;

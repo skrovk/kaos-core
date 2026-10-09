@@ -30,12 +30,11 @@ typedef enum {
     CORE_OUTCOME_PENDING, CORE_OUTCOME_SUCCEEDED,
     CORE_OUTCOME_FAILED_CLEAN, CORE_OUTCOME_UNRESOLVED
 } core_outcome;
-typedef struct { uint8_t revision; uint8_t facts; } core_object_report;
 typedef struct {
     core_op_id operation;
     uint64_t owner;
     uint8_t object; /* index into the immutable authorized operation scope */
-    core_object_report state;
+    uint8_t facts;
 } core_owner_report;
 typedef struct {
     core_op_id id;
@@ -44,7 +43,7 @@ typedef struct {
     uint8_t revision;
     uint8_t history;
     uint8_t object_count;
-    core_object_report objects[CORE_REPORT_MAX_OBJECTS];
+    uint8_t objects[CORE_REPORT_MAX_OBJECTS]; /* cumulative object facts */
 } core_report;
 typedef enum {
     CORE_REPORT_CHANGED, CORE_REPORT_REPEAT, CORE_REPORT_OLD,
@@ -52,18 +51,20 @@ typedef enum {
 } core_report_result;
 
 /* Initial revision 0 plus at most eight new facts per object and six history
- * facts. Retries, queries, diagnostics, ACKs and unchanged snapshots consume
- * no revisions. Each owner emits only when adding at least one fact. */
+ * facts. Only the aggregate has a revision. Retries, queries, diagnostics,
+ * ACKs and unchanged snapshots consume no revisions. Each owner emits only
+ * when adding at least one fact. */
 uint8_t core_report_revision_bound(uint8_t object_count);
 bool core_report_init(core_report *report, uint8_t kind, core_op_id id,
                       uint64_t coordinator, uint8_t object_count);
 core_outcome core_report_outcome(const core_report *report);
 uint16_t core_report_obligations(const core_report *report);
 /* Call only after the engine validates the reporting owner and exact object
- * in the immutable scope. Object revisions compare only within that stream.
- * Invalid/conflicting evidence never changes retained facts or selects cleanup. */
+ * in the immutable scope. Equal facts repeat; strict subsets are old; strict
+ * supersets advance; incomparable sets conflict. Invalid/conflicting evidence
+ * never changes retained facts or selects cleanup. */
 core_report_result core_report_observe(core_report *report, uint8_t object,
-                                       uint8_t revision, uint8_t facts);
+                                       uint8_t facts);
 core_report_result core_report_record(core_report *report, uint8_t history);
 /* Complete cumulative snapshot; keys/owners are indexed by immutable request
  * scope: optional node, then source/destination of each channel. Does not
@@ -73,7 +74,7 @@ bool core_report_encode(const core_report *report, uint8_t *data, size_t size,
 bool core_report_decode(const uint8_t *data, size_t size, uint8_t request_kind,
                         core_report *out);
 core_report_result core_report_accept(core_report *current, const core_report *incoming);
-/* Distinct owner/object stream [1,10,opId,hostingKaOS,objectIndex,revision,facts].
+/* Distinct owner/object stream [3,10,opId,hostingKaOS,objectIndex,facts].
  * Before observe(), the engine must match sender, operation, indexed object
  * owner and issued action. Decoding alone establishes none of those guards. */
 bool core_owner_report_encode(const core_owner_report *report, uint8_t *data,

@@ -21,6 +21,7 @@ enum {
     CORE_COAP_CONTENT = 69, CORE_COAP_CONTINUE = 95,
     CORE_COAP_BAD_REQUEST = 128, CORE_COAP_UNAUTHORIZED = 129,
     CORE_COAP_BAD_OPTION = 130, CORE_COAP_NOT_FOUND = 132,
+    CORE_COAP_METHOD_NOT_ALLOWED = 133,
     CORE_COAP_INCOMPLETE = 136, CORE_COAP_TOO_LARGE = 141,
     CORE_COAP_UNAVAILABLE = 163
 };
@@ -61,6 +62,22 @@ const core_coap_option *core_coap_find(const core_coap_message *message,
 bool core_coap_option_uint(const core_coap_option *option, uint32_t *out);
 /* RFC integer option encoding; zero has length zero. */
 size_t core_coap_uint(uint32_t value, uint8_t out[4]);
+
+/* Check a structurally decoded message against resource-supported singleton
+ * options. Unknown elective options are ignored; unknown critical options and
+ * repeated supported options are rejected. Multi-segment URI paths require a
+ * different resource profile: this helper treats every listed option as single. */
+bool core_coap_options_supported(const core_coap_message *message,
+                                 const uint16_t *singletons, size_t count);
+/* Encode a piggybacked ACK with the request's MID/token. Content-Format is
+ * emitted only for a nonempty body. block is NULL or the request's Block1
+ * option to echo. Output borrows no request/body bytes after return. */
+bool core_coap_reply(const core_coap_message *request, uint8_t code,
+                     uint16_t content_format, const uint8_t *body, size_t size,
+                     const core_coap_option *block,
+                     uint8_t *out, size_t capacity, size_t *written);
+bool core_coap_reset(uint16_t message_id, uint8_t *out,
+                     size_t capacity, size_t *written);
 
 typedef struct {
     uint8_t request[CORE_COAP_MAX_DATAGRAM];
@@ -115,6 +132,13 @@ typedef struct {
 } core_coap_cache;
 typedef enum { CORE_COAP_CACHE_NEW, CORE_COAP_CACHE_DUPLICATE,
                CORE_COAP_CACHE_FULL } core_coap_cache_result;
+
+/* Read-only replay before option validation or body assembly. Does not reserve
+ * or expire entries. False (miss or insufficient output capacity) leaves out
+ * and written unchanged. peer + MID identifies the original exchange. */
+bool core_coap_cache_replay(const core_coap_cache *cache, uint64_t peer,
+                            uint16_t message_id, uint64_t now_us,
+                            uint8_t *out, size_t capacity, size_t *written);
 
 /* Zero initialize once. Reserve BEFORE a non-idempotent handler runs, then
  * store its response without an intervening event. Duplicates replay this

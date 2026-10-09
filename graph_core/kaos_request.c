@@ -114,7 +114,6 @@ static bool read_node(core_cbor_reader *reader, core_node_request *request,
 {
     const uint8_t *artifact_ref, *configuration;
     size_t artifact_ref_size, configuration_size;
-    uint64_t dynamic;
     if (!core_cbor_uint(reader, &request->logical_node_id) ||
         !core_cbor_bytes(reader, &artifact_ref, &artifact_ref_size) ||
         artifact_ref_size == 0 || artifact_ref_size > CORE_MAX_ARTIFACT_REF_BYTES ||
@@ -126,14 +125,13 @@ static bool read_node(core_cbor_reader *reader, core_node_request *request,
         configuration_size > CORE_MAX_CONFIGURATION_BYTES ||
         !core_cbor_uint(reader, &request->addition_allowance_us) ||
         !core_cbor_uint(reader, &request->cleanup_allowance_us) ||
-        !read_ports(reader, scope) || !core_cbor_uint(reader, &dynamic) || dynamic > 1) {
+        !read_ports(reader, scope)) {
         return false;
     }
     request->artifact_ref_size = (uint8_t)artifact_ref_size;
     request->configuration_size = (uint8_t)configuration_size;
     memcpy(request->artifact_ref, artifact_ref, artifact_ref_size);
     memcpy(request->configuration, configuration, configuration_size);
-    scope->dynamic_ports = dynamic != 0;
     scope->logical_node_id = request->logical_node_id;
     scope->instance = (core_instance_id){id.value};
     scope->allowance_us = request->addition_allowance_us;
@@ -170,7 +168,7 @@ static bool read_request(core_cbor_reader *reader, core_op_id id,
     switch (scope->kind) {
     case CORE_REQUEST_ADD_NODE_NO_EDGES:
     case CORE_REQUEST_ADD_NODE:
-        if (count != (scope->kind == CORE_REQUEST_ADD_NODE ? 12 : 10) ||
+        if (count != (scope->kind == CORE_REQUEST_ADD_NODE ? 11 : 9) ||
             !read_node(reader, request, scope, id)) {
             return false;
         }

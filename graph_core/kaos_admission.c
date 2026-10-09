@@ -205,7 +205,6 @@ core_admit_result core_node_admit(core_admission *pool, core_op_id id,
     node->instance = (core_instance_id){ .value = id.value };
     node->logical_node_id = 0;
     node->port_count = 0;
-    node->dynamic_ports = false;
     node->established = false;
     node->occupied = true;
     *record = (core_admission_record){.id = id, .deadline_us = deadline, .node = node, .occupied = true};
@@ -249,7 +248,7 @@ static bool local_port_matches(core_admission *pool, const core_request_scope *s
     }
     const core_reserved_node *node = find_node(pool, instance);
     return node != NULL && node->logical_node_id == logical && node->established &&
-           node->dynamic_ports && !node->lifetime.closing &&
+           !node->lifetime.closing &&
            port_matches(node->ports, node->port_count, port, direction,
                         channel->type, channel->payload_bytes);
 }
@@ -458,7 +457,6 @@ core_admit_result core_admission_reserve(core_admission *pool, core_op_id id,
         new_node->logical_node_id = scope->logical_node_id;
         memcpy(new_node->ports, scope->ports, sizeof(new_node->ports));
         new_node->port_count = scope->port_count;
-        new_node->dynamic_ports = scope->dynamic_ports;
         new_node->established = false;
         new_node->occupied = true;
     }

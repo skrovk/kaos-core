@@ -16,11 +16,9 @@ uint8_t core_report_revision_bound(uint8_t count)
     return count > 0 && count <= CORE_REPORT_MAX_OBJECTS ? (uint8_t)(8 * count + 6) : 0;
 }
 
-static bool object_valid(core_object_report object)
+static bool object_valid(uint8_t f)
 {
-    const unsigned f = object.facts;
-    return object.revision <= fact_count(f) && ((object.revision == 0) == (f == 0)) &&
-        (!(f & CORE_OBJECT_ACTIVE) || (f & CORE_OBJECT_READY)) &&
+    return (!(f & CORE_OBJECT_ACTIVE) || (f & CORE_OBJECT_READY)) &&
         (!(f & CORE_OBJECT_STOPPED) || (f & CORE_OBJECT_CLEANUP)) &&
         (!(f & CORE_OBJECT_CLEANED) || (f & CORE_OBJECT_STOPPED));
 }
@@ -38,7 +36,7 @@ static bool valid(const core_report *r)
         if (!object_valid(r->objects[i])) return false;
     const unsigned h = r->history;
     unsigned changes = fact_count(h) - (removal(r->kind) && (h & CORE_HISTORY_CLEANUP) ? 1u : 0u);
-    for (uint8_t i = 0; i < r->object_count; ++i) changes += fact_count(r->objects[i].facts);
+    for (uint8_t i = 0; i < r->object_count; ++i) changes += fact_count(r->objects[i]);
     if (r->revision > changes || ((r->revision == 0) != (changes == 0))) return false;
     if (removal(r->kind) && ((h & (CORE_HISTORY_COMMIT | CORE_HISTORY_DISPATCH |
             CORE_HISTORY_STARTED | CORE_HISTORY_SUCCESS)) || !(h & CORE_HISTORY_CLEANUP)))
@@ -52,8 +50,8 @@ static bool valid(const core_report *r)
             if (!(h & CORE_HISTORY_STARTED)) return false;
         } else if (r->kind == 3) {
             if (!(h & CORE_HISTORY_COMMIT) ||
-                !(r->objects[0].facts & CORE_OBJECT_ACTIVE) ||
-                !(r->objects[1].facts & CORE_OBJECT_ACTIVE)) return false;
+                !(r->objects[0] & CORE_OBJECT_ACTIVE) ||
+                !(r->objects[1] & CORE_OBJECT_ACTIVE)) return false;
         } else return false;
     }
     return true;
@@ -74,7 +72,7 @@ uint16_t core_report_obligations(const core_report *r)
 {
     uint16_t missing = 0;
     for (uint8_t i = 0; i < r->object_count; ++i) {
-        const unsigned f = r->objects[i].facts;
+        const unsigned f = r->objects[i];
         if (((r->history & CORE_HISTORY_CLEANUP) || (f & CORE_OBJECT_CLEANUP)) &&
             !(f & CORE_OBJECT_CLEANED)) missing |= (uint16_t)(1u << i);
     }
@@ -92,18 +90,16 @@ core_outcome core_report_outcome(const core_report *r)
     return CORE_OUTCOME_PENDING;
 }
 
-core_report_result core_report_observe(core_report *r, uint8_t index,
-                                       uint8_t revision, uint8_t facts)
+core_report_result core_report_observe(core_report *r, uint8_t index, uint8_t facts)
 {
-    if (!valid(r) || index >= r->object_count ||
-        !object_valid((core_object_report){revision, facts})) return CORE_REPORT_INVALID;
-    const core_object_report old = r->objects[index];
-    if (revision < old.revision) return CORE_REPORT_OLD;
-    if (revision == old.revision)
-        return facts == old.facts ? CORE_REPORT_REPEAT : CORE_REPORT_CONFLICT;
-    if ((facts & old.facts) != old.facts || facts == old.facts) return CORE_REPORT_INVALID;
+    if (!valid(r) || index >= r->object_count || !object_valid(facts))
+        return CORE_REPORT_INVALID;
+    const uint8_t old = r->objects[index];
+    if (facts == old) return CORE_REPORT_REPEAT;
+    if ((facts & old) == facts) return CORE_REPORT_OLD;
+    if ((facts & old) != old) return CORE_REPORT_CONFLICT;
     if (r->revision == core_report_revision_bound(r->object_count)) return CORE_REPORT_EXHAUSTED;
-    r->objects[index] = (core_object_report){revision, facts};
+    r->objects[index] = facts;
     ++r->revision;
     return CORE_REPORT_CHANGED;
 }
@@ -132,7 +128,7 @@ bool core_report_encode(const core_report *r, uint8_t *data, size_t size, size_t
     if (!valid(r)) return false;
     core_cbor_writer w = {.data = data, .size = size};
     core_cbor_write_array(&w, 8);
-    core_cbor_write_uint(&w, 1);
+    core_cbor_write_uint(&w, CORE_SCHEMA_VERSION);
     core_cbor_write_uint(&w, CORE_REPORT_KIND);
     core_cbor_write_uint(&w, r->id.value);
     core_cbor_write_uint(&w, r->coordinator);
@@ -141,9 +137,7 @@ bool core_report_encode(const core_report *r, uint8_t *data, size_t size, size_t
     core_cbor_write_uint(&w, r->history);
     core_cbor_write_array(&w, r->object_count);
     for (uint8_t i = 0; i < r->object_count; ++i) {
-        core_cbor_write_array(&w, 2);
-        core_cbor_write_uint(&w, r->objects[i].revision);
-        core_cbor_write_uint(&w, r->objects[i].facts);
+        core_cbor_write_uint(&w, r->objects[i]);
     }
     if (w.failed) return false;
     *written = w.offset;
@@ -157,7 +151,7 @@ bool core_report_decode(const uint8_t *data, size_t size, uint8_t kind, core_rep
     uint64_t count, version, tag, revision, outcome, history, objects;
     core_report r = {.kind = kind};
     if (!core_cbor_array(&rd, &count) || count != 8 ||
-        !core_cbor_uint(&rd, &version) || version != 1 ||
+        !core_cbor_uint(&rd, &version) || version != CORE_SCHEMA_VERSION ||
         !core_cbor_uint(&rd, &tag) || tag != CORE_REPORT_KIND ||
         !core_cbor_uint(&rd, &r.id.value) || !core_cbor_uint(&rd, &r.coordinator) ||
         !core_cbor_uint(&rd, &revision) || revision > UINT8_MAX ||
@@ -168,11 +162,9 @@ bool core_report_decode(const uint8_t *data, size_t size, uint8_t kind, core_rep
     r.history = (uint8_t)history;
     r.object_count = (uint8_t)objects;
     for (uint8_t i = 0; i < r.object_count; ++i) {
-        uint64_t object_revision, facts;
-        if (!core_cbor_array(&rd, &count) || count != 2 ||
-            !core_cbor_uint(&rd, &object_revision) || object_revision > UINT8_MAX ||
-            !core_cbor_uint(&rd, &facts) || facts > UINT8_MAX) return false;
-        r.objects[i] = (core_object_report){(uint8_t)object_revision, (uint8_t)facts};
+        uint64_t facts;
+        if (!core_cbor_uint(&rd, &facts) || facts > UINT8_MAX) return false;
+        r.objects[i] = (uint8_t)facts;
     }
     if (rd.offset != size || !valid(&r) || outcome != core_report_outcome(&r)) return false;
     *out = r;
@@ -187,8 +179,7 @@ core_report_result core_report_accept(core_report *r, const core_report *next)
     if (next->revision < r->revision) return CORE_REPORT_OLD;
     bool equal = r->history == next->history;
     for (uint8_t i = 0; i < r->object_count; ++i) {
-        const core_object_report a = r->objects[i], b = next->objects[i];
-        equal = equal && a.revision == b.revision && a.facts == b.facts;
+        equal = equal && r->objects[i] == next->objects[i];
     }
     if (next->revision == r->revision) return equal ? CORE_REPORT_REPEAT : CORE_REPORT_CONFLICT;
     if (equal || (next->history & r->history) != r->history) return CORE_REPORT_INVALID;
@@ -197,9 +188,7 @@ core_report_result core_report_accept(core_report *r, const core_report *next)
     if ((r->history & CORE_HISTORY_CLEANUP) && (next->history & ~r->history & constructive))
         return CORE_REPORT_INVALID;
     for (uint8_t i = 0; i < r->object_count; ++i) {
-        const core_object_report a = r->objects[i], b = next->objects[i];
-        if (b.revision < a.revision || (b.facts & a.facts) != a.facts ||
-            ((b.revision == a.revision) != (b.facts == a.facts))) return CORE_REPORT_INVALID;
+        if ((next->objects[i] & r->objects[i]) != r->objects[i]) return CORE_REPORT_INVALID;
     }
     *r = *next;
     return CORE_REPORT_CHANGED;
@@ -208,16 +197,15 @@ core_report_result core_report_accept(core_report *r, const core_report *next)
 bool core_owner_report_encode(const core_owner_report *r, uint8_t *data,
                               size_t size, size_t *written)
 {
-    if (r->object >= CORE_REPORT_MAX_OBJECTS || !object_valid(r->state)) return false;
+    if (r->object >= CORE_REPORT_MAX_OBJECTS || !object_valid(r->facts)) return false;
     core_cbor_writer w = {.data = data, .size = size};
-    core_cbor_write_array(&w, 7);
-    core_cbor_write_uint(&w, 1);
+    core_cbor_write_array(&w, 6);
+    core_cbor_write_uint(&w, CORE_SCHEMA_VERSION);
     core_cbor_write_uint(&w, CORE_OWNER_REPORT_KIND);
     core_cbor_write_uint(&w, r->operation.value);
     core_cbor_write_uint(&w, r->owner);
     core_cbor_write_uint(&w, r->object);
-    core_cbor_write_uint(&w, r->state.revision);
-    core_cbor_write_uint(&w, r->state.facts);
+    core_cbor_write_uint(&w, r->facts);
     if (w.failed) return false;
     *written = w.offset;
     return true;
@@ -228,17 +216,16 @@ bool core_owner_report_decode(const uint8_t *data, size_t size, core_owner_repor
     if (data == NULL || size == 0 || size > CORE_REPORT_BYTES) return false;
     core_cbor_reader rd = {.data = data, .size = size};
     core_owner_report r;
-    uint64_t count, version, kind, index, revision, facts;
-    if (!core_cbor_array(&rd, &count) || count != 7 ||
-        !core_cbor_uint(&rd, &version) || version != 1 ||
+    uint64_t count, version, kind, index, facts;
+    if (!core_cbor_array(&rd, &count) || count != 6 ||
+        !core_cbor_uint(&rd, &version) || version != CORE_SCHEMA_VERSION ||
         !core_cbor_uint(&rd, &kind) || kind != CORE_OWNER_REPORT_KIND ||
         !core_cbor_uint(&rd, &r.operation.value) || !core_cbor_uint(&rd, &r.owner) ||
         !core_cbor_uint(&rd, &index) || index >= CORE_REPORT_MAX_OBJECTS ||
-        !core_cbor_uint(&rd, &revision) || revision > UINT8_MAX ||
         !core_cbor_uint(&rd, &facts) || facts > UINT8_MAX || rd.offset != size) return false;
     r.object = (uint8_t)index;
-    r.state = (core_object_report){(uint8_t)revision, (uint8_t)facts};
-    if (!object_valid(r.state)) return false;
+    r.facts = (uint8_t)facts;
+    if (!object_valid(r.facts)) return false;
     *out = r;
     return true;
 }
