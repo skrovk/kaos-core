@@ -4,23 +4,19 @@
 #include "kaos_graph.h"
 #include "kaos_predicate.h"
 #include "kaos_report.h"
+#include "kaos_limits.h"
 
 /* Provisional common host/device profile. Admission and all inspection run
  * under the caller's short local lock. No allocation, dispatch or waits occur
  * here. A reservation never authorizes guest execution or endpoint activation.
  * Static record costs are additional to the variable-byte quota. */
-#define CORE_MAX_NODE_RESERVATIONS 2
-#define CORE_MAX_ENDPOINT_RESERVATIONS 8
-#define CORE_MAX_ADMISSION_RECORDS 4
-#define CORE_ADMISSION_REPORT_BYTES 128
 /* Also bounds complete current incidence per concrete local node instance. */
-#define CORE_MAX_REQUEST_CHANNELS 4
-#define CORE_MAX_PORTS 4
+#define CORE_CHANNEL_COMMAND_KIND 12
+#define CORE_REMOVAL_COMMAND_KIND 13
 #define CORE_MAX_PEERS 8
 #define CORE_MAX_PAYLOAD_BYTES 256
 #define CORE_MAX_QUEUE_MESSAGES 4
 #define CORE_ENDPOINT_BYTES (CORE_MAX_PAYLOAD_BYTES * CORE_MAX_QUEUE_MESSAGES)
-#define CORE_MAX_REQUEST_BYTES 1024
 #define CORE_MAX_ARTIFACT_REF_BYTES 32
 #define CORE_MAX_CONFIGURATION_BYTES 64
 #define CORE_MAX_ARTIFACT_BYTES UINT32_C(65536)
@@ -64,6 +60,21 @@ typedef struct {
 } core_binding;
 
 typedef struct {
+    uint64_t source, destination, service;
+} core_channel_id;
+
+/* A node owns this small notification reservation independently of endpoint
+ * storage. An unread final notification survives endpoint reclamation. */
+typedef struct {
+    core_channel_id channel;
+    core_op_id creating_op;
+    uint8_t permissions;
+    bool attached;
+    bool pending;
+    bool occupied;
+} core_channel_notification;
+
+typedef struct {
     uint64_t logical_node_id;
     uint64_t addition_allowance_us;
     uint64_t cleanup_allowance_us;
@@ -103,6 +114,7 @@ typedef struct {
     core_action prepare;
     uint64_t logical_node_id;
     core_port ports[CORE_MAX_PORTS];
+    core_channel_notification notifications[CORE_MAX_REQUEST_CHANNELS];
     uint8_t port_count;
     bool established;
     bool occupied;
@@ -118,12 +130,31 @@ typedef struct {
 
 typedef struct {
     core_op_id id;
+    /* Local slot lifetime, never a protocol identity. Survives forgetting. */
+    uint64_t incarnation;
     uint64_t deadline_us;
+    /* Shared node/channel whole-cleanup cutoff, set once by its first owner. */
+    uint64_t cleanup_deadline_us;
     core_reserved_node *node;
-    uint8_t report[CORE_ADMISSION_REPORT_BYTES];
     core_report evidence;
+    /* Owner observations await coordinator deadline/phase acceptance. They
+     * survive endpoint reclamation and are separate from aggregate evidence. */
+    uint8_t local_facts[CORE_REPORT_MAX_OBJECTS];
+    /* Coordinator scopes know every channel at admission. Compact owner
+     * commands learn immutable descriptors at their original channel indices;
+     * unlearned slots are never authorized objects. Cleanup also fences work
+     * whose PREPARE has not arrived yet. */
+    core_channel_set channel_known;
+    core_channel_set channel_cleanup;
     core_node_request request;
     core_request_scope scope;
+    /* Shared physical closure, without rewriting another operation's report. */
+    uint32_t closed_objects;
+    uint32_t owner_delivered;
+    uint8_t report_age; /* bounded oldest-first rank; zero until first observation */
+    uint8_t report_revision;
+    uint8_t acknowledged_revision;
+    bool report_acknowledged;
     bool request_present;
     bool cleanup_selected; /* retained local rejection fence, including pre-prepare cancel */
     bool endpoint_only; /* Ki reservation; deadline_us is not a Kc expiry */
@@ -171,7 +202,7 @@ core_admit_result core_node_admit(core_admission *pool, core_op_id id,
                                   uint64_t now_us, uint64_t allowance_us,
                                   const core_admission_record **out);
 
-/* Strict deterministic CBOR [1,kind,opId,body:bstr], exact array shapes documented
+/* Strict deterministic CBOR [version,kind,opId,body:bstr], exact array shapes documented
  * in docs/graph_p2_contract.md. Bound/framing checks precede retained-ID discard;
  * duplicate bodies are never decoded/compared. Fresh requests validate every
  * local scope, capability and resource before one publication boundary. Sender
@@ -202,8 +233,25 @@ core_admit_result core_endpoint_cancel(core_admission *pool, uint64_t coordinato
                                        const uint8_t *data, size_t size,
                                        uint64_t now_us,
                                        const core_admission_record **out);
-/* Trusted local wrapper for initial no-edge profile; caller supplies authority
- * and incidence checks as in core_node_admit. Uses the finalized v1 shape. */
+/* Compact issued ADD_NODE endpoint work: [schema,12,opId,channelIndex,channel].
+ * The channel retains its original 13-field descriptor. Its endpoint on the
+ * new instance (instance=opId) identifies Kc; the opposite endpoint is local.
+ * One retained owner record accumulates independent indexed channels. Cancel
+ * needs no live node or endpoint capacity and fences a later PREPARE. */
+core_admit_result core_endpoint_channel_submit(core_admission *pool, uint64_t coordinator,
+                                               const uint8_t *data, size_t size,
+                                               uint64_t now_us, bool cancel,
+                                               const core_admission_record **out);
+/* Compact full-node removal endpoint work:
+ * [schema,13,removalOpId,channelIndex,targetInstance,[channel,creatingOpId]].
+ * A fresh removal observer retains the exact binding independently of its
+ * creator. The target endpoint identifies Kc; only the opposite role is local.
+ * No endpoint allocation or local expiration is needed to install its fence. */
+core_admit_result core_endpoint_removal_submit(core_admission *pool, uint64_t coordinator,
+                                               const uint8_t *data, size_t size,
+                                               const core_admission_record **out);
+/* Trusted local wrapper for the no-edge profile; caller supplies authority
+ * and incidence checks as in core_node_admit. Uses the current schema. */
 core_admit_result core_node_submit(core_admission *pool, const uint8_t *data,
                                    size_t size, uint64_t now_us,
                                    const core_admission_record **out);
@@ -218,6 +266,8 @@ bool core_admission_establish_node(core_admission *pool, core_instance_id instan
  * scope, suppressing subsequent access. Workers still must stop or complete;
  * these functions neither free allocations nor assert protocol CLEANED. */
 bool core_admission_close_scope(core_admission *pool, core_op_id id);
+/* Select cleanup for one known channel without closing its node or siblings. */
+bool core_admission_close_channel(core_admission *pool, core_op_id id, uint8_t channel);
 bool core_admission_release_endpoints(core_admission *pool, core_op_id creating_id);
 /* Release one exact binding while other channels from the same creation live. */
 bool core_admission_release_binding(core_admission *pool, const core_binding *binding);
@@ -226,5 +276,19 @@ bool core_admission_release_node(core_admission *pool, core_op_id creating_id);
  * Local owned resources must be released. Removing a record also retires its
  * retained rejection fence, subject to the explicit Q05 replay limitation. */
 bool core_admission_forget(core_admission *pool, core_op_id id);
+
+/* Report visibility is separate from the operational record. A matching ACK
+ * hides precisely this revision; an evidence advance becomes visible again.
+ * Caller has attributed the designated O/DB through its enrollment table. */
+bool core_admission_report_retained(const core_admission_record *record);
+void core_admission_acknowledge(core_admission *pool, core_op_id id,
+                                uint64_t coordinator, uint8_t revision);
+/* Serialized event-loop maintenance: rank changed snapshots, then reclaim
+ * O/DB-acknowledged, locally settled coordinator records. Settled owner records
+ * keep their rejection fences until pressure. Admission can replace the oldest
+ * eligible terminal history, atomically with a successful new reservation.
+ * Live objects, optional work, unresolved evidence and undelivered owner closure
+ * remain protected. No allocation, new work, timer reset or network wait. */
+void core_admission_maintain(core_admission *pool);
 
 #endif

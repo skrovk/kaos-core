@@ -11,7 +11,7 @@
  * Never hold that lock across worker execution, allocation, or waits. */
 
 /* Shared CBOR schema for requests, queries, reports and storage ACKs. */
-#define CORE_SCHEMA_VERSION 3
+#define CORE_SCHEMA_VERSION 4
 
 /* Shared protocol identities received from O; K does not allocate them. */
 typedef struct { uint64_t value; } core_op_id;

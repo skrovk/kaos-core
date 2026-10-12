@@ -1,10 +1,14 @@
 #define _POSIX_C_SOURCE 200809L
 
-/* P2 exercise port: real UDP control and artifact transfers, no runtime or
- * endpoint execution. A validated artifact remains Pending for the future
- * P3 loader. The original addition deadline still applies during that wait. */
+/* Shared UDP exercise port. The P2 target retains artifact-only behavior;
+ * CORE_HOST_RUNTIME enables P3 no-edge execution with bounded WAMR workers.
+ * Both targets use the same admission, transport and staging code. */
 #include "kaos_artifact.h"
 #include "kaos_control.h"
+#ifdef CORE_HOST_RUNTIME
+#include "kaos_node.h"
+#include "kaos_wamr.h"
+#endif
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -40,6 +44,64 @@ static uint64_t next_token = 1;
 static bool tokens_exhausted;
 static volatile sig_atomic_t running = 1;
 
+#ifdef CORE_HOST_RUNTIME
+static core_node_service nodes = {.admission = &admission};
+static int runtime_pipe[2];
+static bool node_operation(uint8_t kind);
+
+static void runtime_notify(void *context)
+{
+    (void)context;
+    const uint8_t wake = 1;
+    /* A full pipe already carries a wakeup; fixed mailboxes retain evidence. */
+    ssize_t result;
+    do { result = write(runtime_pipe[1], &wake, 1); } while (result < 0 && errno == EINTR);
+}
+
+static bool runtime_open(void)
+{
+    if (pipe(runtime_pipe) != 0) return false;
+    for (size_t i = 0; i < 2; ++i) {
+        const int flags = fcntl(runtime_pipe[i], F_GETFL, 0);
+        if (flags < 0 || fcntl(runtime_pipe[i], F_SETFL, flags | O_NONBLOCK) != 0) {
+            close(runtime_pipe[0]); close(runtime_pipe[1]);
+            return false;
+        }
+    }
+    if (core_wamr_init(&nodes.runtime, runtime_notify, NULL)) return true;
+    close(runtime_pipe[0]); close(runtime_pipe[1]);
+    return false;
+}
+
+static void runtime_diagnostics(void)
+{
+    for (size_t i = 0; i < CORE_MAX_NODE_RESERVATIONS; ++i) {
+        if (!nodes.executions[i].occupied) continue;
+        core_runtime_state *state = nodes.runtime.lock(nodes.runtime.context, i);
+        const unsigned count = state->errors_pending;
+        state->errors_pending = 0;
+        nodes.runtime.unlock(nodes.runtime.context, i);
+        if (count) printf("ERROR %" PRIu64 " %u\n", nodes.executions[i].id.value, count);
+    }
+}
+
+static void close_scope(core_admission_record *record)
+{
+    /* P2 also admits whole-node removals. If one names a running P3 node,
+     * publish its fence and worker cancellation under the same short lock. */
+    for (size_t i = 0; i < CORE_MAX_NODE_RESERVATIONS; ++i) {
+        if (!node_operation(record->scope.kind) || !nodes.executions[i].occupied ||
+            admission.nodes[i].instance.value != record->scope.instance.value) continue;
+        core_runtime_state *state = nodes.runtime.lock(nodes.runtime.context, i);
+        (void)core_admission_close_scope(&admission, record->id);
+        if (admission.nodes[i].lifetime.closing) state->cancel_requested = true;
+        nodes.runtime.unlock(nodes.runtime.context, i);
+        return;
+    }
+    (void)core_admission_close_scope(&admission, record->id);
+}
+#endif
+
 static void stop(int signal_number)
 {
     (void)signal_number;
@@ -52,6 +114,9 @@ static core_admission_record *find(core_op_id id)
     return record == NULL ? NULL : &admission.records[record - admission.records];
 }
 
+static void registry_lock(void);
+static void registry_unlock(void);
+
 static bool send_to(const uint8_t *data, size_t size, const struct sockaddr_in *address)
 {
     const ssize_t sent = sendto(udp_socket, data, size, 0,
@@ -61,7 +126,10 @@ static bool send_to(const uint8_t *data, size_t size, const struct sockaddr_in *
 
 static bool send_datagram(const uint8_t *data, size_t size)
 {
-    return send_to(data, size, &authority_address);
+    registry_unlock();
+    const bool sent = send_to(data, size, &authority_address);
+    registry_lock();
+    return sent;
 }
 
 static bool allocate_token(uint64_t *out)
@@ -77,6 +145,13 @@ static void token_bytes(uint64_t value, uint8_t out[8])
 {
     for (unsigned i = 0; i < 8; ++i) out[7 - i] = (uint8_t)(value >> (8 * i));
 }
+
+#ifdef CORE_HOST_ENDPOINTS
+#include "p4_host.inc"
+#else
+static void registry_lock(void) { }
+static void registry_unlock(void) { }
+#endif
 
 static void observe(core_admission_record *record, uint8_t object, uint8_t facts)
 {
@@ -94,6 +169,14 @@ static void local_cleanup(core_admission_record *record);
 
 static void select_cleanup(core_admission_record *record, uint64_t now, const char *reason)
 {
+#ifdef CORE_HOST_RUNTIME
+    if (core_node_supported(record)) {
+        record->cleanup_selected = true;
+        core_node_step(&nodes, now);
+        local_cleanup(record);
+        return;
+    }
+#endif
     const size_t index = (size_t)(record - admission.records);
     if (cleanup_deadlines[index] == 0) {
         if (record->endpoint_only) {
@@ -105,7 +188,11 @@ static void select_cleanup(core_admission_record *record, uint64_t now, const ch
             cleanup_deadlines[index] = now;
         }
         (void)core_report_record(&record->evidence, CORE_HISTORY_CLEANUP);
+#ifdef CORE_HOST_RUNTIME
+        close_scope(record);
+#else
         (void)core_admission_close_scope(&admission, record->id);
+#endif
         if (!record->endpoint_only &&
             (record->scope.kind == CORE_REQUEST_REMOVE_NODE_NO_EDGES ||
              record->scope.kind == CORE_REQUEST_REMOVE_NODE)) {
@@ -142,7 +229,9 @@ static void local_cleanup(core_admission_record *record)
             }
             core_artifact_cancel(&s->transfer);
             if (!s->owner->closing || !core_lifetime_unclaimed(s->owner)) continue;
+            registry_unlock();
             free(s->bytes);
+            registry_lock();
             s->bytes = NULL;
             if (s->charged && !core_lifetime_uncharge(s->owner, s->size)) continue;
             s->charged = false;
@@ -175,6 +264,9 @@ static void local_cleanup(core_admission_record *record)
         const core_op_id creation_id = {.value = scope->instance.value};
         core_admission_record *creator = find(creation_id);
         if (creator != NULL && creator->node != NULL) {
+#ifdef CORE_HOST_RUNTIME
+            if (!nodes.executions[creator->node - admission.nodes].occupied)
+#endif
             (void)core_admission_release_node(&admission, creation_id);
         }
         bool present = false;
@@ -249,6 +341,11 @@ static void start_waiting_artifact(uint64_t now)
         if (!record->occupied || record->endpoint_only || !record->request_present ||
             record->node == NULL || record->cleanup_selected ||
             !core_before_deadline(now, record->deadline_us)) continue;
+#ifdef CORE_HOST_RUNTIME
+        if (core_node_supported(record) &&
+            (nodes.executions[record->node - admission.nodes].occupied ||
+             (record->evidence.history & CORE_HISTORY_SUCCESS))) continue;
+#endif
         bool started = false;
         staging_record *available = NULL;
         size_t index = 0;
@@ -274,7 +371,9 @@ static void start_waiting_artifact(uint64_t now)
             return;
         }
         s->charged = true;
+        registry_unlock();
         s->bytes = malloc(s->size);
+        registry_lock();
         uint64_t token;
         if (s->bytes == NULL || !allocate_token(&token) ||
             !core_artifact_begin(&s->transfer, s->owner, s->bytes, s->size, s->size,
@@ -290,9 +389,26 @@ static void start_waiting_artifact(uint64_t now)
 
 static void service(uint64_t now)
 {
+    registry_lock();
+#ifdef CORE_HOST_RUNTIME
+    runtime_diagnostics();
+    core_node_step(&nodes, now);
+#endif
+#ifdef CORE_HOST_ENDPOINTS
+    core_edge_step(&edges, now);
+#endif
     for (size_t i = 0; i < CORE_MAX_ADMISSION_RECORDS; ++i) {
         core_admission_record *record = &admission.records[i];
         if (!record->occupied) continue;
+#ifdef CORE_HOST_ENDPOINTS
+        if (core_edge_supported(record) && !core_node_supported(record)) continue;
+#endif
+#ifdef CORE_HOST_RUNTIME
+        if (core_node_supported(record)) {
+            if (record->cleanup_selected) local_cleanup(record);
+            continue;
+        }
+#endif
         if (record->cleanup_selected || (record->node != NULL && record->node->lifetime.closing)) {
             select_cleanup(record, now, "selected");
         } else if (!record->endpoint_only && !core_before_deadline(now, record->deadline_us)) {
@@ -307,6 +423,9 @@ static void service(uint64_t now)
             local_cleanup(record);
         }
     }
+#ifdef CORE_HOST_RUNTIME
+    core_node_step(&nodes, now); /* accept staging release without a lost wakeup */
+#endif
     if (active_staging >= 0) {
         staging_record *s = &staging[active_staging];
         const core_coap_poll_result result = core_coap_exchange_poll(&exchange, now);
@@ -317,6 +436,13 @@ static void service(uint64_t now)
         }
     }
     start_waiting_artifact(now);
+    registry_unlock();
+#ifdef CORE_HOST_ENDPOINTS
+    endpoints_service(now);
+#endif
+    registry_lock();
+    core_admission_maintain(&admission);
+    registry_unlock();
 }
 
 static bool artifact_options(const core_coap_message *message, size_t expected,
@@ -381,6 +507,19 @@ static void receive_artifact(const core_coap_message *message, uint64_t now)
         s->completed = true;
         printf("ARTIFACT %" PRIu64 " %zu\n", s->id.value, size);
         active_staging = -1;
+#ifdef CORE_HOST_RUNTIME
+        core_admission_record *record = find(s->id);
+        if (core_node_supported(record)) {
+            if (core_node_artifact(&nodes, s->id, bytes, size, now)) {
+                s->bytes = NULL;
+                s->charged = false;
+                s->used = false;
+            } else {
+                observe(record, 0, CORE_OBJECT_FAILED);
+                select_cleanup(record, now, "runtime handoff");
+            }
+        }
+#endif
     } else if (result == CORE_ARTIFACT_INVALID) {
         transfer_failure(s, now, "artifact validation");
     }
@@ -393,9 +532,23 @@ static int wait_milliseconds(uint64_t now)
         next = exchange.deadline_us;
         if (!exchange.acknowledged && exchange.next_retry_us < next) next = exchange.next_retry_us;
     }
+#ifdef CORE_HOST_RUNTIME
+    const uint64_t node_deadline = core_node_next_deadline(&nodes);
+    if (node_deadline < next) next = node_deadline;
+#endif
+#ifdef CORE_HOST_ENDPOINTS
+    const uint64_t edge_deadline = endpoint_deadline();
+    if (edge_deadline < next) next = edge_deadline;
+#endif
     for (size_t i = 0; i < CORE_MAX_ADMISSION_RECORDS; ++i) {
         const core_admission_record *r = &admission.records[i];
         if (!r->occupied || r->endpoint_only) continue;
+#ifdef CORE_HOST_RUNTIME
+        if (core_node_supported(r)) continue;
+#endif
+#ifdef CORE_HOST_ENDPOINTS
+        if (core_edge_supported(r)) continue;
+#endif
         const uint64_t deadline = r->cleanup_selected ? cleanup_deadlines[i] : r->deadline_us;
         if (core_report_outcome(&r->evidence) == CORE_OUTCOME_PENDING && deadline < next) next = deadline;
     }
@@ -462,7 +615,19 @@ int main(int argc, char **argv)
             }
         }
     }
-    if (!core_admission_init(&admission, 131072, 270336) ||
+    /* The archive is a management recipient, not a graph owner. Its socket
+     * cannot authorize graph changes or contend for an endpoint peer slot. */
+    uint16_t collector_port = 0;
+    const char *collector = getenv("KAOS_COLLECTOR");
+    if (collector != NULL) {
+        if (!parse_peer(collector, &control.collector, &collector_port) ||
+            control.collector == authority || collector_port == authority_port) return 2;
+        for (size_t i = 0; i < peer_count; ++i)
+            if (control.collector == peers[i] || collector_port == peer_ports[i]) return 2;
+        control.collector_enabled = true;
+    }
+    if (!core_admission_init(&admission, 131072,
+            CORE_MAX_NODE_RESERVATIONS * 131072u + CORE_MAX_ENDPOINT_RESERVATIONS * CORE_ENDPOINT_BYTES) ||
         !core_admission_configure(&admission, local_device, authority, peers, peer_count)) return 2;
     srand((unsigned)now ^ (unsigned)getpid());
     udp_socket = socket(AF_INET, SOCK_DGRAM, 0);
@@ -483,18 +648,51 @@ int main(int argc, char **argv)
         close(udp_socket);
         return 1;
     }
+#ifdef CORE_HOST_RUNTIME
+    if (!runtime_open()) { close(udp_socket); return 1; }
+#ifdef CORE_HOST_ENDPOINTS
+    if (!endpoints_open()) { core_wamr_shutdown(); close(udp_socket); return 1; }
+    for (size_t i = 1; i < peer_count; ++i) {
+        remote[remote_count].id = peers[i];
+        remote[remote_count++].address = (struct sockaddr_in){.sin_family = AF_INET,
+            .sin_port = htons(peer_ports[i]), .sin_addr = {.s_addr = htonl(INADDR_LOOPBACK)}};
+    }
+#endif
+    /* Diagnostic stdout is lossy under backpressure; it must never stall
+     * control/cleanup. Queryable operation evidence lives in fixed records. */
+    const int output_flags = fcntl(STDOUT_FILENO, F_GETFL, 0);
+    if (output_flags < 0 || fcntl(STDOUT_FILENO, F_SETFL, output_flags | O_NONBLOCK) != 0) {
+        core_wamr_shutdown();
+        close(runtime_pipe[0]); close(runtime_pipe[1]); close(udp_socket);
+        return 1;
+    }
+#endif
     setvbuf(stdout, NULL, _IOLBF, 0);
     printf("LISTENING %" PRIu64 "\n", port);
     while (running) {
         if (!core_clock_now(&now)) break;
         service(now);
-        struct pollfd descriptor = {.fd = udp_socket, .events = POLLIN};
-        const int ready = poll(&descriptor, 1, wait_milliseconds(now));
+        struct pollfd descriptors[] = {{.fd = udp_socket, .events = POLLIN},
+#ifdef CORE_HOST_RUNTIME
+            {.fd = runtime_pipe[0], .events = POLLIN}
+#endif
+        };
+        const int ready = poll(descriptors, sizeof(descriptors) / sizeof(descriptors[0]),
+                               wait_milliseconds(now));
         if (ready < 0) {
             if (errno == EINTR) continue;
             break;
         }
         if (ready == 0) continue;
+#ifdef CORE_HOST_RUNTIME
+        if (descriptors[1].revents & POLLIN) {
+            uint8_t wake[64];
+            (void)read(runtime_pipe[0], wake, sizeof(wake));
+            if (!core_clock_now(&now)) break;
+            service(now);
+        }
+#endif
+        if (!(descriptors[0].revents & POLLIN)) continue;
         uint8_t bytes[CORE_COAP_MAX_DATAGRAM];
         struct sockaddr_in sender;
         struct iovec vector = {.iov_base = bytes, .iov_len = sizeof(bytes)};
@@ -506,6 +704,10 @@ int main(int argc, char **argv)
             sender.sin_addr.s_addr != authority_address.sin_addr.s_addr || !core_clock_now(&now)) continue;
         uint64_t sender_id = authority;
         bool enrolled = sender.sin_port == authority_address.sin_port;
+        if (!enrolled && control.collector_enabled && sender.sin_port == htons(collector_port)) {
+            sender_id = control.collector;
+            enrolled = true;
+        }
         for (size_t i = 1; i < peer_count && !enrolled; ++i) {
             if (sender.sin_port == htons(peer_ports[i])) {
                 sender_id = peers[i];
@@ -514,20 +716,50 @@ int main(int argc, char **argv)
         }
         if (!enrolled) continue;
         service(now); /* Decision-time expiry wins even over queued datagrams. */
+#ifdef CORE_HOST_ENDPOINTS
+        /* Data frames cannot be confused with CoAP (first byte is schema 4).
+         * Oversized datagrams were rejected before either decoder sees them. */
+        if (size > 0 && bytes[0] == CORE_SCHEMA_VERSION) {
+            core_data_frame frame;
+            if (core_data_decode(bytes, (size_t)size, &frame)) {
+                registry_lock();
+                (void)core_endpoint_receive(&endpoints, sender_id, &frame);
+                registry_unlock();
+            }
+            continue;
+        }
+#endif
         core_coap_message message;
         if (!core_coap_decode(bytes, (size_t)size, &message)) continue;
         if (message.type == CORE_COAP_ACK || message.type == CORE_COAP_RST || (message.code >> 5) >= 2) {
-            if (sender_id == authority) receive_artifact(&message, now);
+            if (sender_id == authority) {
+                registry_lock();
+                receive_artifact(&message, now);
+                registry_unlock();
+            }
+#ifdef CORE_HOST_ENDPOINTS
+            else endpoint_response(sender_id, &message, now);
+#endif
         } else {
             uint8_t response[CORE_COAP_MAX_DATAGRAM];
             size_t response_size;
-            if (core_control_receive(&control, sender_id, bytes, (size_t)size, now,
-                                       response, sizeof(response), &response_size)) {
+            registry_lock();
+            const bool replied = core_control_receive(&control, sender_id, bytes, (size_t)size, now,
+                                       response, sizeof(response), &response_size);
+#ifdef CORE_HOST_ENDPOINTS
+            core_edge_step(&edges, now);
+#endif
+            registry_unlock();
+            if (replied) {
                 (void)send_to(response, response_size, &sender);
             }
         }
     }
     /* Process shutdown is an experiment boundary, not a graph outcome. */
+#ifdef CORE_HOST_RUNTIME
+    core_wamr_shutdown();
+    close(runtime_pipe[0]); close(runtime_pipe[1]);
+#endif
     core_coap_exchange_cancel(&exchange);
     for (size_t i = 0; i < CORE_MAX_NODE_RESERVATIONS; ++i) {
         if (staging[i].used) {

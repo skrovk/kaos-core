@@ -298,6 +298,48 @@ core_admit_result core_request_submit(core_admission *pool, uint64_t sender,
     return submit(pool, sender, data, size, now_us, out, false, false, false);
 }
 
+core_admit_result core_endpoint_channel_submit(core_admission *pool, uint64_t coordinator,
+                                               const uint8_t *data, size_t size,
+                                               uint64_t now_us, bool cancel,
+                                               const core_admission_record **out)
+{
+    (void)now_us; /* Ki neither starts a lease nor interprets Kc's clock. */
+    core_cbor_reader reader = {.data = data, .size = size};
+    uint64_t count, version, kind, index;
+    core_op_id id;
+    core_channel channel;
+    if (data == NULL || size == 0 || size > CORE_MAX_REQUEST_BYTES || out == NULL ||
+        !core_cbor_array(&reader, &count) || count != 5 ||
+        !core_cbor_uint(&reader, &version) || version != CORE_SCHEMA_VERSION ||
+        !core_cbor_uint(&reader, &kind) || kind != CORE_CHANNEL_COMMAND_KIND ||
+        !core_cbor_uint(&reader, &id.value) || !core_cbor_uint(&reader, &index) ||
+        index >= CORE_MAX_REQUEST_CHANNELS || !read_channel(&reader, &channel) ||
+        reader.offset != size) return CORE_ADMIT_INVALID;
+    return core_admission_reserve_channel(pool, coordinator, id, (uint8_t)index,
+                                           &channel, cancel, out);
+}
+
+core_admit_result core_endpoint_removal_submit(core_admission *pool, uint64_t coordinator,
+                                               const uint8_t *data, size_t size,
+                                               const core_admission_record **out)
+{
+    core_cbor_reader reader = {.data = data, .size = size};
+    uint64_t count, version, kind, index;
+    core_op_id id;
+    core_instance_id target;
+    core_binding binding;
+    if (data == NULL || size == 0 || size > CORE_MAX_REQUEST_BYTES || out == NULL ||
+        !core_cbor_array(&reader, &count) || count != 6 ||
+        !core_cbor_uint(&reader, &version) || version != CORE_SCHEMA_VERSION ||
+        !core_cbor_uint(&reader, &kind) || kind != CORE_REMOVAL_COMMAND_KIND ||
+        !core_cbor_uint(&reader, &id.value) || !core_cbor_uint(&reader, &index) ||
+        index >= CORE_MAX_REQUEST_CHANNELS || !core_cbor_uint(&reader, &target.value) ||
+        !read_binding(&reader, &binding) || reader.offset != size)
+        return CORE_ADMIT_INVALID;
+    return core_admission_reserve_removal(pool, coordinator, id, (uint8_t)index,
+                                           target, &binding, out);
+}
+
 core_admit_result core_node_submit(core_admission *pool, const uint8_t *data,
                                    size_t size, uint64_t now_us,
                                    const core_admission_record **out)

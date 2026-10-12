@@ -2,13 +2,14 @@
 #define KAOS_REPORT_H
 
 #include "kaos_graph.h"
+#include "kaos_limits.h"
 
-#define CORE_REPORT_MAX_OBJECTS 9
 #define CORE_REPORT_BYTES 128
 #define CORE_REPORT_KIND 8
 #define CORE_QUERY_KIND 7
 #define CORE_STORAGE_ACK_KIND 9
 #define CORE_OWNER_REPORT_KIND 10
+#define CORE_NO_RESULT_KIND 14
 
 /* Monotone historical facts, not present permission or a substitute for the
  * operation engine's identity, issued-work, deadline and execution guards.
@@ -58,7 +59,7 @@ uint8_t core_report_revision_bound(uint8_t object_count);
 bool core_report_init(core_report *report, uint8_t kind, core_op_id id,
                       uint64_t coordinator, uint8_t object_count);
 core_outcome core_report_outcome(const core_report *report);
-uint16_t core_report_obligations(const core_report *report);
+uint32_t core_report_obligations(const core_report *report);
 /* Call only after the engine validates the reporting owner and exact object
  * in the immutable scope. Equal facts repeat; strict subsets are old; strict
  * supersets advance; incomparable sets conflict. Invalid/conflicting evidence

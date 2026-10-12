@@ -68,13 +68,13 @@ bool core_report_init(core_report *r, uint8_t kind, core_op_id id,
     return true;
 }
 
-uint16_t core_report_obligations(const core_report *r)
+uint32_t core_report_obligations(const core_report *r)
 {
-    uint16_t missing = 0;
+    uint32_t missing = 0;
     for (uint8_t i = 0; i < r->object_count; ++i) {
         const unsigned f = r->objects[i];
         if (((r->history & CORE_HISTORY_CLEANUP) || (f & CORE_OBJECT_CLEANUP)) &&
-            !(f & CORE_OBJECT_CLEANED)) missing |= (uint16_t)(1u << i);
+            !(f & CORE_OBJECT_CLEANED)) missing |= UINT32_C(1) << i;
     }
     return missing;
 }
