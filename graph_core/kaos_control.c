@@ -373,3 +373,53 @@ bool core_control_receive(core_control *control, uint64_t sender,
     if (block != NULL) core_coap_block1_reset(&control->assembly);
     return stored;
 }
+
+bool core_control_peer_next(core_control *control, core_control_peer *peer,
+    core_coap_ids *ids, uint64_t now, uint64_t retry_us,
+    uint8_t *out, size_t capacity, size_t *written)
+{
+    if (control->edges == NULL || capacity < CORE_COAP_MAX_DATAGRAM) return false;
+    core_coap_exchange *x = &peer->exchange;
+    if (x->active && !core_edge_effect_current(control->edges, &peer->effect, now))
+        core_coap_exchange_cancel(x);
+    bool send = x->active && core_coap_exchange_poll(x, now) == CORE_COAP_SEND;
+    if (!x->active && core_edge_next(control->edges, peer->id, now, &peer->effect)) {
+        const core_edge_effect *effect = &peer->effect;
+        const char *path = core_edge_path(effect->kind);
+        const uint8_t format = 60;
+        core_coap_message message = {.type = CORE_COAP_CON, .code = CORE_COAP_POST,
+            .options = {{.number = CORE_COAP_URI_PATH,
+                        .value = (const uint8_t *)path, .size = strlen(path)},
+                       {.number = CORE_COAP_CONTENT_FORMAT, .value = &format, .size = 1}},
+            .option_count = 2, .payload = effect->body, .payload_size = effect->size};
+        if (!core_coap_allocate_request(ids, &message) ||
+            !core_coap_encode(&message, out, capacity, written) ||
+            !core_coap_exchange_start(x, peer->id, out, *written, now, effect->deadline_us, retry_us)) {
+            core_edge_rejected(control->edges, effect, now);
+            return false;
+        }
+        send = true;
+    }
+    if (!send) return false;
+    *written = x->request_size;
+    memcpy(out, x->request, *written);
+    return true;
+}
+
+void core_control_peer_receive(core_control *control, core_control_peer *peer,
+    const core_coap_message *message, uint64_t now, bool *acknowledge)
+{
+    core_coap_exchange *x = &peer->exchange;
+    if (control->edges != NULL && (message->code >> 5) == 2 &&
+        message->token_size == x->token_size &&
+        memcmp(message->token, x->token, x->token_size) == 0)
+        (void)core_edge_reply(control->edges, &peer->effect, peer->id,
+                             message->payload, message->payload_size, now);
+    const core_coap_receive_result result = core_coap_exchange_receive(x,
+        peer->id, message, now, acknowledge);
+    if (control->edges == NULL) return;
+    if (result == CORE_COAP_RESET || (result == CORE_COAP_RESPONSE && message->code >= 128))
+        core_edge_rejected(control->edges, &peer->effect, now);
+    if (result == CORE_COAP_RESPONSE && (message->code >> 5) == 2)
+        core_edge_delivered(control->edges, &peer->effect);
+}

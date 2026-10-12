@@ -8,7 +8,7 @@
 /* NSTART=1: one peer cannot advance to its next exchange while retrying a
  * lost reply. Keep its latest accepted final owner response independently of
  * operation/report retirement. Enrolled ports must use strictly increasing
- * MIDs and refuse wrap (as both supplied ports do); generic CoAP alone does
+ * MIDs and refuse wrap (as the shared host does); generic CoAP alone does
  * not establish that order. No retained datagram or duplicate evidence. */
 typedef struct {
     core_op_id operation;
@@ -24,7 +24,7 @@ typedef struct {
  * pool; this adapter does no network wait, allocation or guest execution. */
 typedef struct {
     core_admission *admission;
-    core_edge_service *edges; /* optional until the port enables P4 */
+    core_edge_service *edges; /* optional for artifact-only verification users */
     uint64_t collector; /* designated storage recipient, configured before use */
     bool collector_enabled;
     core_owner_receipt owner_receipts[CORE_MAX_PEERS];
@@ -33,6 +33,22 @@ typedef struct {
     uint64_t assembly_deadline_us;
     uint8_t assembly_resource;
 } core_control;
+
+/* Outgoing management state, allocated once per remote owner by the host.
+ * Kept separate from core_control so inbound-only users need no peer buffers. */
+typedef struct {
+    uint64_t id;
+    core_coap_exchange exchange;
+    core_edge_effect effect;
+} core_control_peer;
+
+/* All calls share the registry lock. true returns an owned copy in out; the
+ * caller sends after unlocking. Failed socket sends are loss, not rejection. */
+bool core_control_peer_next(core_control *control, core_control_peer *peer,
+    core_coap_ids *ids, uint64_t now, uint64_t retry_us,
+    uint8_t *out, size_t capacity, size_t *written);
+void core_control_peer_receive(core_control *control, core_control_peer *peer,
+    const core_coap_message *message, uint64_t now, bool *acknowledge);
 
 /* Zero initialize with .admission pointing to a configured stable pool.
  * POST /graph accepts a typed operation; POST /prepare reserves remote

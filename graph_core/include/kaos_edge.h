@@ -70,5 +70,9 @@ bool core_edge_activate(core_edge_service *service, uint64_t sender,
                          const uint8_t *body, size_t size);
 bool core_edge_owner(core_edge_service *service, uint64_t sender,
                       const uint8_t *body, size_t size, uint64_t now_us);
+/* Correlated cleanup reply evidence may arrive after the exchange cutoff.
+ * Match the original local record lifetime without requiring a live timer. */
+bool core_edge_reply(core_edge_service *service, const core_edge_effect *effect,
+                     uint64_t sender, const uint8_t *body, size_t size, uint64_t now_us);
 
 #endif

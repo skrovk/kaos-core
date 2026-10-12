@@ -213,6 +213,7 @@ void core_edge_step(core_edge_service *s, uint64_t now)
         if (!core_edge_supported(r)) continue;
         core_edge_execution *e = execution(s, r);
         if (r->cleanup_selected && !removal(r)) cleanup(s, r, now);
+        
         for (size_t c = 0; c < r->scope.channel_count; ++c) {
             if (!known(r, c)) continue;
             if (r->channel_cleanup & (1u << c)) {
@@ -520,4 +521,16 @@ bool core_edge_owner(core_edge_service *s, uint64_t sender, const uint8_t *body,
         result == CORE_REPORT_EXHAUSTED) return false;
     core_edge_step(s, now);
     return observe(s, r, sender, report.object, report.facts, now);
+}
+
+bool core_edge_reply(core_edge_service *s, const core_edge_effect *effect,
+                     uint64_t sender, const uint8_t *body, size_t size, uint64_t now)
+{
+    const core_admission_record *r = core_admission_find(s->admission, effect->operation);
+    core_owner_report report;
+    return r != NULL && r->incarnation == effect->incarnation &&
+        r - s->admission->records == effect->record_slot && sender == effect->peer &&
+        core_owner_report_decode(body, size, &report) &&
+        report.operation.value == effect->operation.value && report.object == effect->object &&
+        core_edge_owner(s, sender, body, size, now);
 }

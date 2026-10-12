@@ -114,38 +114,81 @@ bool core_node_artifact(core_node_service *s, core_op_id id, uint8_t *artifact,
     return true;
 }
 
+void core_node_artifact_failed(core_node_service *s, core_op_id id, uint64_t now)
+{
+    core_admission_record *r = find(s, id);
+    if (!core_node_supported(r) || succeeded(r) ||
+        (r->scope.kind != CORE_REQUEST_ADD_NODE_NO_EDGES && r->scope.kind != CORE_REQUEST_ADD_NODE)) return;
+    observe(r, CORE_OBJECT_FAILED);
+    cleanup(s, r, now);
+}
+
+static bool local_node_live(const core_admission *pool, core_instance_id instance)
+{
+    for (size_t i = 0; i < CORE_MAX_NODE_RESERVATIONS; ++i) {
+        const core_reserved_node *node = &pool->nodes[i];
+        if (node->occupied && node->instance.value == instance.value &&
+            !node->lifetime.closing) return true;
+    }
+    return false;
+}
+
+static bool local_endpoint_live(const core_admission *pool, const core_binding *binding,
+                                 bool sender)
+{
+    for (size_t i = 0; i < CORE_MAX_ENDPOINT_RESERVATIONS; ++i) {
+        const core_reserved_endpoint *endpoint = &pool->endpoints[i];
+        const core_binding *installed = &endpoint->binding;
+        if (endpoint->occupied && !endpoint->lifetime.closing && endpoint->sender == sender &&
+            installed->creating_op.value == binding->creating_op.value &&
+            installed->channel.source_logical == binding->channel.source_logical &&
+            installed->channel.destination_logical == binding->channel.destination_logical &&
+            installed->channel.service == binding->channel.service) return true;
+    }
+    return false;
+}
+
+static bool local_roles_live(const core_admission *pool, const core_binding *binding)
+{
+    const core_channel *channel = &binding->channel;
+    for (unsigned role = 0; role < 2; ++role) {
+        const uint64_t owner = role == 0 ? channel->source_owner : channel->destination_owner;
+        const core_instance_id instance = role == 0 ? channel->source_instance : channel->destination_instance;
+        if (owner == pool->local_device &&
+            (!local_node_live(pool, instance) || !local_endpoint_live(pool, binding, role == 0)))
+            return false;
+    }
+    return true;
+}
+
 static core_channel_set node_channels(const core_node_service *s,
     const core_admission_record *r, uint8_t fact)
 {
     core_channel_set channels = core_edge_channels(r, fact);
     for (size_t c = 0; c < r->scope.channel_count; ++c) {
-        if (!(channels & (1u << c))) continue;
-        const core_binding *binding = &r->scope.bindings[c];
-        for (unsigned role = 0; role < 2; ++role) {
-            const uint64_t owner = role == 0 ? binding->channel.source_owner :
-                                              binding->channel.destination_owner;
-            const core_instance_id instance = role == 0 ? binding->channel.source_instance :
-                                                          binding->channel.destination_instance;
-            if (owner != s->admission->local_device) continue;
-            bool node_live = false, endpoint_live = false;
-            for (size_t n = 0; n < CORE_MAX_NODE_RESERVATIONS; ++n) {
-                const core_reserved_node *node = &s->admission->nodes[n];
-                node_live |= node->occupied && node->instance.value == instance.value &&
-                             !node->lifetime.closing;
-            }
-            for (size_t i = 0; i < CORE_MAX_ENDPOINT_RESERVATIONS; ++i) {
-                const core_reserved_endpoint *endpoint = &s->admission->endpoints[i];
-                endpoint_live |= endpoint->occupied && !endpoint->lifetime.closing &&
-                    endpoint->sender == (role == 0) &&
-                    endpoint->binding.creating_op.value == binding->creating_op.value &&
-                    endpoint->binding.channel.source_logical == binding->channel.source_logical &&
-                    endpoint->binding.channel.destination_logical == binding->channel.destination_logical &&
-                    endpoint->binding.channel.service == binding->channel.service;
-            }
-            if (!node_live || !endpoint_live) channels &= (core_channel_set)~(1u << c);
-        }
+        const core_channel_set bit = (core_channel_set)(1u << c);
+        if ((channels & bit) && !local_roles_live(s->admission, &r->scope.bindings[c]))
+            channels &= (core_channel_set)~bit;
     }
     return channels;
+}
+
+/* Shared by worker entry and acceptance of INIT. Neither check advances
+ * lifecycles: scheduling and consumption of mailbox evidence belong to step. */
+static bool startup_authorized(const core_node_service *s, const core_admission_record *r,
+                                uint64_t now)
+{
+    return !r->cleanup_selected && !r->node->lifetime.closing &&
+        (r->evidence.history & CORE_HISTORY_DISPATCH) &&
+        core_before_deadline(now, r->deadline_us) &&
+        core_predicate_eval(&r->scope.predicate, node_channels(s, r, CORE_OBJECT_ACTIVE));
+}
+
+static bool init_acceptable(const core_node_service *s, const core_admission_record *r,
+                             const core_runtime_state *state, uint64_t now)
+{
+    return !succeeded(r) && state->main_active && !state->exited && state->prepared &&
+        startup_authorized(s, r, now);
 }
 
 static void execution_step(core_node_service *s, size_t index, uint64_t now)
@@ -179,11 +222,7 @@ static void execution_step(core_node_service *s, size_t index, uint64_t now)
     }
     if (state->init_pending) {
         state->init_pending = false;
-        if (!succeeded(r) && !r->cleanup_selected && !node->lifetime.closing &&
-            state->main_active && !state->exited && state->prepared &&
-            (r->evidence.history & CORE_HISTORY_DISPATCH) &&
-            core_predicate_eval(&r->scope.predicate, node_channels(s, r, CORE_OBJECT_ACTIVE)) &&
-            core_before_deadline(now, r->deadline_us)) {
+        if (init_acceptable(s, r, state, now)) {
             if (core_admission_establish_node(s->admission, node->instance)) {
                 (void)core_report_record(&r->evidence,
                                          CORE_HISTORY_STARTED | CORE_HISTORY_SUCCESS);
@@ -235,7 +274,7 @@ static bool node_present(const core_node_service *s, const core_request_scope *s
     return false;
 }
 
-void core_node_step(core_node_service *s, uint64_t now)
+void core_node_apply_cleanup(core_node_service *s, uint64_t now)
 {
     /* Admitted removals win before processing any queued startup evidence. */
     for (size_t i = 0; i < CORE_MAX_ADMISSION_RECORDS; ++i) {
@@ -264,6 +303,11 @@ void core_node_step(core_node_service *s, uint64_t now)
             (void)core_report_record(&r->evidence, CORE_HISTORY_CUTOFF);
         }
     }
+}
+
+void core_node_step(core_node_service *s, uint64_t now)
+{
+    core_node_apply_cleanup(s, now);
     for (size_t i = 0; i < CORE_MAX_NODE_RESERVATIONS; ++i) execution_step(s, i, now);
     for (size_t i = 0; i < CORE_MAX_ADMISSION_RECORDS; ++i) {
         core_admission_record *r = &s->admission->records[i];
@@ -309,8 +353,5 @@ bool core_node_start_allowed(const core_node_service *s, size_t slot, uint64_t n
     if (slot >= CORE_MAX_NODE_RESERVATIONS || !s->executions[slot].occupied) return false;
     const core_admission_record *r = core_admission_find(s->admission, s->executions[slot].id);
     return core_node_supported(r) && r->node == &s->admission->nodes[slot] &&
-        !r->cleanup_selected && !r->node->lifetime.closing &&
-        (r->evidence.history & CORE_HISTORY_DISPATCH) &&
-        core_before_deadline(now, r->deadline_us) &&
-        core_predicate_eval(&r->scope.predicate, node_channels(s, r, CORE_OBJECT_ACTIVE));
+        startup_authorized(s, r, now);
 }

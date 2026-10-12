@@ -315,6 +315,32 @@ void core_coap_exchange_cancel(core_coap_exchange *exchange)
     exchange->active = false;
 }
 
+bool core_coap_allocate_token(core_coap_ids *ids, uint64_t *token)
+{
+    if (ids->tokens_exhausted) return false;
+    *token = ids->next_token;
+    if (ids->next_token == UINT64_MAX) ids->tokens_exhausted = true;
+    else ++ids->next_token;
+    return true;
+}
+
+bool core_coap_allocate_request(core_coap_ids *ids, core_coap_message *message)
+{
+    uint64_t token;
+    if (ids->next_mid > UINT16_MAX || !core_coap_allocate_token(ids, &token)) return false;
+    message->message_id = (uint16_t)ids->next_mid++;
+    message->token_size = 8;
+    for (unsigned i = 0; i < 8; ++i) message->token[7 - i] = (uint8_t)(token >> (8 * i));
+    return true;
+}
+
+uint64_t core_coap_exchange_deadline(const core_coap_exchange *exchange)
+{
+    if (!exchange->active) return UINT64_MAX;
+    return !exchange->acknowledged && exchange->next_retry_us < exchange->deadline_us ?
+        exchange->next_retry_us : exchange->deadline_us;
+}
+
 bool core_coap_options_supported(const core_coap_message *message,
                                  const uint16_t *singletons, size_t count)
 {

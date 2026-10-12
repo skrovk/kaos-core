@@ -2,6 +2,8 @@
 #define KAOS_ARTIFACT_H
 
 #include "kaos_graph.h"
+#include "kaos_coap.h"
+#include "kaos_limits.h"
 
 #define CORE_ARTIFACT_BLOCK_BYTES 256
 #define CORE_ARTIFACT_MAX_BYTES UINT32_C(65536)
@@ -71,5 +73,22 @@ bool core_artifact_take(core_artifact *artifact, uint64_t now_us,
 /* Stops writes and releases transfer access. Caller closes/drains ALL owner
  * accesses before freeing and uncharging staging or asserting closure. */
 void core_artifact_cancel(core_artifact *artifact);
+
+/* One active artifact pull per host. Storage remains supplied/charged by the
+ * caller. This client adds CoAP framing and one bounded full restart to the
+ * transfer above; it never performs I/O, allocates or selects graph outcomes.
+ * Set transfer after begin(), and clear it after take()/cancel(). The exchange
+ * retains correlation so delayed CON responses can still be acknowledged. */
+typedef struct {
+    core_artifact *transfer;
+    core_coap_exchange exchange;
+    bool restarted;
+} core_artifact_client;
+core_coap_poll_result core_artifact_client_next(core_artifact_client *client,
+    uint64_t authority, const uint8_t *reference, size_t reference_size,
+    core_coap_ids *ids, uint64_t now, uint64_t retry_us);
+core_artifact_result core_artifact_client_receive(core_artifact_client *client,
+    uint64_t authority, const core_coap_message *message, uint64_t now, bool *acknowledge);
+bool core_artifact_client_restart(core_artifact_client *client, core_coap_ids *ids, uint64_t now);
 
 #endif

@@ -1,0 +1,23 @@
+menu "KaOS graph host"
+config KAOS_DEVICE_ID
+    int "Local device ID"
+    range 0 2147483647
+    default 1
+config KAOS_UDP_PORT
+    int "Local UDP port"
+    range 1 65535
+    default 5683
+config KAOS_AUTHORITY
+    string "Authority id@IPv4:port"
+    default "99@192.168.1.2:5683"
+config KAOS_PEERS
+    string "Remote owners: comma-separated id@IPv4:port"
+    default ""
+config KAOS_COLLECTOR
+    string "Collector id@IPv4:port (empty disables)"
+    default ""
+config KAOS_NODE_BYTES
+    int "Reserved bytes per node, including artifact (provisional profile)"
+    range 1 155648
+    default 28672
+endmenu

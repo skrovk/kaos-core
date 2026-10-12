@@ -120,6 +120,17 @@ core_coap_receive_result core_coap_exchange_receive(core_coap_exchange *exchange
                                                    bool *acknowledge);
 void core_coap_exchange_cancel(core_coap_exchange *exchange);
 
+/* One sequence per sending host session. Refuse wrap rather than reusing an
+ * identity; graph operation IDs are unrelated and remain O-owned. */
+typedef struct {
+    uint32_t next_mid;
+    uint64_t next_token;
+    bool tokens_exhausted;
+} core_coap_ids;
+bool core_coap_allocate_token(core_coap_ids *ids, uint64_t *token);
+bool core_coap_allocate_request(core_coap_ids *ids, core_coap_message *message);
+uint64_t core_coap_exchange_deadline(const core_coap_exchange *exchange);
+
 typedef struct {
     uint64_t peer, expires_us;
     uint16_t message_id;
