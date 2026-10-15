@@ -681,10 +681,16 @@ core_admit_result core_admission_reserve(core_admission *pool, core_op_id id,
     return CORE_ADMIT_ACCEPTED;
 }
 
-core_admit_result core_admission_reserve_channel(core_admission *pool, uint64_t coordinator,
-                                                 core_op_id id, uint8_t index,
-                                                 const core_channel *channel, bool cancel,
-                                                 const core_admission_record **out)
+/* Provisional slot choices; only publication occupies them. */
+typedef struct {
+    core_admission_record *record;
+    core_reserved_node *node;
+    core_reserved_endpoint *endpoint;
+    bool new_record;
+} channel_reservation_plan;
+
+static core_admit_result check_channel_command_owners(const core_admission *pool,
+    uint64_t coordinator, core_op_id id, uint8_t index, const core_channel *channel)
 {
     const bool new_source = channel->source_instance.value == id.value;
     const bool new_destination = channel->destination_instance.value == id.value;
@@ -695,45 +701,56 @@ core_admit_result core_admission_reserve_channel(core_admission *pool, uint64_t 
     if (!pool->configured || coordinator == pool->local_device || new_owner != coordinator ||
         local_owner != pool->local_device || !configured_owner(pool, coordinator))
         return CORE_ADMIT_UNAUTHORIZED;
-    const uint64_t new_logical = new_source ? channel->source_logical : channel->destination_logical;
-    const core_binding binding = {.channel = *channel, .creating_op = id};
+    return CORE_ADMIT_ACCEPTED;
+}
+
+static core_admit_result check_retained_channel_binding(const core_admission_record *record,
+    uint64_t coordinator, const core_binding *binding, uint8_t index)
+{
+    const core_op_id id = binding->creating_op;
+    const core_channel *channel = &binding->channel;
+    const uint64_t new_logical = channel->source_instance.value == id.value ?
+        channel->source_logical : channel->destination_logical;
     const core_channel_set bit = (core_channel_set)(1u << index);
-    const core_admission_record *found = core_admission_find(pool, id);
-    core_admission_record *record = found == NULL ? select_record(pool) :
-        &pool->records[found - pool->records];
-    if (found != NULL) {
-        if (!record->endpoint_only || record->scope.kind != CORE_REQUEST_ADD_NODE ||
-            record->scope.coordinator != coordinator || record->scope.instance.value != id.value ||
-            record->scope.logical_node_id != new_logical || index >= record->scope.channel_count)
+    if (!record->endpoint_only || record->scope.kind != CORE_REQUEST_ADD_NODE ||
+        record->scope.coordinator != coordinator || record->scope.instance.value != id.value ||
+        record->scope.logical_node_id != new_logical || index >= record->scope.channel_count)
+        return CORE_ADMIT_CONFLICT;
+    if (record->channel_known & bit) {
+        if (!same_descriptor(&record->scope.bindings[index].channel, channel))
             return CORE_ADMIT_CONFLICT;
-        if (record->channel_known & bit) {
-            if (!same_descriptor(&record->scope.bindings[index].channel, channel))
-                return CORE_ADMIT_CONFLICT;
-            if (cancel) (void)core_admission_close_channel(pool, id, index);
-            *out = record;
-            return CORE_ADMIT_DUPLICATE;
-        }
-        /* Whole-scope cancellation fences even a later first command for an
-         * as-yet unknown channel. Learning its descriptor creates no endpoint. */
-        cancel |= record->cleanup_selected;
+        return CORE_ADMIT_DUPLICATE;
     }
-    if (record == NULL) return CORE_ADMIT_FULL;
+    return CORE_ADMIT_ACCEPTED;
+}
+
+static core_admit_result check_channel_binding_conflicts(const core_admission *pool,
+    const core_admission_record *record, const core_binding *binding)
+{
+    const core_channel *channel = &binding->channel;
     for (size_t r = 0; r < CORE_MAX_ADMISSION_RECORDS; ++r) {
         const core_admission_record *known = &pool->records[r];
         if (!known->occupied) continue;
         for (size_t c = 0; c < known->scope.channel_count; ++c) {
             if (!(known->channel_known & (1u << c))) continue;
             const core_binding *previous = &known->scope.bindings[c];
-            if (same_binding(&binding, previous) &&
+            if (same_binding(binding, previous) &&
                 (!same_descriptor(channel, &previous->channel) || known == record))
                 return CORE_ADMIT_CONFLICT;
         }
     }
+    return CORE_ADMIT_ACCEPTED;
+}
+
+static core_admit_result check_endpoint_conflicts_and_select_slot(core_admission *pool,
+    const core_binding *binding, bool cancel, core_reserved_endpoint **out)
+{
+    const core_channel *channel = &binding->channel;
     core_reserved_endpoint *available = NULL;
     for (size_t e = 0; e < CORE_MAX_ENDPOINT_RESERVATIONS; ++e) {
         core_reserved_endpoint *endpoint = &pool->endpoints[e];
         if (endpoint->occupied) {
-            if ((cancel && same_binding(&binding, &endpoint->binding) &&
+            if ((cancel && same_binding(binding, &endpoint->binding) &&
                  !same_descriptor(channel, &endpoint->binding.channel)) ||
                 (!cancel && same_channel(channel, &endpoint->binding.channel)))
                 return CORE_ADMIT_CONFLICT;
@@ -743,37 +760,64 @@ core_admit_result core_admission_reserve_channel(core_admission *pool, uint64_t 
             available = endpoint;
         }
     }
-    core_reserved_node *local_node = NULL;
-    if (!cancel) {
-        const core_instance_id local_instance = new_source ? channel->destination_instance :
-                                                             channel->source_instance;
-        const uint64_t local_logical = new_source ? channel->destination_logical : channel->source_logical;
-        const uint16_t local_port = new_source ? channel->destination_port : channel->source_port;
-        local_node = find_node(pool, local_instance);
-        if (binding_fenced(pool, &binding) || find_node(pool, (core_instance_id){id.value}) != NULL ||
-            node_fenced(pool, new_logical, (core_instance_id){id.value}) ||
-            node_fenced(pool, local_logical, local_instance) ||
-            local_node == NULL || local_node->logical_node_id != local_logical ||
-            !local_node->established || local_node->lifetime.closing ||
-            !port_matches(local_node->ports, local_node->port_count, local_port,
-                new_source ? CORE_PORT_INPUT : CORE_PORT_OUTPUT, channel->type, channel->payload_bytes))
-            return CORE_ADMIT_CONFLICT;
-        const core_binding *bindings[CORE_MAX_REQUEST_CHANNELS];
-        size_t incidence;
-        if (!current_incidence(pool, local_logical, local_instance, bindings, &incidence))
-            return CORE_ADMIT_FULL;
-        bool notification_available = false;
-        for (size_t n = 0; n < CORE_MAX_REQUEST_CHANNELS; ++n)
-            notification_available |= !local_node->notifications[n].occupied ||
-                notification_matches(&local_node->notifications[n], channel);
-        if (available == NULL || incidence >= CORE_MAX_REQUEST_CHANNELS || !notification_available ||
-            CORE_ENDPOINT_BYTES > pool->byte_limit - pool->reserved_bytes)
-            return CORE_ADMIT_FULL;
-    }
+    *out = available;
+    return CORE_ADMIT_ACCEPTED;
+}
+
+static core_admit_result check_local_endpoint_requirements(core_admission *pool,
+    const core_binding *binding, core_reserved_node **out)
+{
+    const core_op_id id = binding->creating_op;
+    const core_channel *channel = &binding->channel;
+    const bool new_source = channel->source_instance.value == id.value;
+    const uint64_t new_logical = new_source ? channel->source_logical : channel->destination_logical;
+    const core_instance_id local_instance = new_source ? channel->destination_instance :
+                                                         channel->source_instance;
+    const uint64_t local_logical = new_source ? channel->destination_logical : channel->source_logical;
+    const uint16_t local_port = new_source ? channel->destination_port : channel->source_port;
+    core_reserved_node *local_node = find_node(pool, local_instance);
+    if (binding_fenced(pool, binding) || find_node(pool, (core_instance_id){id.value}) != NULL ||
+        node_fenced(pool, new_logical, (core_instance_id){id.value}) ||
+        node_fenced(pool, local_logical, local_instance) ||
+        local_node == NULL || local_node->logical_node_id != local_logical ||
+        !local_node->established || local_node->lifetime.closing ||
+        !port_matches(local_node->ports, local_node->port_count, local_port,
+            new_source ? CORE_PORT_INPUT : CORE_PORT_OUTPUT, channel->type, channel->payload_bytes))
+        return CORE_ADMIT_CONFLICT;
+    *out = local_node;
+    return CORE_ADMIT_ACCEPTED;
+}
+
+static core_admit_result check_node_channel_capacity(const core_admission *pool,
+    const core_reserved_node *local_node, const core_channel *channel)
+{
+    const core_binding *bindings[CORE_MAX_REQUEST_CHANNELS];
+    size_t incidence;
+    if (!current_incidence(pool, local_node->logical_node_id, local_node->instance, bindings, &incidence))
+        return CORE_ADMIT_FULL;
+    bool notification_available = false;
+    for (size_t n = 0; n < CORE_MAX_REQUEST_CHANNELS; ++n)
+        notification_available |= !local_node->notifications[n].occupied ||
+            notification_matches(&local_node->notifications[n], channel);
+    return incidence >= CORE_MAX_REQUEST_CHANNELS || !notification_available ?
+        CORE_ADMIT_FULL : CORE_ADMIT_ACCEPTED;
+}
+
+static void publish_channel_reservation(core_admission *pool,
+    const channel_reservation_plan *plan, uint64_t coordinator,
+    const core_binding *binding, uint8_t index, bool cancel)
+{
+    core_admission_record *record = plan->record;
+    core_reserved_endpoint *available = plan->endpoint;
+    const core_op_id id = binding->creating_op;
+    const bool new_source = binding->channel.source_instance.value == id.value;
+    const uint64_t new_logical = new_source ? binding->channel.source_logical :
+                                             binding->channel.destination_logical;
+    const core_channel_set bit = (core_channel_set)(1u << index);
     /* No fallible operation follows this publication boundary. A compact Ki
      * record has a bounded sparse scope; each learned descriptor is immutable.
      * Only Kc retains P and produces an aggregate result. */
-    if (found == NULL) {
+    if (plan->new_record) {
         publish_record(pool, record);
         record->id = id;
         record->scope.kind = CORE_REQUEST_ADD_NODE;
@@ -787,27 +831,66 @@ core_admit_result core_admission_reserve_channel(core_admission *pool, uint64_t 
         record->endpoint_only = true;
         record->occupied = true;
     }
-    record->scope.bindings[index] = binding;
+    record->scope.bindings[index] = *binding;
     record->channel_known |= bit;
     if (cancel) {
         (void)core_admission_close_channel(pool, id, index);
     } else {
         (void)core_lifetime_reopen(&available->lifetime);
-        available->binding = binding;
+        available->binding = *binding;
         available->sender = !new_source;
         available->occupied = true;
-        reserve_notification(local_node, &binding);
+        reserve_notification(plan->node, binding);
         reserve_bytes(pool, CORE_ENDPOINT_BYTES);
     }
-    *out = record;
+}
+
+core_admit_result core_admission_reserve_channel(core_admission *pool, uint64_t coordinator,
+                                                 core_op_id id, uint8_t index,
+                                                 const core_channel *channel, bool cancel,
+                                                 const core_admission_record **out)
+{
+    core_admit_result result = check_channel_command_owners(pool, coordinator, id, index, channel);
+    if (result != CORE_ADMIT_ACCEPTED) return result;
+    const core_binding binding = {.channel = *channel, .creating_op = id};
+    const core_admission_record *found = core_admission_find(pool, id);
+    channel_reservation_plan plan = {
+        .record = found == NULL ? select_record(pool) : &pool->records[found - pool->records],
+        .new_record = found == NULL
+    };
+    if (found != NULL) {
+        result = check_retained_channel_binding(found, coordinator, &binding, index);
+        if (result == CORE_ADMIT_DUPLICATE) {
+            if (cancel) (void)core_admission_close_channel(pool, id, index);
+            *out = plan.record;
+            return result;
+        }
+        if (result != CORE_ADMIT_ACCEPTED) return result;
+        /* Whole-scope cancellation fences an unknown channel too. Learning
+         * its descriptor must not reserve an endpoint. */
+        cancel |= found->cleanup_selected;
+    }
+    if (plan.record == NULL) return CORE_ADMIT_FULL;
+    result = check_channel_binding_conflicts(pool, plan.record, &binding);
+    if (result != CORE_ADMIT_ACCEPTED) return result;
+    result = check_endpoint_conflicts_and_select_slot(pool, &binding, cancel, &plan.endpoint);
+    if (result != CORE_ADMIT_ACCEPTED) return result;
+    if (!cancel) {
+        result = check_local_endpoint_requirements(pool, &binding, &plan.node);
+        if (result != CORE_ADMIT_ACCEPTED) return result;
+        result = check_node_channel_capacity(pool, plan.node, channel);
+        if (result != CORE_ADMIT_ACCEPTED) return result;
+        if (plan.endpoint == NULL || CORE_ENDPOINT_BYTES > pool->byte_limit - pool->reserved_bytes)
+            return CORE_ADMIT_FULL;
+    }
+    publish_channel_reservation(pool, &plan, coordinator, &binding, index, cancel);
+    *out = plan.record;
     return CORE_ADMIT_ACCEPTED;
 }
 
-core_admit_result core_admission_reserve_removal(core_admission *pool, uint64_t coordinator,
-                                                 core_op_id id, uint8_t index,
-                                                 core_instance_id target,
-                                                 const core_binding *binding,
-                                                 const core_admission_record **out)
+static core_admit_result check_removal_binding_owners(core_admission *pool,
+    uint64_t coordinator, core_op_id id, uint8_t index, core_instance_id target,
+    const core_binding *binding)
 {
     const core_channel *channel = &binding->channel;
     const bool target_source = channel->source_instance.value == target.value;
@@ -817,7 +900,6 @@ core_admit_result core_admission_reserve_removal(core_admission *pool, uint64_t 
         return CORE_ADMIT_INVALID;
     const uint64_t target_owner = target_source ? channel->source_owner : channel->destination_owner;
     const uint64_t local_owner = target_source ? channel->destination_owner : channel->source_owner;
-    const uint64_t logical = target_source ? channel->source_logical : channel->destination_logical;
     if (!pool->configured || coordinator == pool->local_device || target_owner != coordinator ||
         local_owner != pool->local_device || !configured_owner(pool, coordinator))
         return CORE_ADMIT_UNAUTHORIZED;
@@ -829,25 +911,33 @@ core_admit_result core_admission_reserve_removal(core_admission *pool, uint64_t 
                                 channel->destination_owner != pool->local_device)))
         return CORE_ADMIT_CONFLICT;
 
-    const core_admission_record *found = core_admission_find(pool, id);
-    core_admission_record *record = found == NULL ? select_record(pool) :
-        &pool->records[found - pool->records];
+    return CORE_ADMIT_ACCEPTED;
+}
+
+static core_admit_result check_retained_removal_binding(const core_admission_record *record,
+    uint64_t coordinator, core_instance_id target, const core_binding *binding, uint8_t index)
+{
+    const core_channel *channel = &binding->channel;
+    const uint64_t logical = channel->source_instance.value == target.value ?
+        channel->source_logical : channel->destination_logical;
     const core_channel_set bit = (core_channel_set)(1u << index);
-    if (found != NULL) {
-        if (!record->endpoint_only || record->scope.kind != CORE_REQUEST_REMOVE_NODE ||
-            record->scope.coordinator != coordinator || record->scope.instance.value != target.value ||
-            record->scope.logical_node_id != logical || index >= record->scope.channel_count)
+    if (!record->endpoint_only || record->scope.kind != CORE_REQUEST_REMOVE_NODE ||
+        record->scope.coordinator != coordinator || record->scope.instance.value != target.value ||
+        record->scope.logical_node_id != logical || index >= record->scope.channel_count)
+        return CORE_ADMIT_CONFLICT;
+    if (record->channel_known & bit) {
+        if (!same_binding(&record->scope.bindings[index], binding) ||
+            !same_descriptor(&record->scope.bindings[index].channel, channel))
             return CORE_ADMIT_CONFLICT;
-        if (record->channel_known & bit) {
-            if (!same_binding(&record->scope.bindings[index], binding) ||
-                !same_descriptor(&record->scope.bindings[index].channel, channel))
-                return CORE_ADMIT_CONFLICT;
-            (void)core_admission_close_channel(pool, id, index);
-            *out = record;
-            return CORE_ADMIT_DUPLICATE;
-        }
+        return CORE_ADMIT_DUPLICATE;
     }
-    if (record == NULL) return CORE_ADMIT_FULL;
+    return CORE_ADMIT_ACCEPTED;
+}
+
+static core_admit_result check_removal_binding_conflicts(const core_admission *pool,
+    const core_admission_record *record, const core_binding *binding)
+{
+    const core_channel *channel = &binding->channel;
     for (size_t r = 0; r < CORE_MAX_ADMISSION_RECORDS; ++r) {
         const core_admission_record *known = &pool->records[r];
         if (!known->occupied) continue;
@@ -865,9 +955,20 @@ core_admit_result core_admission_reserve_removal(core_admission *pool, uint64_t 
             !same_descriptor(channel, &endpoint->binding.channel)) return CORE_ADMIT_CONFLICT;
     }
 
+    return CORE_ADMIT_ACCEPTED;
+}
+
+static void publish_removal_observer(core_admission *pool, core_admission_record *record,
+    bool new_record, uint64_t coordinator, core_op_id id, uint8_t index,
+    core_instance_id target, const core_binding *binding)
+{
+    const core_channel *channel = &binding->channel;
+    const uint64_t logical = channel->source_instance.value == target.value ?
+        channel->source_logical : channel->destination_logical;
+    const core_channel_set bit = (core_channel_set)(1u << index);
     /* All checks precede publication. One sparse observer holds the removal
      * identity; endpoint lifetime and payload ownership remain shared. */
-    if (found == NULL) {
+    if (new_record) {
         publish_record(pool, record);
         record->id = id;
         record->scope.kind = CORE_REQUEST_REMOVE_NODE;
@@ -885,6 +986,33 @@ core_admit_result core_admission_reserve_removal(core_admission *pool, uint64_t 
     record->scope.bindings[index] = *binding;
     record->channel_known |= bit;
     (void)core_admission_close_channel(pool, id, index);
+}
+
+core_admit_result core_admission_reserve_removal(core_admission *pool, uint64_t coordinator,
+                                                 core_op_id id, uint8_t index,
+                                                 core_instance_id target,
+                                                 const core_binding *binding,
+                                                 const core_admission_record **out)
+{
+    core_admit_result result = check_removal_binding_owners(pool, coordinator, id, index,
+                                                           target, binding);
+    if (result != CORE_ADMIT_ACCEPTED) return result;
+    const core_admission_record *found = core_admission_find(pool, id);
+    core_admission_record *record = found == NULL ? select_record(pool) :
+        &pool->records[found - pool->records];
+    if (found != NULL) {
+        result = check_retained_removal_binding(found, coordinator, target, binding, index);
+        if (result == CORE_ADMIT_DUPLICATE) {
+            (void)core_admission_close_channel(pool, id, index);
+            *out = record;
+            return result;
+        }
+        if (result != CORE_ADMIT_ACCEPTED) return result;
+    }
+    if (record == NULL) return CORE_ADMIT_FULL;
+    result = check_removal_binding_conflicts(pool, record, binding);
+    if (result != CORE_ADMIT_ACCEPTED) return result;
+    publish_removal_observer(pool, record, found == NULL, coordinator, id, index, target, binding);
     *out = record;
     return CORE_ADMIT_ACCEPTED;
 }

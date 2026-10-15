@@ -128,8 +128,8 @@ static bool request_identity(const uint8_t *data, size_t size, uint64_t *kind, c
         core_cbor_bytes(&reader, &body, &body_size) && reader.offset == size;
 }
 
-static size_t cleanup_snapshot(core_control *control, uint64_t sender,
-                                 core_op_id id, uint64_t now, uint8_t *encoded)
+static size_t advance_edge_cleanup_and_encode_report(core_control *control, uint64_t sender,
+                                                      core_op_id id, uint64_t now, uint8_t *encoded)
 {
     const core_admission_record *record = core_admission_find(control->admission, id);
     if (control->edges == NULL || !core_edge_supported(record) || !record->endpoint_only ||
@@ -226,8 +226,8 @@ static bool owner_report(core_control *control, uint64_t sender,
     return true;
 }
 
-static uint8_t submit(core_admission *pool, uint64_t sender, control_resource resource,
-                       const uint8_t *body, size_t size, uint64_t now)
+static uint8_t submit_operation(core_admission *pool, uint64_t sender, control_resource resource,
+                                 const uint8_t *body, size_t size, uint64_t now)
 {
     const core_admission_record *record;
     core_admit_result result;
@@ -251,6 +251,105 @@ static uint8_t submit(core_admission *pool, uint64_t sender, control_resource re
     case CORE_ADMIT_UNAUTHORIZED: return CORE_COAP_UNAUTHORIZED;
     default: return CORE_COAP_BAD_REQUEST;
     }
+}
+
+typedef struct {
+    core_op_id operation;
+    uint64_t index;
+    bool removal;
+} indexed_command_header;
+
+/* Recognize only the envelope; the endpoint submission validates the complete
+ * command, including the index, before it can be used to access a record. */
+static bool recognize_indexed_command(control_resource resource, const uint8_t *body, size_t size,
+                                       indexed_command_header *header)
+{
+    core_cbor_reader rd = {.data = body, .size = size};
+    uint64_t count, version, tag;
+    if (!core_cbor_array(&rd, &count) ||
+        !core_cbor_uint(&rd, &version) || version != CORE_SCHEMA_VERSION ||
+        !core_cbor_uint(&rd, &tag) ||
+        !((count == 5 && tag == CORE_CHANNEL_COMMAND_KIND) ||
+          (count == 6 && tag == CORE_REMOVAL_COMMAND_KIND && resource == CONTROL_PREPARE)) ||
+        !core_cbor_uint(&rd, &header->operation.value) || !core_cbor_uint(&rd, &header->index))
+        return false;
+    header->removal = tag == CORE_REMOVAL_COMMAND_KIND;
+    return true;
+}
+
+/* Forward one indexed channel, retaining creation and observer identity.
+ * The admission record provides idempotency and exact descriptor checks;
+ * no generic response-cache slot is needed for these bounded commands. */
+static bool receive_indexed_command(core_control *control, uint64_t sender,
+                                     control_resource resource, const core_coap_message *request,
+                                     const uint8_t *body, size_t size, uint64_t now,
+                                     const core_coap_option *block,
+                                     const indexed_command_header *header,
+                                     uint8_t *out, size_t capacity, size_t *written)
+{
+    const core_admission_record *record = NULL;
+    const core_admit_result result = header->removal ?
+        core_endpoint_removal_submit(control->admission, sender, body, size, &record) :
+        core_endpoint_channel_submit(control->admission, sender, body, size, now,
+            resource == CONTROL_CANCEL, &record);
+    const bool accepted = result == CORE_ADMIT_ACCEPTED || result == CORE_ADMIT_DUPLICATE;
+    uint8_t snapshot[CORE_REPORT_BYTES];
+    size_t length = 0;
+    if (accepted && (header->removal || resource == CONTROL_CANCEL) && record != NULL) {
+        core_edge_step(control->edges, now);
+        const core_channel *channel = &record->scope.bindings[header->index].channel;
+        const uint8_t object = (uint8_t)(1 + 2 * header->index +
+            (channel->destination_owner == control->admission->local_device));
+        const core_owner_report report = {.operation = header->operation,
+            .owner = control->admission->local_device, .object = object,
+            .facts = record->local_facts[object]};
+        (void)core_owner_report_encode(&report, snapshot, sizeof(snapshot), &length);
+    }
+    const bool replied = reply(request, accepted ? CORE_COAP_CHANGED :
+        (result == CORE_ADMIT_FULL ? CORE_COAP_UNAVAILABLE : CORE_COAP_BAD_REQUEST),
+        length ? snapshot : NULL, length, block, out, capacity, written);
+    if (block != NULL) core_coap_block1_reset(&control->assembly);
+    return replied;
+}
+
+static bool receive_operation(core_control *control, uint64_t sender, control_resource resource,
+                                const core_coap_message *request, const uint8_t *body, size_t size,
+                                uint64_t now, const core_coap_option *block,
+                                uint8_t *out, size_t capacity, size_t *written)
+{
+    uint64_t kind = 0;
+    core_op_id id = {0};
+    const bool edge_cleanup = control->edges != NULL &&
+        (resource == CONTROL_CANCEL || resource == CONTROL_PREPARE) &&
+        request_identity(body, size, &kind, &id) &&
+        ((resource == CONTROL_CANCEL && kind == CORE_REQUEST_ADD_EDGE) ||
+         (resource == CONTROL_PREPARE && kind == CORE_REQUEST_REMOVE_EDGE));
+    /* The bounded edge engine sends cleanup in one datagram. Its duplicate
+     * replies must reflect later closure, even if an earlier response held
+     * only CLEANUP. Multipart admission retains ordinary Block1 replay. */
+    const bool fresh_cleanup_reply = edge_cleanup && block == NULL;
+    /* Reserve reply capacity before admission. Idempotent cleanup must still
+     * run when the ordinary reply cache is saturated. */
+    core_coap_cached_response *cached = NULL;
+    if (resource != CONTROL_CANCEL && !fresh_cleanup_reply) {
+        const core_coap_cache_result cache = core_coap_cache_reserve(&control->cache,
+            sender, request->message_id, now, &cached);
+        if (cache == CORE_COAP_CACHE_FULL)
+            return reply(request, CORE_COAP_UNAVAILABLE, NULL, 0, NULL, out, capacity, written);
+        if (cache == CORE_COAP_CACHE_DUPLICATE)
+            return core_coap_cache_replay(&control->cache, sender, request->message_id, now,
+                                          out, capacity, written);
+    }
+    const uint8_t code = submit_operation(control->admission, sender, resource, body, size, now);
+    uint8_t snapshot[CORE_REPORT_BYTES];
+    const size_t snapshot_size = edge_cleanup &&
+        (code == CORE_COAP_CREATED || code == CORE_COAP_CHANGED) ?
+        advance_edge_cleanup_and_encode_report(control, sender, id, now, snapshot) : 0;
+    if (!reply(request, code, snapshot_size ? snapshot : NULL, snapshot_size,
+                 block, out, capacity, written)) return false;
+    const bool stored = cached == NULL || core_coap_cache_store(cached, out, *written);
+    if (block != NULL) core_coap_block1_reset(&control->assembly);
+    return stored;
 }
 
 bool core_control_receive(core_control *control, uint64_t sender,
@@ -283,12 +382,15 @@ bool core_control_receive(core_control *control, uint64_t sender,
     if (body_result != 0)
         return reply(&request, body_result, NULL, 0,
                       body_result == CORE_COAP_CONTINUE ? block : NULL, out, capacity, written);
-    if (resource == CONTROL_QUERY)
+
+    switch (resource) {
+    case CONTROL_QUERY:
         return query_reply(control->admission, &request, body, body_size, out, capacity, written);
-    if (resource == CONTROL_STORED)
+    case CONTROL_STORED:
         return reply(&request, storage_ack(control->admission, body, body_size) ?
             CORE_COAP_CHANGED : CORE_COAP_BAD_REQUEST, NULL, 0, NULL, out, capacity, written);
-    if (resource == CONTROL_ACTIVATE || resource == CONTROL_OWNER) {
+    case CONTROL_ACTIVATE:
+    case CONTROL_OWNER: {
         if (control->edges == NULL)
             return reply(&request, CORE_COAP_NOT_FOUND, NULL, 0, NULL, out, capacity, written);
         const bool accepted = resource == CONTROL_ACTIVATE ?
@@ -297,81 +399,21 @@ bool core_control_receive(core_control *control, uint64_t sender,
         return reply(&request, accepted ? CORE_COAP_CHANGED : CORE_COAP_BAD_REQUEST,
                       NULL, 0, NULL, out, capacity, written);
     }
-
-    /* Forward one indexed channel, retaining creation and observer identity.
-     * The admission record provides idempotency and exact descriptor checks;
-     * no generic response-cache slot is needed for these bounded commands. */
-    if (control->edges != NULL &&
-        (resource == CONTROL_PREPARE || resource == CONTROL_CANCEL)) {
-        core_cbor_reader rd = {.data = body, .size = body_size};
-        uint64_t count, version, tag, index;
-        core_op_id operation;
-        if (core_cbor_array(&rd, &count) &&
-            core_cbor_uint(&rd, &version) && version == CORE_SCHEMA_VERSION &&
-            core_cbor_uint(&rd, &tag) &&
-            ((count == 5 && tag == CORE_CHANNEL_COMMAND_KIND) ||
-             (count == 6 && tag == CORE_REMOVAL_COMMAND_KIND && resource == CONTROL_PREPARE)) &&
-            core_cbor_uint(&rd, &operation.value) && core_cbor_uint(&rd, &index)) {
-            const core_admission_record *record = NULL;
-            const bool removal = tag == CORE_REMOVAL_COMMAND_KIND;
-            const core_admit_result result = removal ?
-                core_endpoint_removal_submit(control->admission, sender, body, body_size, &record) :
-                core_endpoint_channel_submit(control->admission, sender, body, body_size, now,
-                    resource == CONTROL_CANCEL, &record);
-            const bool accepted = result == CORE_ADMIT_ACCEPTED || result == CORE_ADMIT_DUPLICATE;
-            uint8_t snapshot[CORE_REPORT_BYTES];
-            size_t length = 0;
-            if (accepted && (removal || resource == CONTROL_CANCEL) && record != NULL) {
-                core_edge_step(control->edges, now);
-                const core_channel *channel = &record->scope.bindings[index].channel;
-                const uint8_t object = (uint8_t)(1 + 2 * index +
-                    (channel->destination_owner == control->admission->local_device));
-                const core_owner_report report = {.operation = operation,
-                    .owner = control->admission->local_device, .object = object,
-                    .facts = record->local_facts[object]};
-                (void)core_owner_report_encode(&report, snapshot, sizeof(snapshot), &length);
-            }
-            const bool replied = reply(&request, accepted ? CORE_COAP_CHANGED :
-                (result == CORE_ADMIT_FULL ? CORE_COAP_UNAVAILABLE : CORE_COAP_BAD_REQUEST),
-                length ? snapshot : NULL, length, block, out, capacity, written);
-            if (block != NULL) core_coap_block1_reset(&control->assembly);
-            return replied;
-        }
+    case CONTROL_PREPARE:
+    case CONTROL_CANCEL: {
+        indexed_command_header header;
+        if (control->edges != NULL && recognize_indexed_command(resource, body, body_size, &header))
+            return receive_indexed_command(control, sender, resource, &request, body, body_size,
+                                             now, block, &header, out, capacity, written);
+        return receive_operation(control, sender, resource, &request, body, body_size,
+                                   now, block, out, capacity, written);
     }
-
-    uint64_t kind = 0;
-    core_op_id id = {0};
-    const bool edge_cleanup = control->edges != NULL &&
-        (resource == CONTROL_CANCEL || resource == CONTROL_PREPARE) &&
-        request_identity(body, body_size, &kind, &id) &&
-        ((resource == CONTROL_CANCEL && kind == CORE_REQUEST_ADD_EDGE) ||
-         (resource == CONTROL_PREPARE && kind == CORE_REQUEST_REMOVE_EDGE));
-    /* The bounded edge engine sends cleanup in one datagram. Its duplicate
-     * replies must reflect later closure, even if an earlier response held
-     * only CLEANUP. Multipart admission retains ordinary Block1 replay. */
-    const bool fresh_cleanup_reply = edge_cleanup && block == NULL;
-    /* Reserve reply capacity before admission. Idempotent cleanup must still
-     * run when the ordinary reply cache is saturated. */
-    core_coap_cached_response *cached = NULL;
-    if (resource != CONTROL_CANCEL && !fresh_cleanup_reply) {
-        const core_coap_cache_result cache = core_coap_cache_reserve(&control->cache,
-            sender, request.message_id, now, &cached);
-        if (cache == CORE_COAP_CACHE_FULL)
-            return reply(&request, CORE_COAP_UNAVAILABLE, NULL, 0, NULL, out, capacity, written);
-        if (cache == CORE_COAP_CACHE_DUPLICATE)
-            return core_coap_cache_replay(&control->cache, sender, request.message_id, now,
-                                          out, capacity, written);
+    case CONTROL_GRAPH:
+        return receive_operation(control, sender, resource, &request, body, body_size,
+                                   now, block, out, capacity, written);
+    default:
+        return reply(&request, CORE_COAP_NOT_FOUND, NULL, 0, NULL, out, capacity, written);
     }
-    const uint8_t code = submit(control->admission, sender, resource, body, body_size, now);
-    uint8_t snapshot[CORE_REPORT_BYTES];
-    const size_t snapshot_size = edge_cleanup &&
-        (code == CORE_COAP_CREATED || code == CORE_COAP_CHANGED) ?
-        cleanup_snapshot(control, sender, id, now, snapshot) : 0;
-    if (!reply(&request, code, snapshot_size ? snapshot : NULL, snapshot_size,
-                 block, out, capacity, written)) return false;
-    const bool stored = cached == NULL || core_coap_cache_store(cached, out, *written);
-    if (block != NULL) core_coap_block1_reset(&control->assembly);
-    return stored;
 }
 
 bool core_control_peer_next(core_control *control, core_control_peer *peer,

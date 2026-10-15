@@ -368,10 +368,8 @@ static bool signature(wasm_module_inst_t instance, wasm_function_inst_t function
     return !results || types[0] == WASM_I32;
 }
 
-static void prepare(runtime_slot *slot)
+static void allocate_runtime_arena(runtime_slot *slot)
 {
-    const bool profile = core_wamr_profile(slot->artifact, slot->artifact_size);
-    bool good = profile;
 #ifdef ESP_PLATFORM
     /* IDF malloc guarantees four-byte alignment; WAMR's heap requires eight. */
     slot->memory.bytes = heap_caps_aligned_alloc(_Alignof(allocation),
@@ -379,6 +377,49 @@ static void prepare(runtime_slot *slot)
 #else
     slot->memory.bytes = malloc(slot->memory.capacity);
 #endif
+}
+
+static bool load_wasm_module(runtime_slot *slot, char *error, size_t error_size)
+{
+    slot->module = wasm_runtime_load(slot->artifact, (uint32_t)slot->artifact_size,
+                                     error, error_size);
+    return slot->module != NULL;
+}
+
+static bool instantiate_wasm_module(runtime_slot *slot, char *error, size_t error_size)
+{
+    /* These fixed stacks/heaps are inside the bounded arena, and the
+     * profile rejects paths that execute guest code during instantiate. */
+    slot->instance = wasm_runtime_instantiate(slot->module, 8192, 4096, error, error_size);
+    return slot->instance != NULL;
+}
+
+static bool resolve_guest_entrypoints(runtime_slot *slot)
+{
+    wasm_runtime_set_custom_data(slot->instance, slot);
+    slot->execution = wasm_runtime_create_exec_env(slot->instance, 8192);
+    slot->configure = wasm_runtime_lookup_function(slot->instance, "kaos_configure");
+    slot->main = wasm_runtime_lookup_function(slot->instance, "kaos_main");
+    return slot->execution && signature(slot->instance, slot->configure, 2, 1) &&
+           signature(slot->instance, slot->main, 0, 0);
+}
+
+static void publish_runtime_preparation_result(runtime_slot *slot, bool good)
+{
+    /* Handles remain private during preparation: cancellation can only
+     * suppress startup. No untrusted function executes in this phase. */
+    pthread_mutex_lock(&slot->mutex);
+    slot->state.prepared = good;
+    slot->state.prepare_failed = !good;
+    pthread_mutex_unlock(&slot->mutex);
+    notify();
+}
+
+static void prepare_wamr_slot(runtime_slot *slot)
+{
+    const bool profile = core_wamr_profile(slot->artifact, slot->artifact_size);
+    bool good = profile;
+    allocate_runtime_arena(slot);
     allocation_arena = &slot->memory;
     bool thread_environment = wasm_runtime_init_thread_env();
 #ifdef CORE_WAMR_TRACE_PREPARE
@@ -386,32 +427,15 @@ static void prepare(runtime_slot *slot)
 #endif
     good = good && slot->memory.bytes && thread_environment;
     char error[128] = {0};
-    if (good) {
-        slot->module = wasm_runtime_load(slot->artifact, (uint32_t)slot->artifact_size,
-                                         error, sizeof(error));
-        good = slot->module != NULL;
-    }
+    if (good) good = load_wasm_module(slot, error, sizeof(error));
 #ifdef CORE_WAMR_TRACE_PREPARE
     const size_t loader_payload = slot->memory.requested[0] - thread_payload;
 #endif
-    if (good) {
-        /* These fixed stacks/heaps are inside the bounded arena, and the
-         * profile rejects paths that execute guest code during instantiate. */
-        slot->instance = wasm_runtime_instantiate(slot->module, 8192, 4096,
-                                                   error, sizeof(error));
-        good = slot->instance != NULL;
-    }
+    if (good) good = instantiate_wasm_module(slot, error, sizeof(error));
 #ifdef CORE_WAMR_TRACE_PREPARE
     const size_t instance_payload = slot->memory.requested[0] - thread_payload - loader_payload;
 #endif
-    if (good) {
-        wasm_runtime_set_custom_data(slot->instance, slot);
-        slot->execution = wasm_runtime_create_exec_env(slot->instance, 8192);
-        slot->configure = wasm_runtime_lookup_function(slot->instance, "kaos_configure");
-        slot->main = wasm_runtime_lookup_function(slot->instance, "kaos_main");
-        good = slot->execution && signature(slot->instance, slot->configure, 2, 1) &&
-               signature(slot->instance, slot->main, 0, 0);
-    }
+    if (good) good = resolve_guest_entrypoints(slot);
 #ifdef CORE_WAMR_TRACE_PREPARE
     trace_arena(&slot->memory, "node", (size_t)(slot - service.slots));
     uint32_t heap_base = 0, data_end = 0;
@@ -435,13 +459,7 @@ static void prepare(runtime_slot *slot)
                 (unsigned)thread_environment, slot->module != NULL,
                 slot->instance != NULL, slot->execution != NULL, error);
 #endif
-    /* Handles remain private during preparation: cancellation can only
-     * suppress startup. No untrusted function executes in this phase. */
-    pthread_mutex_lock(&slot->mutex);
-    slot->state.prepared = good;
-    slot->state.prepare_failed = !good;
-    pthread_mutex_unlock(&slot->mutex);
-    notify();
+    publish_runtime_preparation_result(slot, good);
 }
 
 static bool begin_call(runtime_slot *slot, bool main)
@@ -548,7 +566,7 @@ static void *worker(void *context)
         if (slot->prepare_requested) {
             slot->prepare_requested = false;
             pthread_mutex_unlock(&slot->mutex);
-            prepare(slot);
+            prepare_wamr_slot(slot);
             pthread_mutex_lock(&slot->mutex);
         } else if (slot->busy && (slot->state.dispose_requested || slot->shutdown)) {
             pthread_mutex_unlock(&slot->mutex);

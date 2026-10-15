@@ -123,7 +123,7 @@ void core_endpoint_close(core_endpoint_service *service, const core_binding *bin
     }
 }
 
-void core_endpoint_step(core_endpoint_service *service)
+static void close_bindings_with_unavailable_nodes(core_endpoint_service *service)
 {
     core_admission *pool = service->admission;
     /* Close all affected local roles first. A peer role may precede the exited
@@ -140,6 +140,11 @@ void core_endpoint_step(core_endpoint_service *service)
             core_endpoint_close(service, &endpoint->binding);
         }
     }
+}
+
+static void advance_endpoint_queues(core_endpoint_service *service)
+{
+    core_admission *pool = service->admission;
     for (size_t e = 0; e < CORE_MAX_ENDPOINT_RESERVATIONS; ++e) {
         core_reserved_endpoint *endpoint = &pool->endpoints[e];
         core_endpoint_queue *queue = &service->queues[e];
@@ -169,6 +174,11 @@ void core_endpoint_step(core_endpoint_service *service)
             facts(service, &endpoint->binding, endpoint->sender, CORE_OBJECT_READY);
         }
     }
+}
+
+static void release_reclaimed_bindings(core_endpoint_service *service)
+{
+    core_admission *pool = service->admission;
     /* Admission releases an exact binding only after every co-located role is
      * reclaimed. Retain evidence in each immutable scope before slot reuse. */
     for (size_t e = 0; e < CORE_MAX_ENDPOINT_RESERVATIONS; ++e) {
@@ -186,6 +196,11 @@ void core_endpoint_step(core_endpoint_service *service)
         if (binding.channel.destination_owner == pool->local_device)
             facts(service, &binding, false, CORE_OBJECT_CLEANUP | CORE_OBJECT_STOPPED | CORE_OBJECT_CLEANED);
     }
+}
+
+static void observe_absent_endpoint_cleanup(core_endpoint_service *service)
+{
+    core_admission *pool = service->admission;
     /* An authorized cleanup fence also covers work that was never prepared. */
     for (size_t r = 0; r < CORE_MAX_ADMISSION_RECORDS; ++r) {
         core_admission_record *record = &pool->records[r];
@@ -208,6 +223,14 @@ void core_endpoint_step(core_endpoint_service *service)
             }
         }
     }
+}
+
+void core_endpoint_step(core_endpoint_service *service)
+{
+    close_bindings_with_unavailable_nodes(service);
+    advance_endpoint_queues(service);
+    release_reclaimed_bindings(service);
+    observe_absent_endpoint_cleanup(service);
 }
 
 bool core_endpoint_activate(core_endpoint_service *service, const core_binding *binding, bool sender)

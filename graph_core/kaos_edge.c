@@ -200,7 +200,7 @@ static void local_observations(core_edge_service *s, core_admission_record *r, u
             (void)observe(s, r, s->admission->local_device, i, r->local_facts[i], now);
 }
 
-void core_edge_step(core_edge_service *s, uint64_t now)
+static void apply_edge_removals(core_edge_service *s, uint64_t now)
 {
     /* Removal owns the decision before any pending creator is serviced, even
      * when its record follows that creator and the node service has not run. */
@@ -208,6 +208,10 @@ void core_edge_step(core_edge_service *s, uint64_t now)
         core_admission_record *r = &s->admission->records[i];
         if (core_edge_supported(r) && removal(r)) cleanup(s, r, now);
     }
+}
+
+static void advance_channel_preparation_and_cleanup(core_edge_service *s, uint64_t now)
+{
     for (size_t i = 0; i < CORE_MAX_ADMISSION_RECORDS; ++i) {
         core_admission_record *r = &s->admission->records[i];
         if (!core_edge_supported(r)) continue;
@@ -239,7 +243,32 @@ void core_edge_step(core_edge_service *s, uint64_t now)
         }
         cutoff(r, e, now);
     }
-    core_endpoint_step(s->endpoints);
+}
+
+static void activate_local_channel_endpoints(core_edge_service *s, core_admission_record *r,
+                                              core_edge_execution *e, uint64_t now)
+{
+    for (size_t c = 0; c < r->scope.channel_count; ++c) {
+        if (!(core_edge_channels(r, CORE_OBJECT_READY) & (1u << c))) continue;
+        /* Receiver first, in either direction, including local channels. */
+        for (int role = 1; role >= 0; --role) {
+            const uint8_t object = (uint8_t)(first_object(r) + 2 * c + role);
+            const uint32_t bit = UINT32_C(1) << object;
+            if (owner(r, object) != s->admission->local_device || (e->activate_issued & bit) ||
+                (role == 0 && !(r->evidence.objects[object + 1] & CORE_OBJECT_ACTIVE))) continue;
+            e->activate_issued |= bit;
+            if (!core_endpoint_activate(s->endpoints, &r->scope.bindings[c], role == 0)) {
+                if (r->scope.kind == CORE_REQUEST_ADD_NODE) channel_cleanup(s, r, c, now);
+                else cleanup(s, r, now);
+                break;
+            }
+            local_observations(s, r, now);
+        }
+    }
+}
+
+static void advance_edge_activation(core_edge_service *s, uint64_t now)
+{
     for (size_t i = 0; i < CORE_MAX_ADMISSION_RECORDS; ++i) {
         core_admission_record *r = &s->admission->records[i];
         if (!core_edge_supported(r) || r->endpoint_only) continue;
@@ -250,26 +279,18 @@ void core_edge_step(core_edge_service *s, uint64_t now)
             core_edge_channels(r, CORE_OBJECT_READY) != 0)
             (void)core_report_record(&r->evidence, CORE_HISTORY_COMMIT);
         if (!(r->evidence.history & CORE_HISTORY_COMMIT)) continue;
-        for (size_t c = 0; c < r->scope.channel_count; ++c) {
-            if (!(core_edge_channels(r, CORE_OBJECT_READY) & (1u << c))) continue;
-            /* Receiver first, in either direction, including local channels. */
-            for (int role = 1; role >= 0; --role) {
-                const uint8_t object = (uint8_t)(first_object(r) + 2 * c + role);
-                const uint32_t bit = UINT32_C(1) << object;
-                if (owner(r, object) != s->admission->local_device || (e->activate_issued & bit) ||
-                    (role == 0 && !(r->evidence.objects[object + 1] & CORE_OBJECT_ACTIVE))) continue;
-                e->activate_issued |= bit;
-                if (!core_endpoint_activate(s->endpoints, &r->scope.bindings[c], role == 0)) {
-                    if (r->scope.kind == CORE_REQUEST_ADD_NODE) channel_cleanup(s, r, c, now);
-                    else cleanup(s, r, now);
-                    break;
-                }
-                local_observations(s, r, now);
-            }
-        }
+        activate_local_channel_endpoints(s, r, e, now);
         if (r->scope.kind == CORE_REQUEST_ADD_EDGE && core_edge_channels(r, CORE_OBJECT_ACTIVE))
             (void)core_report_record(&r->evidence, CORE_HISTORY_SUCCESS);
     }
+}
+
+void core_edge_step(core_edge_service *s, uint64_t now)
+{
+    apply_edge_removals(s, now);
+    advance_channel_preparation_and_cleanup(s, now);
+    core_endpoint_step(s->endpoints);
+    advance_edge_activation(s, now);
 }
 
 uint64_t core_edge_next_deadline(const core_edge_service *s)
@@ -319,7 +340,8 @@ static void channel_encode(core_cbor_writer *w, const core_channel *c)
     core_cbor_write_uint(w, c->addition_allowance_us);
 }
 
-static bool request_encode(const core_admission_record *r, size_t c, core_edge_effect *effect)
+static bool encode_channel_operation_request(const core_admission_record *r, size_t c,
+                                              core_edge_effect *effect)
 {
     core_cbor_writer w = {.data = effect->body, .size = sizeof(effect->body)};
     if (r->scope.kind == CORE_REQUEST_ADD_NODE) {
@@ -362,7 +384,31 @@ static bool request_encode(const core_admission_record *r, size_t c, core_edge_e
     return !w.failed;
 }
 
-static bool next_record(core_edge_service *s, core_admission_record *r, uint64_t peer,
+static bool encode_endpoint_owner_report(const core_admission_record *r, uint64_t local_owner,
+                                          uint8_t object, core_edge_effect *effect)
+{
+    const core_owner_report report = {.operation = r->id, .owner = local_owner,
+        .object = object, .facts = r->local_facts[object]};
+    return core_owner_report_encode(&report, effect->body, sizeof(effect->body), &effect->size);
+}
+
+static bool encode_endpoint_activation_command(core_op_id id, uint8_t object,
+                                               core_edge_effect *effect)
+{
+    core_cbor_writer w = {.data = effect->body, .size = sizeof(effect->body)};
+    core_cbor_write_array(&w, 4);
+    core_cbor_write_uint(&w, CORE_SCHEMA_VERSION);
+    core_cbor_write_uint(&w, CORE_ACTIVATE_KIND);
+    core_cbor_write_uint(&w, id.value);
+    core_cbor_write_uint(&w, object);
+    if (w.failed) return false;
+    effect->size = w.offset;
+    return true;
+}
+
+/* Construct one effect and record its issuance only after encoding succeeds.
+ * Delivery and retry handling belong to the caller. */
+static bool issue_next_edge_effect(core_edge_service *s, core_admission_record *r, uint64_t peer,
     uint64_t now, core_edge_effect *effect)
 {
     core_edge_execution *e = execution(s, r);
@@ -375,12 +421,10 @@ static bool next_record(core_edge_service *s, core_admission_record *r, uint64_t
         if (r->endpoint_only) {
             if (r->scope.coordinator != peer || owner(r, i) != s->admission->local_device ||
                 r->local_facts[i] == e->emitted[i]) continue;
-            const core_owner_report report = {.operation = r->id, .owner = s->admission->local_device,
-                .object = i, .facts = r->local_facts[i]};
-            if (!core_owner_report_encode(&report, effect->body, sizeof(effect->body), &effect->size) ||
+            if (!encode_endpoint_owner_report(r, s->admission->local_device, i, effect) ||
                 !core_deadline(now, CORE_COAP_EXCHANGE_LIFETIME_US, &effect->deadline_us)) return false;
             effect->kind = CORE_EDGE_OWNER;
-            e->emitted[i] = report.facts;
+            e->emitted[i] = r->local_facts[i];
             return true;
         }
         const uint32_t bit = UINT32_C(1) << i;
@@ -390,7 +434,7 @@ static bool next_record(core_edge_service *s, core_admission_record *r, uint64_t
                 !core_before_deadline(now, e->channel_cleanup_deadline_us[c])) continue;
             effect->kind = removal(r) ? CORE_EDGE_PREPARE : CORE_EDGE_CANCEL;
             effect->deadline_us = e->channel_cleanup_deadline_us[c];
-            if (!request_encode(r, c, effect)) return false;
+            if (!encode_channel_operation_request(r, c, effect)) return false;
             e->cleanup_issued |= bit;
             return true;
         }
@@ -398,21 +442,14 @@ static bool next_record(core_edge_service *s, core_admission_record *r, uint64_t
         effect->deadline_us = setup_deadline(r, c);
         if (!(e->prepare_issued & bit)) {
             effect->kind = CORE_EDGE_PREPARE;
-            if (!request_encode(r, c, effect)) return false;
+            if (!encode_channel_operation_request(r, c, effect)) return false;
             e->prepare_issued |= bit;
             return true;
         }
         if ((r->evidence.history & CORE_HISTORY_COMMIT) && !(e->activate_issued & bit) &&
             (core_edge_channels(r, CORE_OBJECT_READY) & (1u << c)) &&
             ((i - first_object(r)) % 2 == 1 || (r->evidence.objects[i + 1] & CORE_OBJECT_ACTIVE))) {
-            core_cbor_writer w = {.data = effect->body, .size = sizeof(effect->body)};
-            core_cbor_write_array(&w, 4);
-            core_cbor_write_uint(&w, CORE_SCHEMA_VERSION);
-            core_cbor_write_uint(&w, CORE_ACTIVATE_KIND);
-            core_cbor_write_uint(&w, r->id.value);
-            core_cbor_write_uint(&w, i);
-            if (w.failed) return false;
-            effect->size = w.offset;
+            if (!encode_endpoint_activation_command(r->id, i, effect)) return false;
             effect->kind = CORE_EDGE_ACTIVATE;
             e->activate_issued |= bit;
             return true;
@@ -428,7 +465,7 @@ bool core_edge_next(core_edge_service *s, uint64_t peer, uint64_t now, core_edge
     for (size_t n = 0; n < CORE_MAX_ADMISSION_RECORDS; ++n) {
         const size_t i = (s->next_record + n) % CORE_MAX_ADMISSION_RECORDS;
         core_admission_record *r = &s->admission->records[i];
-        if (core_edge_supported(r) && next_record(s, r, peer, now, effect)) {
+        if (core_edge_supported(r) && issue_next_edge_effect(s, r, peer, now, effect)) {
             s->next_record = (i + 1) % CORE_MAX_ADMISSION_RECORDS;
             return true;
         }

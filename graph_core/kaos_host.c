@@ -110,14 +110,17 @@ bool core_host_init(core_host *h, const core_host_config *config, const core_hos
     h->control = (core_control){.admission = &h->admission, .edges = &h->edges,
         .collector = config->collector, .collector_enabled = config->collector_enabled};
     h->nodes = (core_node_service){.admission = &h->admission};
+    
     core_endpoint_init(&h->endpoints, &h->admission, channel_notify, h);
     h->edges = (core_edge_service){.admission = &h->admission, .endpoints = &h->endpoints};
     h->ids = (core_coap_ids){.next_mid = 1, .next_token = 1};
     h->active_staging = -1;
     atomic_init(&h->stopping, false);
+    
     for (size_t i = 0; i < config->peer_count; ++i)
         if (config->peers[i] != config->local_device)
             h->peers[h->peer_count++].id = config->peers[i];
+            
     if (!core_wamr_init(&h->nodes.runtime, wake, h)) return false;
     const core_wamr_channels channels = {.context = h, .put = channel_put, .get = channel_get,
         .event_get = channel_event, .event_ready = channel_ready};

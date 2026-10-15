@@ -191,23 +191,21 @@ static bool init_acceptable(const core_node_service *s, const core_admission_rec
         startup_authorized(s, r, now);
 }
 
-static void execution_step(core_node_service *s, size_t index, uint64_t now)
+/* These mailbox transitions run under the affected runtime's lock. */
+static void observe_node_runtime_failure(core_node_service *s, core_admission_record *r,
+                                         const core_runtime_state *state, uint64_t now)
 {
-    core_node_execution *e = &s->executions[index];
-    if (!e->occupied) return;
-    core_admission_record *r = find(s, e->id);
-    if (r == NULL || r->node != &s->admission->nodes[index]) return;
-    core_reserved_node *node = r->node;
-    core_runtime_state *state = s->runtime.lock(s->runtime.context, index);
-
-    /* Exit/liveness is observed before INIT, under the worker's same lock.
-     * A marker emitted before an already-observed exit cannot start a node. */
     if (state->exited || state->prepare_failed) {
         if (state->exited) observe(r, CORE_OBJECT_EXITED);
         if (state->fault || state->prepare_failed) observe(r, CORE_OBJECT_FAILED);
         select_cleanup(s, r, now);
     }
-    if (!r->cleanup_selected && !node->lifetime.closing && state->prepared) {
+}
+
+static void advance_node_startup(const core_node_service *s, core_admission_record *r,
+                                  core_runtime_state *state)
+{
+    if (!r->cleanup_selected && !r->node->lifetime.closing && state->prepared) {
         observe(r, CORE_OBJECT_READY);
         if (!(r->evidence.history & CORE_HISTORY_COMMIT) &&
             core_predicate_eval(&r->scope.predicate, node_channels(s, r, CORE_OBJECT_READY)))
@@ -220,10 +218,15 @@ static void execution_step(core_node_service *s, size_t index, uint64_t now)
             state->start_requested = true;
         }
     }
+}
+
+static void accept_node_init(core_node_service *s, core_admission_record *r,
+                              core_runtime_state *state, uint64_t now)
+{
     if (state->init_pending) {
         state->init_pending = false;
         if (init_acceptable(s, r, state, now)) {
-            if (core_admission_establish_node(s->admission, node->instance)) {
+            if (core_admission_establish_node(s->admission, r->node->instance)) {
                 (void)core_report_record(&r->evidence,
                                          CORE_HISTORY_STARTED | CORE_HISTORY_SUCCESS);
             } else {
@@ -231,17 +234,26 @@ static void execution_step(core_node_service *s, size_t index, uint64_t now)
             }
         }
     }
-    /* Generic ERROR is a reporting-only placeholder, not runtime failure or
-     * cleanup evidence. Its bounded FIFO is owned by the runtime adapter. */
+}
+
+static void request_node_runtime_cleanup(core_node_service *s, core_admission_record *r,
+                                          core_access worker, core_runtime_state *state,
+                                          uint64_t now)
+{
+    const core_reserved_node *node = r->node;
     if (r->cleanup_selected || node->lifetime.closing) {
         select_cleanup(s, r, now);
         state->cancel_requested = true;
-        if (worker_only(&node->lifetime, e->worker)) state->dispose_requested = true;
+        if (worker_only(&node->lifetime, worker)) state->dispose_requested = true;
     }
-    const bool disposed = state->disposed && !state->main_active && !state->configuration_active;
-    s->runtime.unlock(s->runtime.context, index);
-    if (!disposed || !r->cleanup_selected || !node->lifetime.closing) return;
+}
 
+/* Called only after disposal was observed under the runtime lock. Charges and
+ * worker acceptance are released once, even when reclamation spans steps. */
+static void reclaim_node_execution(core_node_service *s, core_admission_record *r,
+                                     core_node_execution *e)
+{
+    core_reserved_node *node = r->node;
     if (!e->worker_accepted) {
         core_work_result result;
         if (!core_action_complete(&node->prepare, e->worker, CORE_WORK_CANCELLED) ||
@@ -262,6 +274,30 @@ static void execution_step(core_node_service *s, size_t index, uint64_t now)
         observe(r, CORE_OBJECT_CLEANED);
         *e = (core_node_execution){0};
     }
+}
+
+static void advance_node_execution(core_node_service *s, size_t index, uint64_t now)
+{
+    core_node_execution *e = &s->executions[index];
+    if (!e->occupied) return;
+    core_admission_record *r = find(s, e->id);
+    if (r == NULL || r->node != &s->admission->nodes[index]) return;
+    core_reserved_node *node = r->node;
+    core_runtime_state *state = s->runtime.lock(s->runtime.context, index);
+
+    /* Exit/liveness is observed before INIT, under the worker's same lock.
+     * A marker emitted before an already-observed exit cannot start a node. */
+    observe_node_runtime_failure(s, r, state, now);
+    advance_node_startup(s, r, state);
+    accept_node_init(s, r, state, now);
+    /* Generic ERROR is a reporting-only placeholder, not runtime failure or
+     * cleanup evidence. Its bounded FIFO is owned by the runtime adapter. */
+    request_node_runtime_cleanup(s, r, e->worker, state, now);
+    const bool disposed = state->disposed && !state->main_active && !state->configuration_active;
+    s->runtime.unlock(s->runtime.context, index);
+    if (!disposed || !r->cleanup_selected || !node->lifetime.closing) return;
+
+    reclaim_node_execution(s, r, e);
 }
 
 static bool node_present(const core_node_service *s, const core_request_scope *scope)
@@ -308,7 +344,7 @@ void core_node_apply_cleanup(core_node_service *s, uint64_t now)
 void core_node_step(core_node_service *s, uint64_t now)
 {
     core_node_apply_cleanup(s, now);
-    for (size_t i = 0; i < CORE_MAX_NODE_RESERVATIONS; ++i) execution_step(s, i, now);
+    for (size_t i = 0; i < CORE_MAX_NODE_RESERVATIONS; ++i) advance_node_execution(s, i, now);
     for (size_t i = 0; i < CORE_MAX_ADMISSION_RECORDS; ++i) {
         core_admission_record *r = &s->admission->records[i];
         if (!core_node_supported(r) || !r->cleanup_selected) continue;
