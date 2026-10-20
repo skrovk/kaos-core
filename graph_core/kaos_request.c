@@ -140,6 +140,25 @@ static bool read_node(core_cbor_reader *reader, core_node_request *request,
     return true;
 }
 
+static bool read_imports(core_cbor_reader *reader, core_native_imports *imports)
+{
+    uint64_t count;
+    if (!core_cbor_array(reader, &count) || count == 0 ||
+        count > CORE_MAX_NATIVE_IMPORTS) return false;
+    imports->count = (uint8_t)count;
+    for (size_t i = 0; i < imports->count; ++i) {
+        const uint8_t *name;
+        size_t size;
+        if (!core_cbor_bytes(reader, &name, &size) || size == 0 ||
+            size > CORE_MAX_NATIVE_IMPORT_NAME_BYTES) return false;
+        memcpy(imports->names[i], name, size);
+        imports->names[i][size] = '\0';
+        /* A wire name cannot hide a suffix behind a string terminator. */
+        if (memchr(name, '\0', size) != NULL) return false;
+    }
+    return core_native_imports_valid(imports);
+}
+
 static bool read_predicate(core_cbor_reader *reader, core_request_scope *scope)
 {
     const uint8_t *bytes;
@@ -168,7 +187,11 @@ static bool read_request(core_cbor_reader *reader, core_op_id id,
     switch (scope->kind) {
     case CORE_REQUEST_ADD_NODE_NO_EDGES:
     case CORE_REQUEST_ADD_NODE:
-        if (count != (scope->kind == CORE_REQUEST_ADD_NODE ? 11 : 9) ||
+        /* Schema 4 preserves its original no-grant shape. A nonempty list is
+         * the only extension and follows all existing fields. Old decoders
+         * reject the larger shape instead of ignoring the requested grants. */
+        if ((count != (scope->kind == CORE_REQUEST_ADD_NODE ? 11 : 9) &&
+             count != (scope->kind == CORE_REQUEST_ADD_NODE ? 12 : 10)) ||
             !read_node(reader, request, scope, id)) {
             return false;
         }
@@ -182,6 +205,8 @@ static bool read_request(core_cbor_reader *reader, core_op_id id,
                 return false;
             }
         }
+        if (count == (scope->kind == CORE_REQUEST_ADD_NODE ? 12 : 10) &&
+            !read_imports(reader, &request->imports)) return false;
         break;
     case CORE_REQUEST_ADD_EDGE:
         scope->channel_count = 1;

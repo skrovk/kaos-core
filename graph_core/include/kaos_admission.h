@@ -5,6 +5,7 @@
 #include "kaos_predicate.h"
 #include "kaos_report.h"
 #include "kaos_limits.h"
+#include "kaos_native.h"
 
 /* Provisional common host/device profile. Admission and all inspection run
  * under the caller's short local lock. No allocation, dispatch or waits occur
@@ -84,6 +85,9 @@ typedef struct {
     uint8_t configuration_size;
     uint8_t artifact_ref[CORE_MAX_ARTIFACT_REF_BYTES];
     uint8_t configuration[CORE_MAX_CONFIGURATION_BYTES];
+    /* O-authorized grants, separate from bytes delivered to guest configure.
+     * Fixed storage is part of each admission record's profile overhead. */
+    core_native_imports imports;
 } core_node_request;
 
 /* Exact immutable scope, ordered node (when present), then source/destination

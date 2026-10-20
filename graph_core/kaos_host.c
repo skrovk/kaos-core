@@ -28,6 +28,9 @@ static int32_t channel_put(void *context, size_t slot, const uint64_t channel[3]
     lock(h);
     const int32_t result = core_channel_put(&h->endpoints, h->admission.nodes[slot].instance,
                                             channel_id(channel), data, size);
+    if (result == CORE_DATA_OK && h->platform.channel_observation != NULL)
+        h->platform.channel_observation(h->platform.context, CORE_CHANNEL_PUT,
+            h->admission.nodes[slot].instance, channel_id(channel), data, size);
     unlock(h);
     if (result == CORE_DATA_OK) wake(h);
     return result;
@@ -40,6 +43,9 @@ static int32_t channel_get(void *context, size_t slot, const uint64_t channel[3]
     lock(h);
     const int32_t result = core_channel_get(&h->endpoints, h->admission.nodes[slot].instance,
                                             channel_id(channel), data, capacity, &size);
+    if (result == CORE_DATA_OK && h->platform.channel_observation != NULL)
+        h->platform.channel_observation(h->platform.context, CORE_CHANNEL_GET,
+            h->admission.nodes[slot].instance, channel_id(channel), data, size);
     unlock(h);
     return result == CORE_DATA_OK ? (int32_t)size : result;
 }

@@ -68,5 +68,9 @@ void core_wamr_channel_changed(size_t slot);
 /* Restricted bytecode profile checked before WAMR instantiation. WAMR still
  * performs full bytecode/type validation. Useful for artifact qualification. */
 bool core_wamr_profile(const uint8_t *bytes, size_t size);
+/* The same restricted profile with explicit additional native grants.
+ * Loaded-module function types are checked separately before instantiation. */
+bool core_wamr_profile_with_imports(const uint8_t *bytes, size_t size,
+                                  const core_native_imports *imports);
 
 #endif

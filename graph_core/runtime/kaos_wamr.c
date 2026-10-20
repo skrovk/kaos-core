@@ -3,6 +3,7 @@
 #include "kaos_wamr.h"
 #include "kaos_admission.h"
 #include "wasm_export.h"
+#include "native_internal.h"
 
 #include <errno.h>
 #include <pthread.h>
@@ -96,6 +97,7 @@ typedef struct {
     size_t artifact_size;
     uint8_t configuration[CORE_MAX_CONFIGURATION_BYTES];
     size_t configuration_size;
+    core_native_imports imports;
     wasm_module_t module;
     wasm_module_inst_t instance;
     wasm_exec_env_t execution;
@@ -288,6 +290,39 @@ static bool guest_buffer(runtime_slot *slot, uint32_t offset, uint32_t size,
     return true;
 }
 
+bool core_native_buffer(wasm_exec_env_t execution, uint32_t offset,
+                        uint32_t size, uint8_t **out)
+{
+    runtime_slot *slot = caller(execution);
+    return slot && guest_buffer(slot, offset, size, out);
+}
+
+bool core_native_delay(wasm_exec_env_t execution, uint32_t duration_us)
+{
+    runtime_slot *slot = caller(execution);
+    if (!slot || duration_us > CORE_WAMR_MAX_WAIT_US) return false;
+    struct timespec deadline;
+    if (clock_gettime(CLOCK_MONOTONIC, &deadline) != 0) return false;
+    deadline.tv_nsec += (long)duration_us * 1000;
+    deadline.tv_sec += deadline.tv_nsec / 1000000000;
+    deadline.tv_nsec %= 1000000000;
+    pthread_mutex_lock(&slot->mutex);
+    bool complete = false;
+    while (slot->executing && !slot->state.cancel_requested && !slot->shutdown) {
+        struct timespec now;
+        if (clock_gettime(CLOCK_MONOTONIC, &now) != 0) break;
+        if (now.tv_sec > deadline.tv_sec ||
+            (now.tv_sec == deadline.tv_sec && now.tv_nsec >= deadline.tv_nsec)) {
+            complete = true;
+            break;
+        }
+        const int status = wait_worker(slot, &deadline);
+        if (status != 0 && status != ETIMEDOUT) break;
+    }
+    pthread_mutex_unlock(&slot->mutex);
+    return complete;
+}
+
 static bool guest_channel(runtime_slot *slot, uint32_t offset, uint64_t channel[3])
 {
     uint8_t *bytes;
@@ -356,6 +391,51 @@ static NativeSymbol symbols[] = {
     {"event_get", (void *)guest_event_get, "(ii)i", NULL}
 };
 
+/* The trusted registry currently contains only integer-offset/copy interfaces.
+ * Validate the real loaded Wasm type, rather than trusting the guest's name or
+ * WAMR's process-global linkage. Every check precedes instantiation. */
+static bool import_signature(wasm_func_type_t type, const char *expected)
+{
+    if (!type || !expected || *expected++ != '(') return false;
+    uint32_t parameters = 0;
+    while (*expected == 'i') {
+        if (parameters >= wasm_func_type_get_param_count(type) ||
+            wasm_func_type_get_param_valkind(type, parameters) != WASM_I32)
+            return false;
+        ++parameters;
+        ++expected;
+    }
+    if (*expected++ != ')' || parameters != wasm_func_type_get_param_count(type))
+        return false;
+    if (*expected == '\0') return wasm_func_type_get_result_count(type) == 0;
+    return expected[0] == 'i' && expected[1] == '\0' &&
+           wasm_func_type_get_result_count(type) == 1 &&
+           wasm_func_type_get_result_valkind(type, 0) == WASM_I32;
+}
+
+static bool validate_loaded_imports(runtime_slot *slot)
+{
+    const int32_t count = wasm_runtime_get_import_count(slot->module);
+    if (count < 0 || count > 6 + CORE_MAX_NATIVE_IMPORTS) return false;
+    for (int32_t i = 0; i < count; ++i) {
+        wasm_import_t import = {0};
+        wasm_runtime_get_import_type(slot->module, i, &import);
+        if (!import.linked || import.kind != WASM_IMPORT_EXPORT_KIND_FUNC ||
+            !import.module_name || !import.name) return false;
+        const char *expected = NULL;
+        if (strcmp(import.module_name, "kaos") == 0) {
+            for (size_t j = 0; j < sizeof(symbols) / sizeof(symbols[0]); ++j)
+                if (strcmp(import.name, symbols[j].symbol) == 0)
+                    expected = symbols[j].signature;
+        } else if (strcmp(import.module_name, CORE_NATIVE_MODULE) == 0 &&
+                   core_native_granted(&slot->imports, import.name)) {
+            expected = core_native_signature(import.name);
+        }
+        if (!import_signature(import.u.func_type, expected)) return false;
+    }
+    return true;
+}
+
 static bool signature(wasm_module_inst_t instance, wasm_function_inst_t function,
                       uint32_t parameters, uint32_t results)
 {
@@ -417,7 +497,8 @@ static void publish_runtime_preparation_result(runtime_slot *slot, bool good)
 
 static void prepare_wamr_slot(runtime_slot *slot)
 {
-    const bool profile = core_wamr_profile(slot->artifact, slot->artifact_size);
+    const bool profile = core_wamr_profile_with_imports(slot->artifact,
+                                               slot->artifact_size, &slot->imports);
     bool good = profile;
     allocate_runtime_arena(slot);
     allocation_arena = &slot->memory;
@@ -428,6 +509,7 @@ static void prepare_wamr_slot(runtime_slot *slot)
     good = good && slot->memory.bytes && thread_environment;
     char error[128] = {0};
     if (good) good = load_wasm_module(slot, error, sizeof(error));
+    if (good) good = validate_loaded_imports(slot);
 #ifdef CORE_WAMR_TRACE_PREPARE
     const size_t loader_payload = slot->memory.requested[0] - thread_payload;
 #endif
@@ -547,6 +629,7 @@ static void dispose(runtime_slot *slot)
     slot->memory = (arena){0};
     slot->artifact = NULL;
     slot->artifact_size = 0;
+    slot->imports = (core_native_imports){0};
     slot->busy = false;
     slot->state.prepared = false;
     slot->state.main_active = false;
@@ -588,12 +671,14 @@ static void *worker(void *context)
     return NULL;
 }
 
-static bool queue_prepare(void *context, size_t index, uint8_t *artifact, size_t size,
+static bool queue_prepare_with_imports(void *context, size_t index,
+                          uint8_t *artifact, size_t size,
                           const uint8_t *configuration, size_t configuration_size,
-                          size_t arena_bytes)
+                          size_t arena_bytes, const core_native_imports *imports)
 {
     (void)context;
-    if (!service.initialized || index >= CORE_MAX_NODE_RESERVATIONS || !artifact ||
+    if (!core_native_imports_valid(imports) ||
+        !service.initialized || index >= CORE_MAX_NODE_RESERVATIONS || !artifact ||
         !size || size > CORE_MAX_ARTIFACT_BYTES ||
         configuration_size > CORE_MAX_CONFIGURATION_BYTES ||
         (configuration_size && !configuration) || !arena_bytes ||
@@ -606,6 +691,7 @@ static bool queue_prepare(void *context, size_t index, uint8_t *artifact, size_t
     slot->artifact = artifact;
     slot->artifact_size = size;
     slot->configuration_size = configuration_size;
+    slot->imports = *imports;
     if (configuration_size) memcpy(slot->configuration, configuration, configuration_size);
     slot->busy = true;
     slot->prepare_requested = true;
@@ -615,6 +701,15 @@ static bool queue_prepare(void *context, size_t index, uint8_t *artifact, size_t
     signal_worker(slot);
     pthread_mutex_unlock(&slot->mutex);
     return true;
+}
+
+static bool queue_prepare(void *context, size_t index, uint8_t *artifact, size_t size,
+                          const uint8_t *configuration, size_t configuration_size,
+                          size_t arena_bytes)
+{
+    const core_native_imports empty = {0};
+    return queue_prepare_with_imports(context, index, artifact, size,
+                            configuration, configuration_size, arena_bytes, &empty);
 }
 
 bool core_wamr_attach_entry_guard(void *context,
@@ -712,6 +807,7 @@ bool core_wamr_init(core_node_runtime *out, void (*callback)(void *), void *cont
             sizeof(allocation), (size_t)_Alignof(allocation));
 #endif
     if (!initialized) return false;
+    if (!core_native_register()) goto fail_runtime;
     service.notify = callback;
     service.context = context;
     pthread_attr_t attributes;
@@ -763,7 +859,8 @@ bool core_wamr_init(core_node_runtime *out, void (*callback)(void *), void *cont
         goto fail_runtime;
     }
     service.initialized = true;
-    *out = (core_node_runtime){.prepare = queue_prepare, .lock = lock, .unlock = unlock};
+    *out = (core_node_runtime){.prepare = queue_prepare, .lock = lock, .unlock = unlock,
+                               .prepare_with_imports = queue_prepare_with_imports};
     return true;
 
 #ifndef ESP_PLATFORM

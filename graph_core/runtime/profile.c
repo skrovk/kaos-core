@@ -1,5 +1,6 @@
 #include "kaos_wamr.h"
 #include "kaos_admission.h"
+#include "native_internal.h"
 
 #include <string.h>
 
@@ -33,10 +34,24 @@ static bool equals(reader r, const char *text)
            memcmp(r.at, text, strlen(text)) == 0;
 }
 
-bool core_wamr_profile(const uint8_t *bytes, size_t size)
+static bool allowed(reader module, reader field, const core_native_imports *imports)
+{
+    if (equals(module, "kaos"))
+        return equals(field, "init") || equals(field, "error") ||
+               equals(field, "event_wait") || equals(field, "put") ||
+               equals(field, "get") || equals(field, "event_get");
+    if (!equals(module, CORE_NATIVE_MODULE)) return false;
+    for (size_t i = 0; i < imports->count; ++i)
+        if (equals(field, imports->names[i])) return true;
+    return false;
+}
+
+bool core_wamr_profile_with_imports(const uint8_t *bytes, size_t size,
+                                  const core_native_imports *imports)
 {
     static const uint8_t magic[] = {0, 0x61, 0x73, 0x6d, 1, 0, 0, 0};
-    if (!bytes || size < sizeof(magic) || size > CORE_MAX_ARTIFACT_BYTES ||
+    if (!core_native_grants_registered(imports) ||
+        !bytes || size < sizeof(magic) || size > CORE_MAX_ARTIFACT_BYTES ||
         memcmp(bytes, magic, sizeof(magic)) != 0) return false;
     reader input = {bytes + sizeof(magic), bytes + size};
     bool memory = false, configure = false, main = false;
@@ -49,15 +64,13 @@ bool core_wamr_profile(const uint8_t *bytes, size_t size)
         input.at += size;
         if (section == 8) return false; /* implicit start always forbidden */
         if (section == 2) {
-            if (!u32(&r, &count) || count > 6) return false;
+            if (!u32(&r, &count) || count > 6 + CORE_MAX_NATIVE_IMPORTS) return false;
             for (uint32_t i = 0; i < count; ++i) {
                 reader module, field;
                 uint32_t type;
                 if (!name(&r, &module) || !name(&r, &field) || r.at == r.end ||
-                    *r.at++ != 0 || !u32(&r, &type) || !equals(module, "kaos") ||
-                    !(equals(field, "init") || equals(field, "error") ||
-                      equals(field, "event_wait") || equals(field, "put") ||
-                      equals(field, "get") || equals(field, "event_get"))) return false;
+                    *r.at++ != 0 || !u32(&r, &type) ||
+                    !allowed(module, field, imports)) return false;
             }
             if (r.at != r.end) return false;
         } else if (section == 4) {
@@ -88,4 +101,10 @@ bool core_wamr_profile(const uint8_t *bytes, size_t size)
         }
     }
     return memory && configure && main;
+}
+
+bool core_wamr_profile(const uint8_t *bytes, size_t size)
+{
+    const core_native_imports empty = {0};
+    return core_wamr_profile_with_imports(bytes, size, &empty);
 }

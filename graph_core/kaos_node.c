@@ -98,8 +98,14 @@ bool core_node_artifact(core_node_service *s, core_op_id id, uint8_t *artifact,
     core_access token;
     (void)core_action_issue(&node->prepare, owner, &token);
     (void)core_action_begin(&node->prepare, token);
-    if (!s->runtime.prepare(s->runtime.context, index, artifact, size,
-                            r->request.configuration, r->request.configuration_size, arena)) {
+    const bool prepared = r->request.imports.count == 0 ?
+        s->runtime.prepare(s->runtime.context, index, artifact, size,
+            r->request.configuration, r->request.configuration_size, arena) :
+        s->runtime.prepare_with_imports != NULL &&
+        s->runtime.prepare_with_imports(s->runtime.context, index, artifact, size,
+            r->request.configuration, r->request.configuration_size, arena,
+            &r->request.imports);
+    if (!prepared) {
         core_work_result result;
         (void)core_action_complete(&node->prepare, token, CORE_WORK_FAILED);
         (void)core_action_accept(&node->prepare, token, &result);

@@ -11,6 +11,7 @@
 
 static core_host host;
 static core_host_udp udp;
+static uint64_t observed, observation_drops;
 static void stop(int signal_number) { (void)signal_number; core_host_udp_stop(&udp); }
 static void diagnostic(void *context, const char *name, core_op_id id, size_t value)
 {
@@ -18,6 +19,38 @@ static void diagnostic(void *context, const char *name, core_op_id id, size_t va
     char line[96];
     const int size = snprintf(line, sizeof(line), "%s %" PRIu64 " %zu\n", name, id.value, value);
     if (size > 0 && (size_t)size < sizeof(line)) (void)write(STDOUT_FILENO, line, (size_t)size);
+}
+/* Opt-in host instrumentation. A bounded line fits Linux PIPE_BUF and is
+ * written once to nonblocking stdout: no queue, allocation or retry under the
+ * registry lock. Sequence gaps and the final counters expose observation loss.
+ * Host processes share CLOCK_MONOTONIC; these times are not guest data clocks. */
+static void channel_observation(void *context, unsigned direction, core_instance_id instance,
+                                 core_channel_id channel, const uint8_t *data, size_t size)
+{
+    (void)context;
+    const uint64_t sequence = ++observed;
+    uint64_t time;
+    if (size > CORE_MAX_PAYLOAD_BYTES || !core_clock_now(&time)) {
+        ++observation_drops;
+        return;
+    }
+    char line[256 + 2 * CORE_MAX_PAYLOAD_BYTES];
+    const int prefix = snprintf(line, sizeof(line),
+        "CHANNEL %" PRIu64 " %" PRIu64 " %" PRIu64 " %s %" PRIu64 " %" PRIu64 " %" PRIu64 " ",
+        sequence, time, instance.value, direction == CORE_CHANNEL_PUT ? "PUT" : "GET",
+        channel.source, channel.destination, channel.service);
+    if (prefix < 0 || (size_t)prefix + 2 * size + 1 > sizeof(line)) {
+        ++observation_drops;
+        return;
+    }
+    static const char hex[] = "0123456789abcdef";
+    size_t length = (size_t)prefix;
+    for (size_t i = 0; i < size; ++i) {
+        line[length++] = hex[data[i] >> 4];
+        line[length++] = hex[data[i] & 15];
+    }
+    line[length++] = '\n';
+    if (write(STDOUT_FILENO, line, length) != (ssize_t)length) ++observation_drops;
 }
 static bool number(const char *text, uint64_t max, uint64_t *out)
 {
@@ -76,6 +109,9 @@ int main(int argc, char **argv)
         return 1;
     }
     platform.diagnostic = diagnostic;
+    const char *trace = getenv("KAOS_TRACE_CHANNELS");
+    const bool tracing = trace != NULL && strcmp(trace, "1") == 0;
+    if (tracing) platform.channel_observation = channel_observation;
     const struct sigaction action = {.sa_handler = stop};
     if (sigaction(SIGTERM, &action, NULL) != 0 || sigaction(SIGINT, &action, NULL) != 0 ||
         !core_host_init(&host, &config, &platform)) {
@@ -87,6 +123,14 @@ int main(int argc, char **argv)
     (void)write(STDOUT_FILENO, ready, (size_t)size);
     const bool good = core_host_run(&host);
     core_host_destroy(&host);
+    if (tracing) {
+        /* Workers have joined. A missing final line makes the trace incomplete. */
+        char final[96];
+        const int count = snprintf(final, sizeof(final), "CHANNEL_END %" PRIu64 " %" PRIu64 "\n",
+                                   observed, observation_drops);
+        if (count > 0 && (size_t)count < sizeof(final))
+            (void)write(STDOUT_FILENO, final, (size_t)count);
+    }
     core_host_udp_close(&udp);
     return good ? 0 : 1;
 }

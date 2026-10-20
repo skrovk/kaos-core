@@ -1010,7 +1010,9 @@ core_admit_result core_admission_reserve_removal(core_admission *pool, uint64_t 
         if (result != CORE_ADMIT_ACCEPTED) return result;
     }
     if (record == NULL) return CORE_ADMIT_FULL;
-    result = check_removal_binding_conflicts(pool, record, binding);
+    /* A selected eviction slot still contains its old scope. Only a retained
+     * record for this operation may reject a second use of its logical channel. */
+    result = check_removal_binding_conflicts(pool, found, binding);
     if (result != CORE_ADMIT_ACCEPTED) return result;
     publish_removal_observer(pool, record, found == NULL, coordinator, id, index, target, binding);
     *out = record;
