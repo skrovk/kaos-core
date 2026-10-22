@@ -33,8 +33,8 @@ static bool read_ports(core_cbor_reader *reader, core_request_scope *scope)
     for (size_t i = 0; i < scope->port_count; ++i) {
         core_port *port = &scope->ports[i];
         uint64_t fields, direction;
-        if (!core_cbor_array(reader, &fields) || fields != 4 ||
-            !read_u16(reader, &port->id) || !core_cbor_uint(reader, &direction) || direction > 1 ||
+        if (!core_cbor_array(reader, &fields) || fields != 4 || !read_u16(reader, &port->id) ||
+            !core_cbor_uint(reader, &direction) || direction > 1 ||
             !read_u16(reader, &port->type) || !read_u16(reader, &port->max_payload) ||
             port->max_payload == 0 || port->max_payload > CORE_MAX_PAYLOAD_BYTES) {
             return false;
@@ -49,23 +49,45 @@ static bool read_ports(core_cbor_reader *reader, core_request_scope *scope)
     return true;
 }
 
+void core_channel_encode(core_cbor_writer *w, const core_channel *c)
+{
+    core_cbor_write_array(w, 13);
+    core_cbor_write_uint(w, c->source_logical);
+    core_cbor_write_uint(w, c->destination_logical);
+    core_cbor_write_uint(w, c->service);
+    core_cbor_write_uint(w, c->source_instance.value);
+    core_cbor_write_uint(w, c->destination_instance.value);
+    core_cbor_write_uint(w, c->source_owner);
+    core_cbor_write_uint(w, c->destination_owner);
+    core_cbor_write_uint(w, c->source_port);
+    core_cbor_write_uint(w, c->destination_port);
+    core_cbor_write_uint(w, c->type);
+    core_cbor_write_uint(w, c->payload_bytes);
+    core_cbor_write_uint(w, c->queue_messages);
+    core_cbor_write_uint(w, c->addition_allowance_us);
+}
+
 static bool read_channel(core_cbor_reader *reader, core_channel *channel)
 {
     uint64_t count, queue_messages;
-    if (!core_cbor_array(reader, &count) || count != 13 ||
-        !core_cbor_uint(reader, &channel->source_logical) ||
+    if (!core_cbor_array(reader, &count) || count != 13)
+        return false;
+    /* Channel and execution identities precede owner/port descriptors. */
+    if (!core_cbor_uint(reader, &channel->source_logical) ||
         !core_cbor_uint(reader, &channel->destination_logical) ||
         channel->source_logical == channel->destination_logical ||
         !core_cbor_uint(reader, &channel->service) ||
         !core_cbor_uint(reader, &channel->source_instance.value) ||
         !core_cbor_uint(reader, &channel->destination_instance.value) ||
-        channel->source_instance.value == channel->destination_instance.value ||
-        !core_cbor_uint(reader, &channel->source_owner) ||
+        channel->source_instance.value == channel->destination_instance.value)
+        return false;
+    if (!core_cbor_uint(reader, &channel->source_owner) ||
         !core_cbor_uint(reader, &channel->destination_owner) ||
-        !read_u16(reader, &channel->source_port) ||
-        !read_u16(reader, &channel->destination_port) ||
-        !read_u16(reader, &channel->type) ||
-        !read_u16(reader, &channel->payload_bytes) || channel->payload_bytes == 0 ||
+        !read_u16(reader, &channel->source_port) || !read_u16(reader, &channel->destination_port) ||
+        !read_u16(reader, &channel->type))
+        return false;
+    /* Payload, queue and time bounds retain their wire/check order. */
+    if (!read_u16(reader, &channel->payload_bytes) || channel->payload_bytes == 0 ||
         channel->payload_bytes > CORE_MAX_PAYLOAD_BYTES ||
         !core_cbor_uint(reader, &queue_messages) || queue_messages == 0 ||
         queue_messages > CORE_MAX_QUEUE_MESSAGES ||
@@ -85,8 +107,8 @@ static bool read_binding(core_cbor_reader *reader, core_binding *binding)
            core_cbor_uint(reader, &binding->creating_op.value);
 }
 
-static bool read_channels(core_cbor_reader *reader, core_request_scope *scope,
-                          core_op_id id, bool bindings)
+static bool read_channels(core_cbor_reader *reader, core_request_scope *scope, core_op_id id,
+                          bool bindings)
 {
     uint64_t count;
     if (!core_cbor_array(reader, &count) || count > CORE_MAX_REQUEST_CHANNELS) {
@@ -115,17 +137,18 @@ static bool read_node(core_cbor_reader *reader, core_node_request *request,
     const uint8_t *artifact_ref, *configuration;
     size_t artifact_ref_size, configuration_size;
     if (!core_cbor_uint(reader, &request->logical_node_id) ||
-        !core_cbor_bytes(reader, &artifact_ref, &artifact_ref_size) ||
-        artifact_ref_size == 0 || artifact_ref_size > CORE_MAX_ARTIFACT_REF_BYTES ||
+        !core_cbor_bytes(reader, &artifact_ref, &artifact_ref_size) || artifact_ref_size == 0 ||
+        artifact_ref_size > CORE_MAX_ARTIFACT_REF_BYTES ||
         !read_u32(reader, &request->artifact_bytes) || request->artifact_bytes == 0 ||
         request->artifact_bytes > CORE_MAX_ARTIFACT_BYTES ||
         !read_u32(reader, &request->artifact_crc32) ||
-        !read_u32(reader, &request->required_bytes) || request->required_bytes < request->artifact_bytes ||
-        !core_cbor_bytes(reader, &configuration, &configuration_size) ||
+        !read_u32(reader, &request->required_bytes) ||
+        request->required_bytes < request->artifact_bytes)
+        return false;
+    if (!core_cbor_bytes(reader, &configuration, &configuration_size) ||
         configuration_size > CORE_MAX_CONFIGURATION_BYTES ||
         !core_cbor_uint(reader, &request->addition_allowance_us) ||
-        !core_cbor_uint(reader, &request->cleanup_allowance_us) ||
-        !read_ports(reader, scope)) {
+        !core_cbor_uint(reader, &request->cleanup_allowance_us) || !read_ports(reader, scope)) {
         return false;
     }
     request->artifact_ref_size = (uint8_t)artifact_ref_size;
@@ -143,18 +166,20 @@ static bool read_node(core_cbor_reader *reader, core_node_request *request,
 static bool read_imports(core_cbor_reader *reader, core_native_imports *imports)
 {
     uint64_t count;
-    if (!core_cbor_array(reader, &count) || count == 0 ||
-        count > CORE_MAX_NATIVE_IMPORTS) return false;
+    if (!core_cbor_array(reader, &count) || count == 0 || count > CORE_MAX_NATIVE_IMPORTS)
+        return false;
     imports->count = (uint8_t)count;
     for (size_t i = 0; i < imports->count; ++i) {
         const uint8_t *name;
         size_t size;
         if (!core_cbor_bytes(reader, &name, &size) || size == 0 ||
-            size > CORE_MAX_NATIVE_IMPORT_NAME_BYTES) return false;
+            size > CORE_MAX_NATIVE_IMPORT_NAME_BYTES)
+            return false;
         memcpy(imports->names[i], name, size);
         imports->names[i][size] = '\0';
         /* A wire name cannot hide a suffix behind a string terminator. */
-        if (memchr(name, '\0', size) != NULL) return false;
+        if (memchr(name, '\0', size) != NULL)
+            return false;
     }
     return core_native_imports_valid(imports);
 }
@@ -163,8 +188,8 @@ static bool read_predicate(core_cbor_reader *reader, core_request_scope *scope)
 {
     const uint8_t *bytes;
     size_t size;
-    if (!core_cbor_bytes(reader, &bytes, &size) || size == 0 ||
-        size % 2 != 0 || size / 2 > CORE_MAX_PREDICATE_TOKENS) {
+    if (!core_cbor_bytes(reader, &bytes, &size) || size == 0 || size % 2 != 0 ||
+        size / 2 > CORE_MAX_PREDICATE_TOKENS) {
         return false;
     }
     core_predicate_token tokens[CORE_MAX_PREDICATE_TOKENS];
@@ -177,8 +202,8 @@ static bool read_predicate(core_cbor_reader *reader, core_request_scope *scope)
     return core_predicate_init(&scope->predicate, tokens, size / 2, scope->channel_count);
 }
 
-static bool read_request(core_cbor_reader *reader, core_op_id id,
-                         core_node_request *request, core_request_scope *scope)
+static bool read_request(core_cbor_reader *reader, core_op_id id, core_node_request *request,
+                         core_request_scope *scope)
 {
     uint64_t count;
     if (!core_cbor_array(reader, &count)) {
@@ -186,13 +211,12 @@ static bool read_request(core_cbor_reader *reader, core_op_id id,
     }
     switch (scope->kind) {
     case CORE_REQUEST_ADD_NODE_NO_EDGES:
-    case CORE_REQUEST_ADD_NODE:
+    case CORE_REQUEST_ADD_NODE: {
+        const uint64_t fields = scope->kind == CORE_REQUEST_ADD_NODE ? 11 : 9;
         /* Schema 4 preserves its original no-grant shape. A nonempty list is
          * the only extension and follows all existing fields. Old decoders
          * reject the larger shape instead of ignoring the requested grants. */
-        if ((count != (scope->kind == CORE_REQUEST_ADD_NODE ? 11 : 9) &&
-             count != (scope->kind == CORE_REQUEST_ADD_NODE ? 12 : 10)) ||
-            !read_node(reader, request, scope, id)) {
+        if ((count != fields && count != fields + 1) || !read_node(reader, request, scope, id)) {
             return false;
         }
         if (scope->kind == CORE_REQUEST_ADD_NODE) {
@@ -205,9 +229,10 @@ static bool read_request(core_cbor_reader *reader, core_op_id id,
                 return false;
             }
         }
-        if (count == (scope->kind == CORE_REQUEST_ADD_NODE ? 12 : 10) &&
-            !read_imports(reader, &request->imports)) return false;
+        if (count == fields + 1 && !read_imports(reader, &request->imports))
+            return false;
         break;
+    }
     case CORE_REQUEST_ADD_EDGE:
         scope->channel_count = 1;
         scope->bindings[0].creating_op = id;
@@ -245,47 +270,61 @@ static bool read_request(core_cbor_reader *reader, core_op_id id,
     return reader->offset == reader->size;
 }
 
-static core_admit_result submit(core_admission *pool, uint64_t sender,
-                                const uint8_t *data, size_t size, uint64_t now_us,
-                                const core_admission_record **out, bool trusted_node,
-                                bool endpoint_only, bool cancel)
+typedef enum {
+    SUBMIT_AUTHORITY,
+    SUBMIT_TRUSTED_NODE,
+    SUBMIT_FORWARDED_PREPARE,
+    SUBMIT_FORWARDED_CANCEL
+} submission_mode;
+
+static core_admit_result submit(core_admission *pool, uint64_t sender, const uint8_t *data,
+                                size_t size, uint64_t now_us, const core_admission_record **out,
+                                submission_mode mode)
 {
+    const bool trusted_node = mode == SUBMIT_TRUSTED_NODE;
+    const bool endpoint_only = mode == SUBMIT_FORWARDED_PREPARE || mode == SUBMIT_FORWARDED_CANCEL;
+    const bool cancel = mode == SUBMIT_FORWARDED_CANCEL;
     if (data == NULL || size == 0 || size > CORE_MAX_REQUEST_BYTES) {
         return CORE_ADMIT_INVALID;
     }
+
     core_cbor_reader envelope = {.data = data, .size = size};
     uint64_t count, version, kind;
     core_op_id id;
     const uint8_t *body;
     size_t body_size;
-    if (!core_cbor_array(&envelope, &count) || count != 4 ||
-        !core_cbor_uint(&envelope, &version) || version != CORE_SCHEMA_VERSION ||
-        !core_cbor_uint(&envelope, &kind) || kind < CORE_REQUEST_ADD_NODE_NO_EDGES ||
-        kind > CORE_REQUEST_REMOVE_EDGE ||
-        (trusted_node && kind != CORE_REQUEST_ADD_NODE_NO_EDGES) ||
-        !core_cbor_uint(&envelope, &id.value) ||
-        !core_cbor_bytes(&envelope, &body, &body_size) || envelope.offset != size) {
+    if (!core_cbor_array(&envelope, &count) || count != 4 || !core_cbor_uint(&envelope, &version) ||
+        version != CORE_SCHEMA_VERSION || !core_cbor_uint(&envelope, &kind) ||
+        kind < CORE_REQUEST_ADD_NODE_NO_EDGES || kind > CORE_REQUEST_REMOVE_EDGE ||
+        (trusted_node && kind != CORE_REQUEST_ADD_NODE_NO_EDGES))
+        return CORE_ADMIT_INVALID;
+    if (!core_cbor_uint(&envelope, &id.value) || !core_cbor_bytes(&envelope, &body, &body_size) ||
+        envelope.offset != size) {
         return CORE_ADMIT_INVALID;
     }
+
     if (!trusted_node && !endpoint_only && (!pool->configured || sender != pool->authority)) {
         return CORE_ADMIT_UNAUTHORIZED;
     }
     if (!endpoint_only && core_admission_find(pool, id) != NULL) {
         return CORE_ADMIT_DUPLICATE;
     }
+
     core_cbor_reader reader = {.data = body, .size = body_size};
     core_node_request request = {0};
     core_request_scope scope = {.kind = (uint8_t)kind};
     if (!read_request(&reader, id, &request, &scope)) {
         return CORE_ADMIT_INVALID;
     }
+
     scope.coordinator = pool->local_device;
     if (scope.kind == CORE_REQUEST_ADD_EDGE || scope.kind == CORE_REQUEST_REMOVE_EDGE) {
         scope.coordinator = scope.bindings[0].channel.source_owner;
     } else if (endpoint_only && scope.channel_count > 0) {
         const core_channel *channel = &scope.bindings[0].channel;
-        scope.coordinator = channel->source_instance.value == scope.instance.value ?
-                            channel->source_owner : channel->destination_owner;
+        scope.coordinator = channel->source_instance.value == scope.instance.value
+                                ? channel->source_owner
+                                : channel->destination_owner;
     }
     if (cancel && scope.kind != CORE_REQUEST_ADD_NODE && scope.kind != CORE_REQUEST_ADD_EDGE) {
         return CORE_ADMIT_INVALID;
@@ -316,17 +355,16 @@ static core_admit_result submit(core_admission *pool, uint64_t sender,
     return core_admission_reserve(pool, id, &request, &scope, now_us, endpoint_only, cancel, out);
 }
 
-core_admit_result core_request_submit(core_admission *pool, uint64_t sender,
-                                      const uint8_t *data, size_t size,
-                                      uint64_t now_us, const core_admission_record **out)
+core_admit_result core_request_submit(core_admission *pool, uint64_t sender, const uint8_t *data,
+                                      size_t size, uint64_t now_us,
+                                      const core_admission_record **out)
 {
-    return submit(pool, sender, data, size, now_us, out, false, false, false);
+    return submit(pool, sender, data, size, now_us, out, SUBMIT_AUTHORITY);
 }
 
 core_admit_result core_endpoint_channel_submit(core_admission *pool, uint64_t coordinator,
-                                               const uint8_t *data, size_t size,
-                                               uint64_t now_us, bool cancel,
-                                               const core_admission_record **out)
+                                               const uint8_t *data, size_t size, uint64_t now_us,
+                                               bool cancel, const core_admission_record **out)
 {
     (void)now_us; /* Ki neither starts a lease nor interprets Kc's clock. */
     core_cbor_reader reader = {.data = data, .size = size};
@@ -334,14 +372,14 @@ core_admit_result core_endpoint_channel_submit(core_admission *pool, uint64_t co
     core_op_id id;
     core_channel channel;
     if (data == NULL || size == 0 || size > CORE_MAX_REQUEST_BYTES || out == NULL ||
-        !core_cbor_array(&reader, &count) || count != 5 ||
-        !core_cbor_uint(&reader, &version) || version != CORE_SCHEMA_VERSION ||
-        !core_cbor_uint(&reader, &kind) || kind != CORE_CHANNEL_COMMAND_KIND ||
-        !core_cbor_uint(&reader, &id.value) || !core_cbor_uint(&reader, &index) ||
-        index >= CORE_MAX_REQUEST_CHANNELS || !read_channel(&reader, &channel) ||
-        reader.offset != size) return CORE_ADMIT_INVALID;
-    return core_admission_reserve_channel(pool, coordinator, id, (uint8_t)index,
-                                           &channel, cancel, out);
+        !core_cbor_array(&reader, &count) || count != 5 || !core_cbor_uint(&reader, &version) ||
+        version != CORE_SCHEMA_VERSION || !core_cbor_uint(&reader, &kind) ||
+        kind != CORE_CHANNEL_COMMAND_KIND || !core_cbor_uint(&reader, &id.value) ||
+        !core_cbor_uint(&reader, &index) || index >= CORE_MAX_REQUEST_CHANNELS ||
+        !read_channel(&reader, &channel) || reader.offset != size)
+        return CORE_ADMIT_INVALID;
+    return core_admission_reserve_channel(pool, coordinator, id, (uint8_t)index, &channel, cancel,
+                                          out);
 }
 
 core_admit_result core_endpoint_removal_submit(core_admission *pool, uint64_t coordinator,
@@ -354,34 +392,33 @@ core_admit_result core_endpoint_removal_submit(core_admission *pool, uint64_t co
     core_instance_id target;
     core_binding binding;
     if (data == NULL || size == 0 || size > CORE_MAX_REQUEST_BYTES || out == NULL ||
-        !core_cbor_array(&reader, &count) || count != 6 ||
-        !core_cbor_uint(&reader, &version) || version != CORE_SCHEMA_VERSION ||
-        !core_cbor_uint(&reader, &kind) || kind != CORE_REMOVAL_COMMAND_KIND ||
-        !core_cbor_uint(&reader, &id.value) || !core_cbor_uint(&reader, &index) ||
-        index >= CORE_MAX_REQUEST_CHANNELS || !core_cbor_uint(&reader, &target.value) ||
-        !read_binding(&reader, &binding) || reader.offset != size)
+        !core_cbor_array(&reader, &count) || count != 6 || !core_cbor_uint(&reader, &version) ||
+        version != CORE_SCHEMA_VERSION || !core_cbor_uint(&reader, &kind) ||
+        kind != CORE_REMOVAL_COMMAND_KIND || !core_cbor_uint(&reader, &id.value) ||
+        !core_cbor_uint(&reader, &index) || index >= CORE_MAX_REQUEST_CHANNELS ||
+        !core_cbor_uint(&reader, &target.value) || !read_binding(&reader, &binding) ||
+        reader.offset != size)
         return CORE_ADMIT_INVALID;
-    return core_admission_reserve_removal(pool, coordinator, id, (uint8_t)index,
-                                           target, &binding, out);
+    return core_admission_reserve_removal(pool, coordinator, id, (uint8_t)index, target, &binding,
+                                          out);
 }
 
-core_admit_result core_node_submit(core_admission *pool, const uint8_t *data,
-                                   size_t size, uint64_t now_us,
-                                   const core_admission_record **out)
+core_admit_result core_node_submit(core_admission *pool, const uint8_t *data, size_t size,
+                                   uint64_t now_us, const core_admission_record **out)
 {
-    return submit(pool, 0, data, size, now_us, out, true, false, false);
+    return submit(pool, 0, data, size, now_us, out, SUBMIT_TRUSTED_NODE);
 }
 
 core_admit_result core_endpoint_submit(core_admission *pool, uint64_t coordinator,
-                                       const uint8_t *data, size_t size,
-                                       uint64_t now_us, const core_admission_record **out)
+                                       const uint8_t *data, size_t size, uint64_t now_us,
+                                       const core_admission_record **out)
 {
-    return submit(pool, coordinator, data, size, now_us, out, false, true, false);
+    return submit(pool, coordinator, data, size, now_us, out, SUBMIT_FORWARDED_PREPARE);
 }
 
 core_admit_result core_endpoint_cancel(core_admission *pool, uint64_t coordinator,
-                                       const uint8_t *data, size_t size,
-                                       uint64_t now_us, const core_admission_record **out)
+                                       const uint8_t *data, size_t size, uint64_t now_us,
+                                       const core_admission_record **out)
 {
-    return submit(pool, coordinator, data, size, now_us, out, false, true, true);
+    return submit(pool, coordinator, data, size, now_us, out, SUBMIT_FORWARDED_CANCEL);
 }

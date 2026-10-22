@@ -40,8 +40,8 @@ typedef struct {
  * No allocation, recursion, or graph side effects. Failure leaves out unchanged.
  * tokens must contain count readable elements when count is within bounds.
  * Null pointers are rejected. The input may overlap out's token storage. */
-bool core_predicate_init(core_predicate *out, const core_predicate_token *tokens,
-                         size_t count, size_t channel_count);
+bool core_predicate_init(core_predicate *out, const core_predicate_token *tokens, size_t count,
+                         size_t channel_count);
 
 /* Requires a successfully initialized, unmodified predicate. Bit i represents
  * declared channel i; other bits are ignored. The caller supplies complete

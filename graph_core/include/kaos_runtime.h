@@ -37,9 +37,8 @@ typedef struct {
      * disposed means WAMR, artifact and arena are actually destroyed, all
      * imports/callbacks have returned, and no worker retains their addresses.
      * Slot mailbox storage and native task stack are fixed profile overhead. */
-    bool (*prepare)(void *context, size_t slot, uint8_t *artifact,
-                    size_t artifact_size, const uint8_t *configuration,
-                    size_t configuration_size, size_t arena_bytes);
+    bool (*prepare)(void *context, size_t slot, uint8_t *artifact, size_t artifact_size,
+                    const uint8_t *configuration, size_t configuration_size, size_t arena_bytes);
     core_runtime_state *(*lock)(void *context, size_t slot);
     /* Unlock also wakes a worker when a command has changed. */
     void (*unlock)(void *context, size_t slot);
@@ -47,9 +46,9 @@ typedef struct {
      * grants before returning. Optional for runtimes supporting no additional
      * imports; a nonempty grant must never fall back to the old callback. */
     bool (*prepare_with_imports)(void *context, size_t slot, uint8_t *artifact,
-                    size_t artifact_size, const uint8_t *configuration,
-                    size_t configuration_size, size_t arena_bytes,
-                    const core_native_imports *imports);
+                                 size_t artifact_size, const uint8_t *configuration,
+                                 size_t configuration_size, size_t arena_bytes,
+                                 const core_native_imports *imports);
 } core_node_runtime;
 
 #endif

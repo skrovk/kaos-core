@@ -22,18 +22,21 @@ typedef struct {
  * Registry availability is checked separately before instantiation. */
 static inline bool core_native_imports_valid(const core_native_imports *imports)
 {
-    if (!imports || imports->count > CORE_MAX_NATIVE_IMPORTS) return false;
+    if (!imports || imports->count > CORE_MAX_NATIVE_IMPORTS)
+        return false;
     for (size_t i = 0; i < imports->count; ++i) {
         size_t length = 0;
-        while (length <= CORE_MAX_NATIVE_IMPORT_NAME_BYTES &&
-               imports->names[i][length] != '\0') {
+        while (length <= CORE_MAX_NATIVE_IMPORT_NAME_BYTES && imports->names[i][length] != '\0') {
             const unsigned char c = (unsigned char)imports->names[i][length];
-            if (c < 0x21 || c > 0x7e) return false;
+            if (c < 0x21 || c > 0x7e)
+                return false;
             ++length;
         }
-        if (!length || length > CORE_MAX_NATIVE_IMPORT_NAME_BYTES) return false;
+        if (!length || length > CORE_MAX_NATIVE_IMPORT_NAME_BYTES)
+            return false;
         for (size_t j = 0; j < i; ++j)
-            if (strcmp(imports->names[i], imports->names[j]) == 0) return false;
+            if (strcmp(imports->names[i], imports->names[j]) == 0)
+                return false;
     }
     return true;
 }

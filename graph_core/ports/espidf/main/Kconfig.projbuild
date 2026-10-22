@@ -4,14 +4,18 @@ config KAOS_DEVICE_ID
     range 0 2147483647
     default 1
 config KAOS_UDP_PORT
-    int "Local UDP port"
+    int "Local management UDP port"
     range 1 65535
     default 5683
+config KAOS_APPLICATION_UDP_PORT
+    int "Local application UDP port (must differ from management)"
+    range 1 65535
+    default 5684
 config KAOS_AUTHORITY
     string "Authority id@IPv4:port"
     default "99@192.168.1.2:5683"
 config KAOS_PEERS
-    string "Remote owners: comma-separated id@IPv4:port"
+    string "Remote owners: comma-separated id@IPv4:management_port:application_port"
     default ""
 config KAOS_COLLECTOR
     string "Collector id@IPv4:port (empty disables)"

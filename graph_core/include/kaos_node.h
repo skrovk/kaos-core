@@ -35,8 +35,8 @@ bool core_node_start_allowed(const core_node_service *service, size_t slot, uint
  * leaving no transfer access. Success transfers it to the runtime worker;
  * on false the caller still owns/frees it, including after dispatch failure.
  * The engine charges the remaining declared runtime arena before dispatch. */
-bool core_node_artifact(core_node_service *service, core_op_id id,
-                        uint8_t *artifact, size_t size, uint64_t now_us);
+bool core_node_artifact(core_node_service *service, core_op_id id, uint8_t *artifact, size_t size,
+                        uint64_t now_us);
 /* Artifact acquisition/handoff failed. Select normal node cleanup; the caller
  * still drains/releases any staging storage it owns. */
 void core_node_artifact_failed(core_node_service *service, core_op_id id, uint64_t now_us);

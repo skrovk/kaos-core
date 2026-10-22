@@ -14,8 +14,7 @@ bool core_native_granted(const core_native_imports *imports, const char *name);
 
 /* Helpers attribute the call through WAMR's trusted instance custom data.
  * They never retain guest addresses; disposal runs after the call returns. */
-bool core_native_buffer(wasm_exec_env_t execution, uint32_t offset,
-                        uint32_t size, uint8_t **out);
+bool core_native_buffer(wasm_exec_env_t execution, uint32_t offset, uint32_t size, uint8_t **out);
 bool core_native_delay(wasm_exec_env_t execution, uint32_t duration_us);
 
 /* Synthetic sensor fixture only: observability for its ABI/cleanup checks. */

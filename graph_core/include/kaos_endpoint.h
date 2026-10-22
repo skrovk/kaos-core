@@ -56,28 +56,28 @@ void core_endpoint_init(core_endpoint_service *service, core_admission *admissio
  * releases the queue charge and endpoint reservation, then publishes CLEANED. */
 void core_endpoint_step(core_endpoint_service *service);
 /* Engine validates commit, receiver-first ordering and exact authorization. */
-bool core_endpoint_activate(core_endpoint_service *service,
-                            const core_binding *binding, bool sender);
-uint8_t core_endpoint_facts(const core_endpoint_service *service,
-                            const core_binding *binding, bool sender);
+bool core_endpoint_activate(core_endpoint_service *service, const core_binding *binding,
+                            bool sender);
+uint8_t core_endpoint_facts(const core_endpoint_service *service, const core_binding *binding,
+                            bool sender);
 void core_endpoint_close(core_endpoint_service *service, const core_binding *binding);
 
 core_data_result core_channel_put(core_endpoint_service *service, core_instance_id caller,
-                                   core_channel_id channel, const void *data, size_t size);
+                                  core_channel_id channel, const void *data, size_t size);
 core_data_result core_channel_get(core_endpoint_service *service, core_instance_id caller,
-                                   core_channel_id channel, void *data, size_t capacity,
-                                   size_t *written);
-core_data_result core_channel_event_get(core_endpoint_service *service,
-                                         core_instance_id caller, core_channel_event *event);
+                                  core_channel_id channel, void *data, size_t capacity,
+                                  size_t *written);
+core_data_result core_channel_event_get(core_endpoint_service *service, core_instance_id caller,
+                                        core_channel_event *event);
 bool core_channel_event_pending(const core_endpoint_service *service, core_instance_id caller);
 /* Removes one message for one best-effort transfer attempt. Local destinations
  * use receive too. Returned frame owns its bytes and holds no endpoint access. */
 bool core_endpoint_next(core_endpoint_service *service, uint64_t *destination_owner,
-                         core_data_frame *frame);
+                        core_data_frame *frame);
 core_data_result core_endpoint_receive(core_endpoint_service *service, uint64_t sender_owner,
-                                        const core_data_frame *frame);
+                                       const core_data_frame *frame);
 bool core_data_encode(const core_data_frame *frame, uint8_t *data, size_t capacity,
-                       size_t *written);
+                      size_t *written);
 bool core_data_decode(const uint8_t *data, size_t size, core_data_frame *frame);
 
 #endif

@@ -25,7 +25,7 @@ typedef struct {
 typedef struct {
     core_admission *admission;
     core_edge_service *edges; /* optional for artifact-only verification users */
-    uint64_t collector; /* designated storage recipient, configured before use */
+    uint64_t collector;       /* designated storage recipient, configured before use */
     bool collector_enabled;
     core_owner_receipt owner_receipts[CORE_MAX_PEERS];
     core_coap_cache cache;
@@ -44,11 +44,11 @@ typedef struct {
 
 /* All calls share the registry lock. true returns an owned copy in out; the
  * caller sends after unlocking. Failed socket sends are loss, not rejection. */
-bool core_control_peer_next(core_control *control, core_control_peer *peer,
-    core_coap_ids *ids, uint64_t now, uint64_t retry_us,
-    uint8_t *out, size_t capacity, size_t *written);
+bool core_control_peer_next(core_control *control, core_control_peer *peer, core_coap_ids *ids,
+                            uint64_t now, uint64_t retry_us, uint8_t *out, size_t capacity,
+                            size_t *written);
 void core_control_peer_receive(core_control *control, core_control_peer *peer,
-    const core_coap_message *message, uint64_t now, bool *acknowledge);
+                               const core_coap_message *message, uint64_t now, bool *acknowledge);
 
 /* Zero initialize with .admission pointing to a configured stable pool.
  * POST /graph accepts a typed operation; POST /prepare reserves remote
@@ -71,8 +71,14 @@ void core_control_peer_receive(core_control *control, core_control_peer *peer,
  * idempotent cleanup replies without consuming the ordinary response cache.
  * Reply bytes borrow no input. false means malformed datagram/no response.
  * A small output buffer is rejected BEFORE any admission mutation. */
-bool core_control_receive(core_control *control, uint64_t sender,
-                           const uint8_t *data, size_t size, uint64_t now_us,
-                           uint8_t *response, size_t capacity, size_t *written);
+bool core_control_receive(core_control *control, uint64_t sender, const uint8_t *data, size_t size,
+                          uint64_t now_us, uint8_t *response, size_t capacity, size_t *written);
+
+/* Decoded-input path for the host: request must come from core_coap_decode().
+ * The message and its borrowed options/payload live for this call only. Same
+ * serialization, output-capacity and resource semantics as the raw entrypoint. */
+bool core_control_receive_message(core_control *control, uint64_t sender,
+                                  const core_coap_message *request, uint64_t now_us,
+                                  uint8_t *response, size_t capacity, size_t *written);
 
 #endif

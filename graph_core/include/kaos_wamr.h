@@ -59,8 +59,8 @@ bool core_wamr_attach_channels(const core_wamr_channels *channels);
  * checks its mailbox and marks execution; entry_unlock releases the registry.
  * Both callbacks run without a held mailbox lock. The guard samples current
  * time after taking the registry lock. Neither callback spans guest code. */
-bool core_wamr_attach_entry_guard(void *context,
-    bool (*entry_lock)(void *, size_t), void (*entry_unlock)(void *));
+bool core_wamr_attach_entry_guard(void *context, bool (*entry_lock)(void *, size_t),
+                                  void (*entry_unlock)(void *));
 /* Bounded wakeup only; safe while holding the registry lock. The unread event
  * remains in the endpoint service until event_get consumes it. */
 void core_wamr_channel_changed(size_t slot);
@@ -71,6 +71,6 @@ bool core_wamr_profile(const uint8_t *bytes, size_t size);
 /* The same restricted profile with explicit additional native grants.
  * Loaded-module function types are checked separately before instantiation. */
 bool core_wamr_profile_with_imports(const uint8_t *bytes, size_t size,
-                                  const core_native_imports *imports);
+                                    const core_native_imports *imports);
 
 #endif

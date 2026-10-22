@@ -2,11 +2,11 @@
 
 #include <string.h>
 
-bool core_predicate_init(core_predicate *out, const core_predicate_token *tokens,
-                         size_t count, size_t channel_count)
+bool core_predicate_init(core_predicate *out, const core_predicate_token *tokens, size_t count,
+                         size_t channel_count)
 {
-    if (out == NULL || tokens == NULL || count == 0 ||
-        count > CORE_MAX_PREDICATE_TOKENS || channel_count > CORE_MAX_CHANNELS) {
+    if (out == NULL || tokens == NULL || count == 0 || count > CORE_MAX_PREDICATE_TOKENS ||
+        channel_count > CORE_MAX_CHANNELS) {
         return false;
     }
 
@@ -20,8 +20,7 @@ bool core_predicate_init(core_predicate *out, const core_predicate_token *tokens
         case CORE_PREDICATE_TRUE:
         case CORE_PREDICATE_CHANNEL:
             if (used == CORE_MAX_PREDICATE_DEPTH ||
-                (token.kind == CORE_PREDICATE_CHANNEL &&
-                 token.channel >= channel_count)) {
+                (token.kind == CORE_PREDICATE_CHANNEL && token.channel >= channel_count)) {
                 return false;
             }
             /* Every declared channel belongs to the admission-time full set. */
@@ -35,15 +34,13 @@ bool core_predicate_init(core_predicate *out, const core_predicate_token *tokens
                 return false;
             }
             --used;
-            const uint8_t depth = depths[used - 1] > depths[used]
-                ? depths[used - 1] : depths[used];
+            const uint8_t depth = depths[used - 1] > depths[used] ? depths[used - 1] : depths[used];
             if (depth == CORE_MAX_PREDICATE_DEPTH) {
                 return false;
             }
             depths[used - 1] = depth + 1;
-            values[used - 1] = token.kind == CORE_PREDICATE_AND
-                ? values[used - 1] && values[used]
-                : values[used - 1] || values[used];
+            values[used - 1] = token.kind == CORE_PREDICATE_AND ? values[used - 1] && values[used]
+                                                                : values[used - 1] || values[used];
             break;
         }
         default:
@@ -74,13 +71,12 @@ bool core_predicate_eval(const core_predicate *predicate, core_channel_set chann
         case CORE_PREDICATE_TRUE:
         case CORE_PREDICATE_CHANNEL:
             if (used == CORE_MAX_PREDICATE_DEPTH ||
-                (token.kind == CORE_PREDICATE_CHANNEL &&
-                 token.channel >= CORE_MAX_CHANNELS)) {
+                (token.kind == CORE_PREDICATE_CHANNEL && token.channel >= CORE_MAX_CHANNELS)) {
                 return false;
             }
             values[used++] = token.kind == CORE_PREDICATE_CHANNEL
-                ? (channels & (UINT32_C(1) << token.channel)) != 0
-                : token.kind == CORE_PREDICATE_TRUE;
+                                 ? (channels & (UINT32_C(1) << token.channel)) != 0
+                                 : token.kind == CORE_PREDICATE_TRUE;
             break;
         case CORE_PREDICATE_AND:
         case CORE_PREDICATE_OR:
@@ -88,9 +84,8 @@ bool core_predicate_eval(const core_predicate *predicate, core_channel_set chann
                 return false;
             }
             --used;
-            values[used - 1] = token.kind == CORE_PREDICATE_AND
-                ? values[used - 1] && values[used]
-                : values[used - 1] || values[used];
+            values[used - 1] = token.kind == CORE_PREDICATE_AND ? values[used - 1] && values[used]
+                                                                : values[used - 1] || values[used];
             break;
         default:
             return false;

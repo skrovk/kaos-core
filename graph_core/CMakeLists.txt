@@ -13,13 +13,13 @@ endif()
 if(ESP_PLATFORM)
     set(host_sources)
     if(CORE_BUILD_HOST)
-        list(APPEND host_sources kaos_host.c ports/host_udp.c)
+        list(APPEND host_sources kaos_host.c host_udp.c)
     endif()
     idf_component_register(SRCS "kaos_graph.c" "kaos_predicate.c" "kaos_admission.c" "kaos_request.c"
         "kaos_report.c" "kaos_coap.c" "kaos_artifact.c" "kaos_control.c" "kaos_node.c"
         "kaos_endpoint.c" "kaos_edge.c"
-        "ports/clock_espidf.c" ${host_sources}
-        INCLUDE_DIRS "include" "ports" PRIV_REQUIRES esp_timer pthread lwip vfs)
+        "ports/espidf/clock.c" ${host_sources}
+        INCLUDE_DIRS "include" PRIV_REQUIRES esp_timer pthread lwip vfs)
     target_compile_features(${COMPONENT_LIB} PUBLIC c_std_11)
     if(CORE_FOUR_NODE_PROFILE)
         target_compile_definitions(${COMPONENT_LIB} PUBLIC CORE_FOUR_NODE_PROFILE=1)
@@ -31,7 +31,7 @@ project(kaos_graph_core C)
 add_library(kaos_graph_core STATIC kaos_graph.c kaos_predicate.c kaos_admission.c kaos_request.c
     kaos_report.c kaos_coap.c kaos_artifact.c kaos_control.c kaos_node.c
     kaos_endpoint.c kaos_edge.c
-    ports/clock_posix.c)
+    ports/posix/clock.c)
 target_include_directories(kaos_graph_core PUBLIC include)
 target_compile_features(kaos_graph_core PUBLIC c_std_11)
 if(CORE_FOUR_NODE_PROFILE)
@@ -52,8 +52,8 @@ if(CORE_BUILD_P2_HOST)
 endif()
 if(CORE_BUILD_HOST OR CORE_BUILD_P3_HOST OR CORE_BUILD_P4_HOST)
     add_subdirectory(runtime)
-    add_library(kaos_graph_host STATIC kaos_host.c ports/host_udp.c)
-    target_include_directories(kaos_graph_host PUBLIC include ports)
+    add_library(kaos_graph_host STATIC kaos_host.c host_udp.c)
+    target_include_directories(kaos_graph_host PUBLIC include)
     target_link_libraries(kaos_graph_host PUBLIC kaos_graph_core kaos_wamr)
     target_compile_options(kaos_graph_host PRIVATE -Wall -Wextra -Wpedantic -Werror)
     set(host_targets kaos_host)

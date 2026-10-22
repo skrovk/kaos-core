@@ -160,7 +160,7 @@ typedef struct {
     bool report_acknowledged;
     bool request_present;
     bool cleanup_selected; /* retained local rejection fence, including pre-prepare cancel */
-    bool endpoint_only; /* Ki reservation; deadline_us is not a Kc expiry */
+    bool endpoint_only;    /* Ki reservation; deadline_us is not a Kc expiry */
     bool occupied;
 } core_admission_record;
 
@@ -194,16 +194,14 @@ bool core_admission_init(core_admission *pool, size_t node_bytes, size_t byte_li
 /* Configure enrolled owner IDs and O once before protocol submission. peers
  * contains the local device and every permitted remote owner (not necessarily
  * O); no discovery or cryptographic authentication is implied. */
-bool core_admission_configure(core_admission *pool, uint64_t local_device,
-                              uint64_t authority, const uint64_t *peers,
-                              size_t peer_count);
+bool core_admission_configure(core_admission *pool, uint64_t local_device, uint64_t authority,
+                              const uint64_t *peers, size_t peer_count);
 
 /* Original resource-only prerequisite. Caller validates authority and empty
  * incidence. Retained duplicate precedes allowance checks. No request, report
  * outcome or managed work is produced. Kept for low-level reservation tests. */
-core_admit_result core_node_admit(core_admission *pool, core_op_id id,
-                                  uint64_t now_us, uint64_t allowance_us,
-                                  const core_admission_record **out);
+core_admit_result core_node_admit(core_admission *pool, core_op_id id, uint64_t now_us,
+                                  uint64_t allowance_us, const core_admission_record **out);
 
 /* Strict deterministic CBOR [version,kind,opId,body:bstr], exact array shapes documented
  * in docs/graph_p2_contract.md. Bound/framing checks precede retained-ID discard;
@@ -212,9 +210,8 @@ core_admit_result core_node_admit(core_admission *pool, core_op_id id,
  * is derived from configured transport peer attribution, not a payload field.
  * All rejection paths preserve pool and out. Input may be freed on return.
  * This reserves an operation; P3-P6 own execution and outcome transitions. */
-core_admit_result core_request_submit(core_admission *pool, uint64_t sender,
-                                      const uint8_t *data, size_t size,
-                                      uint64_t now_us,
+core_admit_result core_request_submit(core_admission *pool, uint64_t sender, const uint8_t *data,
+                                      size_t size, uint64_t now_us,
                                       const core_admission_record **out);
 /* Issued endpoint work carries the complete original O-authorized request.
  * A configured coordinator forwards it: node owner for node operations,
@@ -224,8 +221,7 @@ core_admit_result core_request_submit(core_admission *pool, uint64_t sender,
  * top-level resubmission filter. Later phases use the retained exact scope.
  * Ki does not interpret Kc's allowance as a local expiration: deadline_us=0. */
 core_admit_result core_endpoint_submit(core_admission *pool, uint64_t coordinator,
-                                       const uint8_t *data, size_t size,
-                                       uint64_t now_us,
+                                       const uint8_t *data, size_t size, uint64_t now_us,
                                        const core_admission_record **out);
 /* Original coordinator may cancel issued ADD scope without a new O operation.
  * Install its fence/report capacity even if PREPARE has not arrived. Existing
@@ -233,8 +229,7 @@ core_admit_result core_endpoint_submit(core_admission *pool, uint64_t coordinato
  * have stopped. Subsequent phase work
  * must observe cleanup_selected. Repeating cancellation resets no deadline. */
 core_admit_result core_endpoint_cancel(core_admission *pool, uint64_t coordinator,
-                                       const uint8_t *data, size_t size,
-                                       uint64_t now_us,
+                                       const uint8_t *data, size_t size, uint64_t now_us,
                                        const core_admission_record **out);
 /* Compact issued ADD_NODE endpoint work: [schema,12,opId,channelIndex,channel].
  * The channel retains its original 13-field descriptor. Its endpoint on the
@@ -242,9 +237,8 @@ core_admit_result core_endpoint_cancel(core_admission *pool, uint64_t coordinato
  * One retained owner record accumulates independent indexed channels. Cancel
  * needs no live node or endpoint capacity and fences a later PREPARE. */
 core_admit_result core_endpoint_channel_submit(core_admission *pool, uint64_t coordinator,
-                                               const uint8_t *data, size_t size,
-                                               uint64_t now_us, bool cancel,
-                                               const core_admission_record **out);
+                                               const uint8_t *data, size_t size, uint64_t now_us,
+                                               bool cancel, const core_admission_record **out);
 /* Compact full-node removal endpoint work:
  * [schema,13,removalOpId,channelIndex,targetInstance,[channel,creatingOpId]].
  * A fresh removal observer retains the exact binding independently of its
@@ -255,12 +249,10 @@ core_admit_result core_endpoint_removal_submit(core_admission *pool, uint64_t co
                                                const core_admission_record **out);
 /* Trusted local wrapper for the no-edge profile; caller supplies authority
  * and incidence checks as in core_node_admit. Uses the current schema. */
-core_admit_result core_node_submit(core_admission *pool, const uint8_t *data,
-                                   size_t size, uint64_t now_us,
-                                   const core_admission_record **out);
+core_admit_result core_node_submit(core_admission *pool, const uint8_t *data, size_t size,
+                                   uint64_t now_us, const core_admission_record **out);
 
-const core_admission_record *core_admission_find(const core_admission *pool,
-                                                core_op_id id);
+const core_admission_record *core_admission_find(const core_admission *pool, core_op_id id);
 /* P3's integration seam: call only after accepted startup success. It does not
  * fabricate startup evidence. Pending/removing/exited instances cannot receive
  * a newly added edge. */
@@ -284,8 +276,8 @@ bool core_admission_forget(core_admission *pool, core_op_id id);
  * hides precisely this revision; an evidence advance becomes visible again.
  * Caller has attributed the designated O/DB through its enrollment table. */
 bool core_admission_report_retained(const core_admission_record *record);
-void core_admission_acknowledge(core_admission *pool, core_op_id id,
-                                uint64_t coordinator, uint8_t revision);
+void core_admission_acknowledge(core_admission *pool, core_op_id id, uint64_t coordinator,
+                                uint8_t revision);
 /* Serialized event-loop maintenance: rank changed snapshots, then reclaim
  * O/DB-acknowledged, locally settled coordinator records. Settled owner records
  * keep their rejection fences until pressure. Admission can replace the oldest

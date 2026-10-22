@@ -8,6 +8,7 @@ bool core_clock_now(uint64_t *out_us)
     if (now < 0) {
         return false;
     }
+
     *out_us = (uint64_t)now;
     return true;
 }

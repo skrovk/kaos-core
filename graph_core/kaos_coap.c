@@ -17,17 +17,19 @@ static bool code_valid(uint8_t type, uint8_t code)
     return class_id == 2 || class_id == 4 || class_id == 5;
 }
 
-static bool decode_argument(const uint8_t *data, size_t size, size_t *offset,
-                            uint8_t nibble, uint32_t *out)
+static bool decode_argument(const uint8_t *data, size_t size, size_t *offset, uint8_t nibble,
+                            uint32_t *out)
 {
     if (nibble < 13) {
         *out = nibble;
         return true;
     }
+
     const size_t count = nibble == 13 ? 1 : 2;
     if (nibble == 15 || count > size - *offset) {
         return false;
     }
+
     uint32_t value = data[(*offset)++];
     if (count == 2) {
         value = (value << 8) | data[(*offset)++];
@@ -38,20 +40,19 @@ static bool decode_argument(const uint8_t *data, size_t size, size_t *offset,
 
 bool core_coap_decode(const uint8_t *data, size_t size, core_coap_message *out)
 {
-    if (data == NULL || size < 4 || size > CORE_COAP_MAX_DATAGRAM ||
-        (data[0] >> 6) != 1) {
+    if (data == NULL || size < 4 || size > CORE_COAP_MAX_DATAGRAM || (data[0] >> 6) != 1) {
         return false;
     }
-    core_coap_message message = {
-        .type = (data[0] >> 4) & 3,
-        .code = data[1], .token_size = data[0] & 15,
-        .message_id = (uint16_t)((uint16_t)data[2] << 8) | data[3]
-    };
+
+    core_coap_message message = {.type = (data[0] >> 4) & 3,
+                                 .code = data[1],
+                                 .token_size = data[0] & 15,
+                                 .message_id = (uint16_t)((uint16_t)data[2] << 8) | data[3]};
     if (message.token_size > 8 || message.token_size > size - 4 ||
-        !code_valid(message.type, message.code) ||
-        (message.code == 0 && size != 4)) {
+        !code_valid(message.type, message.code) || (message.code == 0 && size != 4)) {
         return false;
     }
+
     memcpy(message.token, data + 4, message.token_size);
     size_t offset = 4 + message.token_size;
     uint32_t option_number = 0;
@@ -68,11 +69,10 @@ bool core_coap_decode(const uint8_t *data, size_t size, core_coap_message *out)
         }
         option_number += delta;
         message.options[message.option_count++] = (core_coap_option){
-            .number = (uint16_t)option_number,
-            .value = data + offset, .size = length
-        };
+            .number = (uint16_t)option_number, .value = data + offset, .size = length};
         offset += length;
     }
+
     if (offset < size) {
         ++offset;
         if (offset == size) {
@@ -81,6 +81,7 @@ bool core_coap_decode(const uint8_t *data, size_t size, core_coap_message *out)
         message.payload = data + offset;
         message.payload_size = size - offset;
     }
+
     *out = message;
     return true;
 }
@@ -109,18 +110,18 @@ static void encode_argument(uint8_t *out, size_t *offset, size_t value)
     out[(*offset)++] = (uint8_t)value;
 }
 
-bool core_coap_encode(const core_coap_message *message, uint8_t *out,
-                      size_t capacity, size_t *out_size)
+bool core_coap_encode(const core_coap_message *message, uint8_t *out, size_t capacity,
+                      size_t *out_size)
 {
-    if (out == NULL || !code_valid(message->type, message->code) ||
-        message->token_size > 8 || message->option_count > CORE_COAP_MAX_OPTIONS ||
+    if (out == NULL || !code_valid(message->type, message->code) || message->token_size > 8 ||
+        message->option_count > CORE_COAP_MAX_OPTIONS ||
         message->payload_size > CORE_COAP_MAX_DATAGRAM ||
         (message->payload_size != 0 && message->payload == NULL) ||
-        (message->code == 0 && (message->token_size != 0 ||
-                              message->option_count != 0 ||
-                              message->payload_size != 0))) {
+        (message->code == 0 &&
+         (message->token_size != 0 || message->option_count != 0 || message->payload_size != 0))) {
         return false;
     }
+
     size_t required = 4 + message->token_size;
     uint16_t previous = 0;
     for (size_t i = 0; i < message->option_count; ++i) {
@@ -129,26 +130,27 @@ bool core_coap_encode(const core_coap_message *message, uint8_t *out,
             (option->size != 0 && option->value == NULL)) {
             return false;
         }
-        required += 1 + argument_size(option->number - previous) +
-                    argument_size(option->size) + option->size;
+        required += 1 + argument_size(option->number - previous) + argument_size(option->size) +
+                    option->size;
         previous = option->number;
     }
     required += message->payload_size + (message->payload_size != 0 ? 1 : 0);
     if (required > capacity || required > CORE_COAP_MAX_DATAGRAM) {
         return false;
     }
+
     out[0] = (uint8_t)(0x40 | (message->type << 4) | message->token_size);
     out[1] = message->code;
     out[2] = (uint8_t)(message->message_id >> 8);
     out[3] = (uint8_t)message->message_id;
     memcpy(out + 4, message->token, message->token_size);
+
     size_t offset = 4 + message->token_size;
     previous = 0;
     for (size_t i = 0; i < message->option_count; ++i) {
         const core_coap_option *option = &message->options[i];
         const size_t delta = option->number - previous;
-        out[offset++] = (uint8_t)((argument_nibble(delta) << 4) |
-                                 argument_nibble(option->size));
+        out[offset++] = (uint8_t)((argument_nibble(delta) << 4) | argument_nibble(option->size));
         encode_argument(out, &offset, delta);
         encode_argument(out, &offset, option->size);
         if (option->size != 0) {
@@ -157,40 +159,43 @@ bool core_coap_encode(const core_coap_message *message, uint8_t *out,
         }
         previous = option->number;
     }
+
     if (message->payload_size != 0) {
         out[offset++] = 0xff;
         memcpy(out + offset, message->payload, message->payload_size);
         offset += message->payload_size;
     }
+
     *out_size = offset;
     return true;
 }
 
-const core_coap_option *core_coap_find(const core_coap_message *message,
-                                      uint16_t number)
+const core_coap_option *core_coap_find(const core_coap_message *message, uint16_t number)
 {
     const core_coap_option *found = NULL;
     for (size_t i = 0; i < message->option_count; ++i) {
-        if (message->options[i].number == number) {
-            if (found != NULL) {
-                return NULL;
-            }
-            found = &message->options[i];
+        if (message->options[i].number != number)
+            continue;
+
+        if (found != NULL) {
+            return NULL;
         }
+        found = &message->options[i];
     }
     return found;
 }
 
 bool core_coap_option_uint(const core_coap_option *option, uint32_t *out)
 {
-    if (option == NULL || option->size > 4 ||
-        (option->size != 0 && option->value == NULL)) {
+    if (option == NULL || option->size > 4 || (option->size != 0 && option->value == NULL)) {
         return false;
     }
+
     uint32_t value = 0;
     for (size_t i = 0; i < option->size; ++i) {
         value = (value << 8) | option->value[i];
     }
+
     *out = value;
     return true;
 }
@@ -214,18 +219,16 @@ static uint64_t retry_time(uint64_t now, uint64_t interval, uint64_t deadline)
     return interval >= deadline - now ? deadline : now + interval;
 }
 
-bool core_coap_exchange_start(core_coap_exchange *exchange, uint64_t peer,
-                              const uint8_t *request, size_t request_size,
-                              uint64_t now_us, uint64_t deadline_us,
+bool core_coap_exchange_start(core_coap_exchange *exchange, uint64_t peer, const uint8_t *request,
+                              size_t request_size, uint64_t now_us, uint64_t deadline_us,
                               uint64_t initial_timeout_us)
 {
     core_coap_message message;
     if (exchange->active || !core_before_deadline(now_us, deadline_us) ||
         initial_timeout_us < CORE_COAP_ACK_TIMEOUT_US ||
         initial_timeout_us > CORE_COAP_ACK_TIMEOUT_US * 3 / 2 ||
-        !core_coap_decode(request, request_size, &message) ||
-        message.type != CORE_COAP_CON || message.code == 0 ||
-        (message.code >> 5) != 0) {
+        !core_coap_decode(request, request_size, &message) || message.type != CORE_COAP_CON ||
+        message.code == 0 || (message.code >> 5) != 0) {
         return false;
     }
     /* Validation is complete. Publish directly instead of making a second
@@ -247,8 +250,7 @@ bool core_coap_exchange_start(core_coap_exchange *exchange, uint64_t peer,
     return true;
 }
 
-core_coap_poll_result core_coap_exchange_poll(core_coap_exchange *exchange,
-                                             uint64_t now_us)
+core_coap_poll_result core_coap_exchange_poll(core_coap_exchange *exchange, uint64_t now_us)
 {
     if (!exchange->active) {
         return CORE_COAP_WAIT;
@@ -266,19 +268,17 @@ core_coap_poll_result core_coap_exchange_poll(core_coap_exchange *exchange,
     }
     ++exchange->retransmissions;
     exchange->retry_interval_us *= 2;
-    exchange->next_retry_us = retry_time(now_us, exchange->retry_interval_us,
-                                        exchange->deadline_us);
+    exchange->next_retry_us =
+        retry_time(now_us, exchange->retry_interval_us, exchange->deadline_us);
     return CORE_COAP_SEND;
 }
 
-core_coap_receive_result core_coap_exchange_receive(core_coap_exchange *exchange,
-                                                   uint64_t peer,
-                                                   const core_coap_message *message,
-                                                   uint64_t now_us,
-                                                   bool *acknowledge)
+core_coap_receive_result core_coap_exchange_receive(core_coap_exchange *exchange, uint64_t peer,
+                                                    const core_coap_message *message,
+                                                    uint64_t now_us, bool *acknowledge)
 {
-    *acknowledge = peer == exchange->peer && message->type == CORE_COAP_CON &&
-                   (message->code >> 5) >= 2;
+    *acknowledge =
+        peer == exchange->peer && message->type == CORE_COAP_CON && (message->code >> 5) >= 2;
     if (peer != exchange->peer || !exchange->active) {
         return CORE_COAP_IGNORED;
     }
@@ -317,81 +317,95 @@ void core_coap_exchange_cancel(core_coap_exchange *exchange)
 
 bool core_coap_allocate_token(core_coap_ids *ids, uint64_t *token)
 {
-    if (ids->tokens_exhausted) return false;
+    if (ids->tokens_exhausted)
+        return false;
     *token = ids->next_token;
-    if (ids->next_token == UINT64_MAX) ids->tokens_exhausted = true;
-    else ++ids->next_token;
+    if (ids->next_token == UINT64_MAX)
+        ids->tokens_exhausted = true;
+    else
+        ++ids->next_token;
     return true;
 }
 
 bool core_coap_allocate_request(core_coap_ids *ids, core_coap_message *message)
 {
     uint64_t token;
-    if (ids->next_mid > UINT16_MAX || !core_coap_allocate_token(ids, &token)) return false;
+    if (ids->next_mid > UINT16_MAX || !core_coap_allocate_token(ids, &token))
+        return false;
     message->message_id = (uint16_t)ids->next_mid++;
     message->token_size = 8;
-    for (unsigned i = 0; i < 8; ++i) message->token[7 - i] = (uint8_t)(token >> (8 * i));
+    for (unsigned i = 0; i < 8; ++i)
+        message->token[7 - i] = (uint8_t)(token >> (8 * i));
     return true;
 }
 
 uint64_t core_coap_exchange_deadline(const core_coap_exchange *exchange)
 {
-    if (!exchange->active) return UINT64_MAX;
-    return !exchange->acknowledged && exchange->next_retry_us < exchange->deadline_us ?
-        exchange->next_retry_us : exchange->deadline_us;
+    if (!exchange->active)
+        return UINT64_MAX;
+    return !exchange->acknowledged && exchange->next_retry_us < exchange->deadline_us
+               ? exchange->next_retry_us
+               : exchange->deadline_us;
 }
 
-bool core_coap_options_supported(const core_coap_message *message,
-                                 const uint16_t *singletons, size_t count)
+bool core_coap_options_supported(const core_coap_message *message, const uint16_t *singletons,
+                                 size_t count)
 {
     for (size_t i = 0; i < message->option_count; ++i) {
         const uint16_t number = message->options[i].number;
         bool supported = false;
-        for (size_t j = 0; j < count; ++j) supported |= number == singletons[j];
+        for (size_t j = 0; j < count; ++j)
+            supported |= number == singletons[j];
         if (!supported) {
-            if (number & 1u) return false; /* unknown critical option */
+            if (number & 1u)
+                return false; /* unknown critical option */
             continue;
         }
         for (size_t j = 0; j < i; ++j)
-            if (message->options[j].number == number) return false;
+            if (message->options[j].number == number)
+                return false;
     }
     return true;
 }
 
-bool core_coap_reply(const core_coap_message *request, uint8_t code,
-                     uint16_t content_format, const uint8_t *body, size_t size,
-                     const core_coap_option *block,
-                     uint8_t *out, size_t capacity, size_t *written)
+bool core_coap_reply(const core_coap_message *request, uint8_t code, uint16_t content_format,
+                     const uint8_t *body, size_t size, const core_coap_option *block, uint8_t *out,
+                     size_t capacity, size_t *written)
 {
     uint8_t format[4];
     const size_t format_size = core_coap_uint(content_format, format);
-    core_coap_message response = {.type = CORE_COAP_ACK, .code = code,
-        .message_id = request->message_id, .token_size = request->token_size,
-        .payload = body, .payload_size = size};
-    if (request->token_size > sizeof(response.token)) return false;
+    core_coap_message response = {.type = CORE_COAP_ACK,
+                                  .code = code,
+                                  .message_id = request->message_id,
+                                  .token_size = request->token_size,
+                                  .payload = body,
+                                  .payload_size = size};
+    if (request->token_size > sizeof(response.token))
+        return false;
     memcpy(response.token, request->token, request->token_size);
-    if (size) response.options[response.option_count++] =
-        (core_coap_option){CORE_COAP_CONTENT_FORMAT, format, format_size};
-    if (block != NULL) response.options[response.option_count++] = *block;
+    if (size)
+        response.options[response.option_count++] =
+            (core_coap_option){CORE_COAP_CONTENT_FORMAT, format, format_size};
+    if (block != NULL)
+        response.options[response.option_count++] = *block;
     return core_coap_encode(&response, out, capacity, written);
 }
 
-bool core_coap_reset(uint16_t message_id, uint8_t *out,
-                     size_t capacity, size_t *written)
+bool core_coap_reset(uint16_t message_id, uint8_t *out, size_t capacity, size_t *written)
 {
     const core_coap_message reset = {.type = CORE_COAP_RST, .message_id = message_id};
     return core_coap_encode(&reset, out, capacity, written);
 }
 
-bool core_coap_cache_replay(const core_coap_cache *cache, uint64_t peer,
-                            uint16_t message_id, uint64_t now_us,
-                            uint8_t *out, size_t capacity, size_t *written)
+bool core_coap_cache_replay(const core_coap_cache *cache, uint64_t peer, uint16_t message_id,
+                            uint64_t now_us, uint8_t *out, size_t capacity, size_t *written)
 {
     for (size_t i = 0; i < CORE_COAP_CACHE_SIZE; ++i) {
         const core_coap_cached_response *entry = &cache->entries[i];
-        if (entry->occupied && entry->peer == peer &&
-            entry->message_id == message_id && now_us < entry->expires_us) {
-            if (capacity < entry->response_size) return false;
+        if (entry->occupied && entry->peer == peer && entry->message_id == message_id &&
+            now_us < entry->expires_us) {
+            if (capacity < entry->response_size)
+                return false;
             memcpy(out, entry->response, entry->response_size);
             *written = entry->response_size;
             return true;
@@ -400,9 +414,8 @@ bool core_coap_cache_replay(const core_coap_cache *cache, uint64_t peer,
     return false;
 }
 
-core_coap_cache_result core_coap_cache_reserve(core_coap_cache *cache,
-                                               uint64_t peer, uint16_t message_id,
-                                               uint64_t now_us,
+core_coap_cache_result core_coap_cache_reserve(core_coap_cache *cache, uint64_t peer,
+                                               uint16_t message_id, uint64_t now_us,
                                                core_coap_cached_response **out)
 {
     core_coap_cached_response *available = NULL;
@@ -420,20 +433,17 @@ core_coap_cache_result core_coap_cache_reserve(core_coap_cache *cache,
         }
     }
     uint64_t expiry;
-    if (available == NULL || !core_deadline(now_us, CORE_COAP_EXCHANGE_LIFETIME_US,
-                                           &expiry)) {
+    if (available == NULL || !core_deadline(now_us, CORE_COAP_EXCHANGE_LIFETIME_US, &expiry)) {
         return CORE_COAP_CACHE_FULL;
     }
     *available = (core_coap_cached_response){
-        .peer = peer, .message_id = message_id, .expires_us = expiry,
-        .occupied = true
-    };
+        .peer = peer, .message_id = message_id, .expires_us = expiry, .occupied = true};
     *out = available;
     return CORE_COAP_CACHE_NEW;
 }
 
-bool core_coap_cache_store(core_coap_cached_response *entry,
-                           const uint8_t *response, size_t response_size)
+bool core_coap_cache_store(core_coap_cached_response *entry, const uint8_t *response,
+                           size_t response_size)
 {
     core_coap_message decoded;
     if (!entry->occupied || entry->response_size != 0 ||
@@ -447,32 +457,30 @@ bool core_coap_cache_store(core_coap_cached_response *entry,
     return true;
 }
 
-core_coap_block_result core_coap_block1_receive(core_coap_block1 *assembly,
-                                               uint64_t peer,
-                                               const uint8_t *tag, size_t tag_size,
-                                               uint32_t block, size_t declared_size,
-                                               const uint8_t *payload,
-                                               size_t payload_size)
+core_coap_block_result core_coap_block1_receive(core_coap_block1 *assembly, uint64_t peer,
+                                                const uint8_t *tag, size_t tag_size, uint32_t block,
+                                                size_t declared_size, const uint8_t *payload,
+                                                size_t payload_size)
 {
     const uint8_t szx = block & 7;
     const bool more = (block & 8) != 0;
-    if (block > UINT32_C(0xffffff) || szx > 6 || tag == NULL || tag_size == 0 ||
-        tag_size > 8 || declared_size > CORE_COAP_MAX_BODY || payload == NULL) {
+    if (block > UINT32_C(0xffffff) || szx > 6 || tag == NULL || tag_size == 0 || tag_size > 8 ||
+        declared_size > CORE_COAP_MAX_BODY || payload == NULL) {
         return CORE_COAP_BLOCK_INVALID;
     }
+
     const size_t block_size = (size_t)1 << (szx + 4);
     const size_t offset = (size_t)(block >> 4) * block_size;
-    if (payload_size > block_size || payload_size == 0 ||
-        (more && payload_size != block_size) || offset > CORE_COAP_MAX_BODY ||
-        payload_size > CORE_COAP_MAX_BODY - offset ||
+    if (payload_size > block_size || payload_size == 0 || (more && payload_size != block_size) ||
+        offset > CORE_COAP_MAX_BODY || payload_size > CORE_COAP_MAX_BODY - offset ||
         (more && offset + payload_size == CORE_COAP_MAX_BODY)) {
         return CORE_COAP_BLOCK_INVALID;
     }
+
     if (!assembly->active) {
-        if (offset != 0 || (declared_size != 0 &&
-            (offset + payload_size > declared_size ||
-             (!more && payload_size != declared_size) ||
-             (more && payload_size == declared_size)))) {
+        if (offset != 0 || (declared_size != 0 && (offset + payload_size > declared_size ||
+                                                   (!more && payload_size != declared_size) ||
+                                                   (more && payload_size == declared_size)))) {
             return CORE_COAP_BLOCK_INVALID;
         }
         assembly->peer = peer;
@@ -488,10 +496,10 @@ core_coap_block_result core_coap_block1_receive(core_coap_block1 *assembly,
                (declared_size != 0 && declared_size != assembly->declared_size)) {
         return CORE_COAP_BLOCK_INVALID;
     }
+
     const size_t end = offset + payload_size;
     if (offset < assembly->size) {
-        if (end > assembly->size ||
-            memcmp(assembly->body + offset, payload, payload_size) != 0 ||
+        if (end > assembly->size || memcmp(assembly->body + offset, payload, payload_size) != 0 ||
             (more && end == assembly->size && assembly->complete) ||
             (!more && (!assembly->complete || end != assembly->size))) {
             return CORE_COAP_BLOCK_INVALID;
@@ -500,11 +508,11 @@ core_coap_block_result core_coap_block1_receive(core_coap_block1 *assembly,
     }
     if (assembly->complete || offset != assembly->size ||
         (assembly->declared_size != 0 &&
-         (end > assembly->declared_size ||
-          (!more && end != assembly->declared_size) ||
+         (end > assembly->declared_size || (!more && end != assembly->declared_size) ||
           (more && end == assembly->declared_size)))) {
         return CORE_COAP_BLOCK_INVALID;
     }
+
     memcpy(assembly->body + offset, payload, payload_size);
     assembly->size = end;
     assembly->complete = !more;

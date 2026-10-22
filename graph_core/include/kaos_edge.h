@@ -8,7 +8,10 @@
  * every identity and allowance uses the largest CBOR integer representation. */
 #define CORE_EDGE_MESSAGE_BYTES 160
 typedef enum {
-    CORE_EDGE_PREPARE, CORE_EDGE_ACTIVATE, CORE_EDGE_CANCEL, CORE_EDGE_OWNER
+    CORE_EDGE_PREPARE,
+    CORE_EDGE_ACTIVATE,
+    CORE_EDGE_CANCEL,
+    CORE_EDGE_OWNER
 } core_edge_effect_kind;
 
 /* An owned message copy. The port starts one bounded CoAP exchange from it;
@@ -53,26 +56,26 @@ uint64_t core_edge_next_deadline(const core_edge_service *service);
 /* Call only when this peer's transport slot is free. Success records issue
  * before bytes leave the process. Local work is driven by step(), not I/O. */
 bool core_edge_next(core_edge_service *service, uint64_t peer, uint64_t now_us,
-                     core_edge_effect *effect);
+                    core_edge_effect *effect);
 const char *core_edge_path(core_edge_effect_kind kind);
 /* Before every retransmission, cancel obsolete constructive work. Owner
  * reports remain deliverable after coordinator cutoff. */
-bool core_edge_effect_current(const core_edge_service *service,
-                              const core_edge_effect *effect, uint64_t now_us);
+bool core_edge_effect_current(const core_edge_service *service, const core_edge_effect *effect,
+                              uint64_t now_us);
 /* Receipt success is not lifecycle evidence. A definitive command rejection
  * selects cleanup; network silence is resolved by the original deadline. */
 void core_edge_rejected(core_edge_service *service, const core_edge_effect *effect,
-                         uint64_t now_us);
+                        uint64_t now_us);
 /* A correlated successful /owner response permits retirement of that exact
  * final local closure copy. An empty transport ACK is not acceptance. */
 void core_edge_delivered(core_edge_service *service, const core_edge_effect *effect);
-bool core_edge_activate(core_edge_service *service, uint64_t sender,
-                         const uint8_t *body, size_t size);
-bool core_edge_owner(core_edge_service *service, uint64_t sender,
-                      const uint8_t *body, size_t size, uint64_t now_us);
+bool core_edge_activate(core_edge_service *service, uint64_t sender, const uint8_t *body,
+                        size_t size);
+bool core_edge_owner(core_edge_service *service, uint64_t sender, const uint8_t *body, size_t size,
+                     uint64_t now_us);
 /* Correlated cleanup reply evidence may arrive after the exchange cutoff.
  * Match the original local record lifetime without requiring a live timer. */
-bool core_edge_reply(core_edge_service *service, const core_edge_effect *effect,
-                     uint64_t sender, const uint8_t *body, size_t size, uint64_t now_us);
+bool core_edge_reply(core_edge_service *service, const core_edge_effect *effect, uint64_t sender,
+                     const uint8_t *body, size_t size, uint64_t now_us);
 
 #endif

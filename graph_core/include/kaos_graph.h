@@ -14,8 +14,12 @@
 #define CORE_SCHEMA_VERSION 4
 
 /* Shared protocol identities received from O; K does not allocate them. */
-typedef struct { uint64_t value; } core_op_id;
-typedef struct { uint64_t value; } core_instance_id;
+typedef struct {
+    uint64_t value;
+} core_op_id;
+typedef struct {
+    uint64_t value;
+} core_instance_id;
 
 /* All time values are owner-local monotonic microseconds. Pass the time at
  * the serialized decision boundary, not an event's arrival timestamp.
@@ -49,7 +53,10 @@ struct core_lifetime {
  * Initialize once, never copy/reset a used record: old queued tokens may still
  * refer to its address. Reopen preserves the nonwrapping ticket sequence.
  * Fields are readable for ledgers/observation; mutate only through this API. */
-#define CORE_LIFETIME_INIT(limit) { .byte_limit = (limit) }
+#define CORE_LIFETIME_INIT(limit)                                                                  \
+    {                                                                                              \
+        .byte_limit = (limit)                                                                      \
+    }
 
 /* Reserve one positive-sized allocation before allocating/dispatching work.
  * A failed allocation stays charged until its reservation is released.
@@ -75,11 +82,7 @@ typedef enum {
     CORE_ACTION_COMPLETED
 } core_action_phase;
 
-typedef enum {
-    CORE_WORK_SUCCEEDED,
-    CORE_WORK_FAILED,
-    CORE_WORK_CANCELLED
-} core_work_result;
+typedef enum { CORE_WORK_SUCCEEDED, CORE_WORK_FAILED, CORE_WORK_CANCELLED } core_work_result;
 
 /* One caller-owned mailbox per outstanding action. Its access remains charged
  * through completion acceptance, so publishing completion needs no queue slot
