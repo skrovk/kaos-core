@@ -1,0 +1,10 @@
+{
+  "legacy-cli": {
+    "returncode": 2,
+    "retirement_message": true
+  },
+  "legacy-cmake": {
+    "returncode": 1,
+    "retirement_message": true
+  }
+}

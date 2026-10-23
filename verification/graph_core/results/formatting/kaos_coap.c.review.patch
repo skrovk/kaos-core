@@ -1,0 +1,15 @@
+--- kaos_coap.c before
++++ kaos_coap.c after
+@@ -155,10 +155,10 @@
+ const core_coap_option *found = NULL;
+ for (size_t i = 0; i < message->option_count; ++i) {
+-if (message->options[i].number == number) {
++if (message->options[i].number != number)
++continue;
+ if (found != NULL) {
+ return NULL;
+ }
+ found = &message->options[i];
+-}
+ }
+ return found;

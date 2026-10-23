@@ -39,21 +39,22 @@ and checking the resulting memory use and platform routing capacity. The
 authority and collector do not consume peer entries, but need their own
 configured routes.
 
-See [host configuration](../../graph_core/include/kaos_host.h),
-[peer limit and enrollment contract](../../graph_core/include/kaos_admission.h)
-and [enrollment validation](../../graph_core/kaos_admission.c).
+See [host configuration](../graph_core/include/kaos_host.h),
+[peer limit and enrollment contract](../graph_core/include/kaos_admission.h)
+and [enrollment validation](../graph_core/kaos_admission.c).
 
 ## Graph capacity is also bounded
 
 Peer enrollment does not guarantee that a graph operation will fit. Each host
 also has fixed capacities for node reservations, endpoint reservations,
 admission records, ports and channels per request. The selected build profile
-sets these bounds in [kaos_limits.h](../../graph_core/include/kaos_limits.h).
+sets these bounds in [kaos_limits.h](../graph_core/include/kaos_limits.h).
 The configured memory budget imposes an additional admission limit.
 
 An operation can therefore be rejected for insufficient capacity even when
 all participating devices are enrolled. Cleanup and retained operation
 evidence can continue to occupy capacity after execution stops.
 
-See [verification and testing](verification.md) for the remaining platform and
-system qualification work.
+Host test results and ESP32 cross-compilation do not establish distributed
+Wi-Fi capacity or physical stack/timing bounds. The demonstrated scope is
+recorded in the [verification inventory](../implementation_rails/graph_operation_verification_inventory.csv).

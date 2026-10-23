@@ -1,0 +1,28 @@
+{
+  "before": {
+    "profile_admission": 36776,
+    "profile_record": 1200,
+    "profile_request": 136,
+    "profile_runtime_adapter": 16,
+    "global_storage": 32768,
+    "service": 1104
+  },
+  "after": {
+    "profile_admission": 40040,
+    "profile_record": 1336,
+    "profile_request": 272,
+    "profile_runtime_adapter": 20,
+    "global_storage": 32768,
+    "service": 1648
+  },
+  "delta": {
+    "profile_admission": 3264,
+    "profile_record": 136,
+    "profile_request": 136,
+    "profile_runtime_adapter": 4,
+    "global_storage": 0,
+    "service": 544
+  },
+  "scope": "ESP32 four-node compiler layouts with existing trace-prepare configuration; not physical runtime RAM/high-water measurements",
+  "compiler": "/home/karolina/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32-elf-gcc"
+}

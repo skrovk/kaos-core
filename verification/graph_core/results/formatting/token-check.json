@@ -1,0 +1,30 @@
+{
+  "formatter": "clang-format 14.0.4",
+  "checked_files": 40,
+  "mechanical_token_changes": [],
+  "control_flow_edited_functions": {
+    "kaos_admission.c": [
+      "detach_notification",
+      "core_admission_release_endpoints",
+      "core_admission_release_binding",
+      "resources_released"
+    ],
+    "kaos_coap.c": [
+      "core_coap_find"
+    ],
+    "kaos_endpoint.c": [
+      "core_endpoint_close",
+      "close_bindings_with_unavailable_nodes",
+      "advance_endpoint_queues"
+    ],
+    "kaos_host.c": [
+      "send_artifact"
+    ],
+    "kaos_node.c": [
+      "observe_node_runtime_failure",
+      "advance_node_startup",
+      "accept_node_init",
+      "request_node_runtime_cleanup"
+    ]
+  }
+}

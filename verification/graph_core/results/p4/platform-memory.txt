@@ -1,0 +1,212 @@
+P4 ESP32 platform memory accounting — 10 October 2026
+This read-only analysis made no implementation, profile or existing test changes.
+Snapshot: /tmp/kaos-p4-session/platform-snapshot
+ELF SHA256: abf231fdd78e91a225fafb4a365086d9aab101f12eaadb297f7d7f4da64b9375
+Board log matching ELF prefix abf231fdd: /tmp/kaos-p4-session/board.log
+ESP-IDF v5.5, ESP32, dual core, no PSRAM; four-node qualification profile.
+
+1. Main SRAM: exact physical-region reconciliation, before counting live allocations
+The IDF ESP32 memory-layout source enumerates 532480 bytes (520 KiB):
+  Data-only SRAM:                 204800  0x3ffae000..0x3ffe0000
+  Dual-mapped D/IRAM:             131072  0x3ffe0000..0x40000000
+  Instruction-side SRAM:         196608  0x40070000..0x400a0000
+D/IRAM has instruction aliases 0x400a0000..0x400c0000. Those aliases are the SAME
+131072 bytes, not an additional bank. The instruction-only free heap below is
+0x4008d738..0x400a0000 and does not overlap the D/IRAM heaps.
+
+  CPU0 and CPU1 flash caches:      65536  two 32768-byte instruction-side banks
+  ROM reservations:                3920  1760 data-only + 1088 + 1072 in D/IRAM
+  Application static DRAM:        119880  data 9336 + BSS 110544
+  Loaded IRAM including alignment: 55096  vectors 1028 + text 54067 + padding 1
+  Raw byte-addressable heap:      212072  four DRAM/D/IRAM regions below
+  Raw instruction-only heap:       75976  not ordinary byte-addressable malloc
+  TOTAL:                         532480
+
+The map size tool reports dram_total=180736 and dram_remain=60856. That describes
+the statically linkable DRAM segment, NOT all data-addressable RAM or the total heap.
+Its IRAM used=55095 omits the final one-byte NOBITS alignment; the actual reservation
+ends at 0x4008d738 and consumes 55096 bytes.
+
+Boot heap regions from the matching physical boot log:
+  0x3ffae6e0 length 0x01920 =   6432  DRAM
+  0x3ffcd448 length 0x12bb8 =  76728  DRAM
+  0x3ffe0440 length 0x03ae0 =  15072  D/IRAM
+  0x3ffe4350 length 0x1bcb0 = 113840  D/IRAM
+  Byte-addressable subtotal = 212072
+  0x4008d738 length 0x128c8 =  75976  IRAM-only
+  All physical raw heap regions = 288048; only 212072 are ordinary 8-bit-capable RAM.
+MALLOC_CAP_EXEC includes the dual-use D/IRAM heaps as well as IRAM-only storage.
+Therefore exec_free and internal|8bit heap_free overlap and MUST NOT be added.
+CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY and SRAM1-as-IRAM are not enabled.
+
+RTC address spaces are separate: 8192-byte RTC fast and 8192-byte RTC slow.
+The current ELF loads 32 bytes into RTC fast and reserves 24 bytes in RTC slow.
+Neither RTC region is enabled as ordinary heap; do not add RTC capacity to the
+212072-byte heap budget or count the fast instruction/data aliases twice.
+
+2. Static DRAM: what the 119880 bytes contain
+  Qualification application libmain.a: 74300 = 74200 fixture + 92 wake semaphore
+                                             + 4 wake handle + 4 registry mutex handle
+  Runtime/WAMR libruntime.a:          34080 = 32768 global arena + 1088 service
+                                             + 28 global-arena record + 196 other globals
+  ESP-IDF/libc/platform globals:      11374 (archive-attributed bytes below)
+  Linker alignment/padding:             126
+  TOTAL:                            119880
+
+Fixture detail (included in the 74200-byte fixture, not additional):
+  core_admission                  39272
+  core_endpoint_service           33232
+  core_edge_service                 592
+  core_node_service                 760
+  Fixture counters/IDs/handles/padding:       344
+Endpoint service 33232 already includes 32768 payload bytes for 32 full queues.
+The 1024-byte per-endpoint admission charge is an accounting reservation for these
+existing static buffers; it is not another heap allocation. Likewise the process
+global 32768-byte WAMR arena is static BSS and must not be charged a second time
+against the runtime heap. Its measured current initialization use is only 40 bytes;
+this report makes no budget-cut decision.
+
+Per-archive table from esp_idf_size; bytes. DRAM columns include only DRAM; IRAM
+is separate. Merged flash strings may be attributed to the first contributing
+archive by the size tool, so per-archive flash ownership is not a causal marginal
+saving estimate (particularly the large esp_timer rodata entry).
+Archive                        DRAM data   DRAM BSS   DRAM sum     IRAM  Flash text  Flash rodata*
+libmain.a                              4      74296      74300        0        8532           1160
+libruntime.a                         128      33952      34080        0       64800           1092
+libfreertos.a                       3106        741       3847    14319         449           1042
+libhal.a                            2093          8       2101     5930        2026             98
+libspi_flash.a                      1116         24       1140     6999        1053            429
+libxtensa.a                         1044          0       1044     2216         117             36
+libesp_system.a                      465        309        774     4092        7157            634
+libc.a                               264        320        584        0       53116           3420
+libesp_hw_support.a                  306         76        382     6001        6390            902
+libnewlib.a                          160        216        376     1479        1377            109
+libesp_driver_uart.a                 280         32        312        0        6726            601
+liblog.a                               8        276        284      337         634             24
+libvfs.a                             192         44        236        0        3897            143
+libesp_mm.a                           36        128        164     1054        2691            214
+libsoc.a                              40          0         40       37           0           1444
+libpthread.a                          16         16         32        0        2852            135
+libesp_vfs_console.a                   0         16         16        0         481            180
+libheap.a                              4          8         12     7414        3238           1614
+libesp_app_format.a                    0         10         10        0         417            264
+libesp_timer.a                         0          8          8      146         397          36723
+libesp_partition.a                     0          8          8        0         981             37
+libapp_update.a                        0          4          4        0         147             30
+libgraph_core.a                        0          0          0        0       21105             64
+libm.a                                 0          0          0        0        2325             40
+libbootloader_support.a                0          0          0     2088          94             40
+libesp_ringbuf.a                       0          0          0     1057           0             97
+libesp_rom.a                           0          0          0      241           0            558
+libesp_common.a                        0          0          0        0          50            470
+libxt_hal.a                            0          0          0      443           0             32
+libefuse.a                             0          0          0        0         263             56
+libgcc.a                               0          0          0        0         308              0
+libesp_security.a                      0          0          0        0          12              8
+libcxx.a                               0          0          0        0          10              0
+Archive-attributed DRAM total: 119754; plus padding126 =119880.
+Archive-attributed IRAM total: 53853; plus section padding/vector gaps1243 =55096.
+The static FreeRTOS data contribution includes port_IntStack=3072 bytes: two
+1536-byte interrupt stacks. These are already in static DRAM, not heap task stacks.
+
+3. Runtime task stacks and task-control blocks
+The compiler probe used the actual Xtensa compiler and current ESP compile flags;
+see platform-layout.c/.o/.json. The physical task listing confirms nine live tasks:
+  main/control: 1 * 12800 =12800  (configured12288 +512 non-nano-libc extra)
+  IDLE0, IDLE1: 2 * 1536  = 3072
+  ipc0, ipc1:   2 * 1024  = 2048
+  WAMR workers: 4 * 8192  =32768
+  Requested task stack total:    50688
+  Task-control blocks: 9 *348 =   3132
+  Combined requested stacks/TCBs:53820, before heap/pthread allocation overhead.
+These allocations are already included in the measured heap reductions below.
+WAMR interpreter stacks8192 per node and guest linear stacks4096 per node reside
+inside each node arena. They are NOT additional native/FreeRTOS task stacks.
+
+Configured but NOT linked/instantiated here: esp_timer task4096 actual stack,
+FreeRTOS timer daemon2048, default event task2816, TCP/IP task3584. Only early
+esp_timer clock initialization is linked; esp_timer_init_os/task symbols are absent.
+xTimerCreateTimerTask is the weak7-byte no-op implementation, so the configured
+FreeRTOS timer service does not consume a task stack in this image.
+
+Physical high-water observations at first all-queues-full snapshot:
+  main free6908 of12800 => at most5892 bytes observed used
+  IDLE0 free904 of1536; IDLE1 free900 of1536
+  ipc0 free480 of1024; ipc1 free488 of1024
+  workers free5888,6004,6008,6012 of8192 at that snapshot
+These are observed stack watermarks, not proof of worst-case safe stack sizing.
+
+4. Measured first-cycle heap reconciliation (matching physical firmware)
+  Raw internal8bit heap total:                 212072
+  Startup tasks/platform/allocator overhead:   -24056  =>188016 before_runtime
+  Four persistent worker initialization:       -35388  =>152628 workers_ready
+  First registry mutex/attachment activity:      -112  =>152516 before_node0
+  Four node buffers + other node-stage costs:  -112928  =>39588 all_queues_full
+  Free at all32queuesfull:                       39588; largest block18432
+  Exact identity: 24056+35388+112+112928+39588=212072.
+
+The startup category includes17920 requested main/idle/IPC stack bytes plus
+1740 TCB bytes; remaining4396 is startup/platform allocations and allocator
+bookkeeping, not separately attributed by this trace.
+Worker initialization includes32768 stack +1392 TCB bytes; remaining1228 is
+pthread/platform allocations and allocator overhead, not individually traced.
+Node-stage requested arena+artifact backing is4*(26624+1124)=110992; remaining
+1936 is other platform allocations/allocator overhead in this phase. The trace
+does not support labeling all of that residual as any single structure.
+The112-byte delta coincides with the first lock of a lazy pthread registry mutex;
+this attribution is an inference from the code boundary, not allocation tracing.
+At allqueuesfull, exec_free=96192 overlaps the byte-addressable heap, as explained
+above. No additional memory capacity is gained by adding that number to39588.
+
+The final firmware completed all three traffic/reclamation cycles in 6.5 seconds
+with PASS and no watchdog failure. Every cycle reclaimed the node-stage112928
+bytes: free heap returned to152516 and largest block110592. Control priority3
+matches the P3 profile; worker priority2. This is a local capacity qualification,
+not a Wi-Fi qualification run.
+
+5. Networking and management costs absent from this physical image
+The app_main fixture calls the local capacity runner. There is no esp_wifi component,
+no Wi-Fi initialization, and no active lwIP/TCPIP stack or UDP sockets. liblwip was
+built as a dependency but contributes no allocated text/data/BSS to the linked ELF.
+core_control_receive, core_coap_* and wire core_edge_next/owner/activate entrypoints
+are absent from the final ELF. Local core_edge_step, node and endpoint execution
+are present. No CoAP server cache, Block1 workspace or outgoing exchange objects
+are instantiated by the capacity fixture.
+
+Known Xtensa object sizes for a future port, NOT additional costs measured here:
+  core_control                     6848
+  core_coap_cache                  4736
+  core_coap_cached_response        1184
+  core_coap_block1                 2088
+  core_coap_exchange               1208
+  core_edge_effect                  200
+  core_artifact                      80
+core_control6848 already includes cache4736 and Block1 workspace2088. Do not add
+those members again. One additional outgoing exchange+owned edge effect is
+1208+200=1408 bytes before port address/bookkeeping. Eight such slots are11264;
+control plus these slots=18112, excluding addresses, socket/pbuf/Wi-Fi buffers,
+network/event tasks, artifact exchanges and network-driver allocations. This is
+a layout subtotal, not a qualified embedded transport design or forecast peak.
+The current ELF has no Wi-Fi configuration/profile from which to assert an exact
+Wi-Fi RAM cost. Network memory needs a concrete port and physical measurement.
+
+6. Flash and image bytes (separate from working RAM)
+  Flash-mapped code:                  193146
+  Flash-mapped read-only data:          51756
+  Flash app descriptor:                  256
+  Linked flash-mapped subtotal:        245158
+  Initialized DRAM copied at boot:       9336
+  IRAM vectors/text copied at boot:     55095
+  esp_idf_size total:                  309589
+  Add RTC fast initial data32 + IRAM finalpad1 + flash textpad2 =309624 imagepayload
+  Image header24 +6 segmentheaders48 +checksum/alignment16 +hash32 =120
+  Exact .bin size:                    309744
+BSS110544 has no payload bytes in the flash image. Flash copies of initialized
+DRAM/IRAM consume flash storage as well as working RAM; these are separate budgets.
+The4MiB flash partition table gives this factory application1MiB; this image leaves
+738832 bytes in that app partition. NVS24KiB and PHY-init4KiB are flash partitions,
+not RAM buffers. The ELF debug/symbol file size is not the flashed image size.
+
+Primary local evidence: current .map/.elf/sdkconfig, esp_idf_size JSON tables,
+Xtensa compiler sizeof probe, esp_task.h, FreeRTOS port_common.c and timer weak
+stub source, ESP-IDF heap/port/esp32/memory_layout.c, matching physical board.log.

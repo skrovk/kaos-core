@@ -1,0 +1,816 @@
+TLC2 Version 2.19 of 08 August 2024 (rev: 5a47802)
+Running breadth-first search Model-Checking with fp 102 and seed 42 with 1 worker on 14 cores with 1820MB heap and 64MB offheap memory [pid: 340287] (Linux 7.0.0-38-generic amd64, Ubuntu 21.0.12.1 x86_64, MSBDiskFPSet, DiskStateQueue).
+Parsing file /home/karolina/Research/Code/kaos_core/verification/graph_core/model/HostExecutionWitness.tla
+Parsing file /home/karolina/Research/Code/kaos_core/verification/graph_core/model/HostExecution.tla
+Parsing file /tmp/Naturals.tla
+Parsing file /tmp/FiniteSets.tla
+Parsing file /tmp/TLC.tla
+Parsing file /tmp/Sequences.tla
+Semantic processing of module Naturals
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module TLC
+Semantic processing of module HostExecution
+Semantic processing of module HostExecutionWitness
+Starting... (2026-10-20 17:22:17)
+Computing initial states...
+Finished computing initial states: 1 distinct state generated at 2026-10-20 17:22:17.
+Progress(10) at 2026-10-20 17:22:20: 33,758 states generated (33,758 s/min), 8,465 distinct states found (8,465 ds/min), 3,655 states left on queue.
+Error: Invariant NoOptionalOverlapWitness is violated.
+Error: The behavior up to this point is:
+State 1: <Initial predicate>
+s = [ prepared |->
+      { <<a, "send">>,
+        <<a, "recv">>,
+        <<b, "send">>,
+        <<b, "recv">>,
+        <<c, "send">>,
+        <<c, "recv">> },
+  success |-> FALSE,
+  phase |-> "prepared",
+  closing |-> FALSE,
+  removalCutoff |-> FALSE,
+  background |-> "clean",
+  nodeClean |-> FALSE,
+  endpointAccess |-> {},
+  packet |-> [kind |-> "empty"],
+  queue |-> (a :> 0 @@ b :> 0 @@ c :> 0),
+  generation |-> 0,
+  wire |-> [kind |-> "empty"],
+  ack |-> [kind |-> "empty"],
+  removal |-> FALSE,
+  channelCutoff |-> {},
+  nodeDue |-> FALSE,
+  seen |->
+      ( <<a, "send">> :> {"ready"} @@
+        <<a, "recv">> :> {"ready"} @@
+        <<b, "send">> :> {"ready"} @@
+        <<b, "recv">> :> {"ready"} @@
+        <<c, "send">> :> {"ready", "active"} @@
+        <<c, "recv">> :> {"ready", "active"} ),
+  endpoint |->
+      ( <<a, "send">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<a, "recv">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<b, "send">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<b, "recv">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<c, "send">> :> [phase |-> "active", facts |-> {"ready", "active"}] @@
+        <<c, "recv">> :> [phase |-> "active", facts |-> {"ready", "active"}] ),
+  commit |-> TRUE,
+  dispatch |-> FALSE,
+  bytes |-> 2,
+  worker |-> TRUE,
+  access |-> FALSE,
+  ready |-> TRUE,
+  exitSeen |-> FALSE,
+  cutoff |-> FALSE,
+  channelClosing |-> {},
+  revision |-> 1,
+  retained |-> TRUE,
+  record |-> TRUE,
+  grant |-> TRUE,
+  init |-> FALSE,
+  channelDue |-> {},
+  cleanupDue |-> FALSE,
+  channelCleanupDue |-> {},
+  removalDue |-> FALSE,
+  activated |-> {<<c, "send">>, <<c, "recv">>},
+  cleanupIssued |-> {},
+  notification |-> (a :> "none" @@ b :> "none" @@ c :> "none"),
+  errors |-> 0,
+  exchange |-> [kind |-> "empty"],
+  attempts |-> 0,
+  acknowledged |-> 0,
+  snapshot |-> [kind |-> "empty"],
+  backgroundDue |-> TRUE,
+  backgroundMailbox |-> FALSE ]
+
+State 2: <Action line 27, col 16 to line 29, col 70 of module HostExecutionWitness>
+s = [ prepared |->
+      { <<a, "send">>,
+        <<a, "recv">>,
+        <<b, "send">>,
+        <<b, "recv">>,
+        <<c, "send">>,
+        <<c, "recv">> },
+  success |-> FALSE,
+  phase |-> "prepared",
+  closing |-> FALSE,
+  removalCutoff |-> FALSE,
+  background |-> "clean",
+  nodeClean |-> FALSE,
+  endpointAccess |-> {},
+  packet |-> [kind |-> "empty"],
+  queue |-> (a :> 0 @@ b :> 0 @@ c :> 0),
+  generation |-> 0,
+  wire |-> [kind |-> "empty"],
+  ack |-> [kind |-> "empty"],
+  removal |-> FALSE,
+  channelCutoff |-> {},
+  nodeDue |-> FALSE,
+  seen |->
+      ( <<a, "send">> :> {"ready"} @@
+        <<a, "recv">> :> {"ready"} @@
+        <<b, "send">> :> {"ready"} @@
+        <<b, "recv">> :> {"ready"} @@
+        <<c, "send">> :> {"ready", "active"} @@
+        <<c, "recv">> :> {"ready", "active"} ),
+  endpoint |->
+      ( <<a, "send">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<a, "recv">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<b, "send">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<b, "recv">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<c, "send">> :> [phase |-> "active", facts |-> {"ready", "active"}] @@
+        <<c, "recv">> :> [phase |-> "active", facts |-> {"ready", "active"}] ),
+  commit |-> TRUE,
+  dispatch |-> FALSE,
+  bytes |-> 2,
+  worker |-> TRUE,
+  access |-> FALSE,
+  ready |-> TRUE,
+  exitSeen |-> FALSE,
+  cutoff |-> FALSE,
+  channelClosing |-> {a},
+  revision |-> 2,
+  retained |-> TRUE,
+  record |-> TRUE,
+  grant |-> TRUE,
+  init |-> FALSE,
+  channelDue |-> {},
+  cleanupDue |-> FALSE,
+  channelCleanupDue |-> {},
+  removalDue |-> FALSE,
+  activated |-> {<<c, "send">>, <<c, "recv">>},
+  cleanupIssued |-> {},
+  notification |-> (a :> "none" @@ b :> "none" @@ c :> "none"),
+  errors |-> 0,
+  exchange |-> [kind |-> "empty"],
+  attempts |-> 0,
+  acknowledged |-> 0,
+  snapshot |-> [kind |-> "empty"],
+  backgroundDue |-> TRUE,
+  backgroundMailbox |-> FALSE ]
+
+State 3: <Action line 27, col 16 to line 29, col 70 of module HostExecutionWitness>
+s = [ prepared |->
+      { <<a, "send">>,
+        <<a, "recv">>,
+        <<b, "send">>,
+        <<b, "recv">>,
+        <<c, "send">>,
+        <<c, "recv">> },
+  success |-> FALSE,
+  phase |-> "prepared",
+  closing |-> FALSE,
+  removalCutoff |-> FALSE,
+  background |-> "clean",
+  nodeClean |-> FALSE,
+  endpointAccess |-> {},
+  packet |-> [kind |-> "empty"],
+  queue |-> (a :> 0 @@ b :> 0 @@ c :> 0),
+  generation |-> 0,
+  wire |-> [kind |-> "empty"],
+  ack |-> [kind |-> "empty"],
+  removal |-> FALSE,
+  channelCutoff |-> {},
+  nodeDue |-> FALSE,
+  seen |->
+      ( <<a, "send">> :> {"ready"} @@
+        <<a, "recv">> :> {"ready"} @@
+        <<b, "send">> :> {"ready"} @@
+        <<b, "recv">> :> {"ready"} @@
+        <<c, "send">> :> {"ready", "active"} @@
+        <<c, "recv">> :> {"ready", "active"} ),
+  endpoint |->
+      ( <<a, "send">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<a, "recv">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<b, "send">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<b, "recv">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<c, "send">> :> [phase |-> "active", facts |-> {"ready", "active"}] @@
+        <<c, "recv">> :> [phase |-> "active", facts |-> {"ready", "active"}] ),
+  commit |-> TRUE,
+  dispatch |-> FALSE,
+  bytes |-> 2,
+  worker |-> TRUE,
+  access |-> FALSE,
+  ready |-> TRUE,
+  exitSeen |-> FALSE,
+  cutoff |-> FALSE,
+  channelClosing |-> {a},
+  revision |-> 2,
+  retained |-> TRUE,
+  record |-> TRUE,
+  grant |-> TRUE,
+  init |-> FALSE,
+  channelDue |-> {},
+  cleanupDue |-> FALSE,
+  channelCleanupDue |-> {a},
+  removalDue |-> FALSE,
+  activated |-> {<<c, "send">>, <<c, "recv">>},
+  cleanupIssued |-> {},
+  notification |-> (a :> "none" @@ b :> "none" @@ c :> "none"),
+  errors |-> 0,
+  exchange |-> [kind |-> "empty"],
+  attempts |-> 0,
+  acknowledged |-> 0,
+  snapshot |-> [kind |-> "empty"],
+  backgroundDue |-> TRUE,
+  backgroundMailbox |-> FALSE ]
+
+State 4: <Action line 27, col 16 to line 29, col 70 of module HostExecutionWitness>
+s = [ prepared |->
+      { <<a, "send">>,
+        <<a, "recv">>,
+        <<b, "send">>,
+        <<b, "recv">>,
+        <<c, "send">>,
+        <<c, "recv">> },
+  success |-> FALSE,
+  phase |-> "prepared",
+  closing |-> FALSE,
+  removalCutoff |-> FALSE,
+  background |-> "clean",
+  nodeClean |-> FALSE,
+  endpointAccess |-> {},
+  packet |-> [kind |-> "empty"],
+  queue |-> (a :> 0 @@ b :> 0 @@ c :> 0),
+  generation |-> 0,
+  wire |-> [kind |-> "empty"],
+  ack |-> [kind |-> "empty"],
+  removal |-> FALSE,
+  channelCutoff |-> {a},
+  nodeDue |-> FALSE,
+  seen |->
+      ( <<a, "send">> :> {"ready"} @@
+        <<a, "recv">> :> {"ready"} @@
+        <<b, "send">> :> {"ready"} @@
+        <<b, "recv">> :> {"ready"} @@
+        <<c, "send">> :> {"ready", "active"} @@
+        <<c, "recv">> :> {"ready", "active"} ),
+  endpoint |->
+      ( <<a, "send">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<a, "recv">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<b, "send">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<b, "recv">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<c, "send">> :> [phase |-> "active", facts |-> {"ready", "active"}] @@
+        <<c, "recv">> :> [phase |-> "active", facts |-> {"ready", "active"}] ),
+  commit |-> TRUE,
+  dispatch |-> FALSE,
+  bytes |-> 2,
+  worker |-> TRUE,
+  access |-> FALSE,
+  ready |-> TRUE,
+  exitSeen |-> FALSE,
+  cutoff |-> FALSE,
+  channelClosing |-> {a},
+  revision |-> 3,
+  retained |-> TRUE,
+  record |-> TRUE,
+  grant |-> TRUE,
+  init |-> FALSE,
+  channelDue |-> {},
+  cleanupDue |-> FALSE,
+  channelCleanupDue |-> {a},
+  removalDue |-> FALSE,
+  activated |-> {<<c, "send">>, <<c, "recv">>},
+  cleanupIssued |-> {},
+  notification |-> (a :> "none" @@ b :> "none" @@ c :> "none"),
+  errors |-> 0,
+  exchange |-> [kind |-> "empty"],
+  attempts |-> 0,
+  acknowledged |-> 0,
+  snapshot |-> [kind |-> "empty"],
+  backgroundDue |-> TRUE,
+  backgroundMailbox |-> FALSE ]
+
+State 5: <Action line 27, col 16 to line 29, col 70 of module HostExecutionWitness>
+s = [ prepared |->
+      { <<a, "send">>,
+        <<a, "recv">>,
+        <<b, "send">>,
+        <<b, "recv">>,
+        <<c, "send">>,
+        <<c, "recv">> },
+  success |-> FALSE,
+  phase |-> "prepared",
+  closing |-> FALSE,
+  removalCutoff |-> FALSE,
+  background |-> "clean",
+  nodeClean |-> FALSE,
+  endpointAccess |-> {},
+  packet |-> [kind |-> "empty"],
+  queue |-> (a :> 0 @@ b :> 0 @@ c :> 0),
+  generation |-> 0,
+  wire |-> [kind |-> "empty"],
+  ack |-> [kind |-> "empty"],
+  removal |-> FALSE,
+  channelCutoff |-> {a},
+  nodeDue |-> FALSE,
+  seen |->
+      ( <<a, "send">> :> {"ready"} @@
+        <<a, "recv">> :> {"ready"} @@
+        <<b, "send">> :> {"ready"} @@
+        <<b, "recv">> :> {"ready", "active"} @@
+        <<c, "send">> :> {"ready", "active"} @@
+        <<c, "recv">> :> {"ready", "active"} ),
+  endpoint |->
+      ( <<a, "send">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<a, "recv">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<b, "send">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<b, "recv">> :> [phase |-> "active", facts |-> {"ready", "active"}] @@
+        <<c, "send">> :> [phase |-> "active", facts |-> {"ready", "active"}] @@
+        <<c, "recv">> :> [phase |-> "active", facts |-> {"ready", "active"}] ),
+  commit |-> TRUE,
+  dispatch |-> FALSE,
+  bytes |-> 2,
+  worker |-> TRUE,
+  access |-> FALSE,
+  ready |-> TRUE,
+  exitSeen |-> FALSE,
+  cutoff |-> FALSE,
+  channelClosing |-> {a},
+  revision |-> 4,
+  retained |-> TRUE,
+  record |-> TRUE,
+  grant |-> TRUE,
+  init |-> FALSE,
+  channelDue |-> {},
+  cleanupDue |-> FALSE,
+  channelCleanupDue |-> {a},
+  removalDue |-> FALSE,
+  activated |-> {<<b, "recv">>, <<c, "send">>, <<c, "recv">>},
+  cleanupIssued |-> {},
+  notification |-> (a :> "none" @@ b :> "enabled" @@ c :> "none"),
+  errors |-> 0,
+  exchange |-> [kind |-> "empty"],
+  attempts |-> 0,
+  acknowledged |-> 0,
+  snapshot |-> [kind |-> "empty"],
+  backgroundDue |-> TRUE,
+  backgroundMailbox |-> FALSE ]
+
+State 6: <Action line 27, col 16 to line 29, col 70 of module HostExecutionWitness>
+s = [ prepared |->
+      { <<a, "send">>,
+        <<a, "recv">>,
+        <<b, "send">>,
+        <<b, "recv">>,
+        <<c, "send">>,
+        <<c, "recv">> },
+  success |-> FALSE,
+  phase |-> "prepared",
+  closing |-> FALSE,
+  removalCutoff |-> FALSE,
+  background |-> "clean",
+  nodeClean |-> FALSE,
+  endpointAccess |-> {},
+  packet |-> [kind |-> "empty"],
+  queue |-> (a :> 0 @@ b :> 0 @@ c :> 0),
+  generation |-> 0,
+  wire |-> [kind |-> "empty"],
+  ack |-> [kind |-> "empty"],
+  removal |-> FALSE,
+  channelCutoff |-> {a},
+  nodeDue |-> FALSE,
+  seen |->
+      ( <<a, "send">> :> {"ready"} @@
+        <<a, "recv">> :> {"ready"} @@
+        <<b, "send">> :> {"ready", "active"} @@
+        <<b, "recv">> :> {"ready", "active"} @@
+        <<c, "send">> :> {"ready", "active"} @@
+        <<c, "recv">> :> {"ready", "active"} ),
+  endpoint |->
+      ( <<a, "send">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<a, "recv">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<b, "send">> :> [phase |-> "active", facts |-> {"ready", "active"}] @@
+        <<b, "recv">> :> [phase |-> "active", facts |-> {"ready", "active"}] @@
+        <<c, "send">> :> [phase |-> "active", facts |-> {"ready", "active"}] @@
+        <<c, "recv">> :> [phase |-> "active", facts |-> {"ready", "active"}] ),
+  commit |-> TRUE,
+  dispatch |-> FALSE,
+  bytes |-> 2,
+  worker |-> TRUE,
+  access |-> FALSE,
+  ready |-> TRUE,
+  exitSeen |-> FALSE,
+  cutoff |-> FALSE,
+  channelClosing |-> {a},
+  revision |-> 5,
+  retained |-> TRUE,
+  record |-> TRUE,
+  grant |-> TRUE,
+  init |-> FALSE,
+  channelDue |-> {},
+  cleanupDue |-> FALSE,
+  channelCleanupDue |-> {a},
+  removalDue |-> FALSE,
+  activated |-> {<<b, "send">>, <<b, "recv">>, <<c, "send">>, <<c, "recv">>},
+  cleanupIssued |-> {},
+  notification |-> (a :> "none" @@ b :> "enabled" @@ c :> "none"),
+  errors |-> 0,
+  exchange |-> [kind |-> "empty"],
+  attempts |-> 0,
+  acknowledged |-> 0,
+  snapshot |-> [kind |-> "empty"],
+  backgroundDue |-> TRUE,
+  backgroundMailbox |-> FALSE ]
+
+State 7: <Action line 27, col 16 to line 29, col 70 of module HostExecutionWitness>
+s = [ prepared |->
+      { <<a, "send">>,
+        <<a, "recv">>,
+        <<b, "send">>,
+        <<b, "recv">>,
+        <<c, "send">>,
+        <<c, "recv">> },
+  success |-> FALSE,
+  phase |-> "prepared",
+  closing |-> FALSE,
+  removalCutoff |-> FALSE,
+  background |-> "clean",
+  nodeClean |-> FALSE,
+  endpointAccess |-> {},
+  packet |-> [kind |-> "empty"],
+  queue |-> (a :> 0 @@ b :> 0 @@ c :> 0),
+  generation |-> 0,
+  wire |-> [kind |-> "empty"],
+  ack |-> [kind |-> "empty"],
+  removal |-> FALSE,
+  channelCutoff |-> {a},
+  nodeDue |-> FALSE,
+  seen |->
+      ( <<a, "send">> :> {"ready"} @@
+        <<a, "recv">> :> {"ready"} @@
+        <<b, "send">> :> {"ready", "active"} @@
+        <<b, "recv">> :> {"ready", "active"} @@
+        <<c, "send">> :> {"ready", "active"} @@
+        <<c, "recv">> :> {"ready", "active"} ),
+  endpoint |->
+      ( <<a, "send">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<a, "recv">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<b, "send">> :> [phase |-> "active", facts |-> {"ready", "active"}] @@
+        <<b, "recv">> :> [phase |-> "active", facts |-> {"ready", "active"}] @@
+        <<c, "send">> :> [phase |-> "active", facts |-> {"ready", "active"}] @@
+        <<c, "recv">> :> [phase |-> "active", facts |-> {"ready", "active"}] ),
+  commit |-> TRUE,
+  dispatch |-> TRUE,
+  bytes |-> 2,
+  worker |-> TRUE,
+  access |-> FALSE,
+  ready |-> TRUE,
+  exitSeen |-> FALSE,
+  cutoff |-> FALSE,
+  channelClosing |-> {a},
+  revision |-> 6,
+  retained |-> TRUE,
+  record |-> TRUE,
+  grant |-> TRUE,
+  init |-> FALSE,
+  channelDue |-> {},
+  cleanupDue |-> FALSE,
+  channelCleanupDue |-> {a},
+  removalDue |-> FALSE,
+  activated |-> {<<b, "send">>, <<b, "recv">>, <<c, "send">>, <<c, "recv">>},
+  cleanupIssued |-> {},
+  notification |-> (a :> "none" @@ b :> "enabled" @@ c :> "none"),
+  errors |-> 0,
+  exchange |-> [kind |-> "empty"],
+  attempts |-> 0,
+  acknowledged |-> 0,
+  snapshot |-> [kind |-> "empty"],
+  backgroundDue |-> TRUE,
+  backgroundMailbox |-> FALSE ]
+
+State 8: <Action line 27, col 16 to line 29, col 70 of module HostExecutionWitness>
+s = [ prepared |->
+      { <<a, "send">>,
+        <<a, "recv">>,
+        <<b, "send">>,
+        <<b, "recv">>,
+        <<c, "send">>,
+        <<c, "recv">> },
+  success |-> FALSE,
+  phase |-> "configure",
+  closing |-> FALSE,
+  removalCutoff |-> FALSE,
+  background |-> "clean",
+  nodeClean |-> FALSE,
+  endpointAccess |-> {},
+  packet |-> [kind |-> "empty"],
+  queue |-> (a :> 0 @@ b :> 0 @@ c :> 0),
+  generation |-> 0,
+  wire |-> [kind |-> "empty"],
+  ack |-> [kind |-> "empty"],
+  removal |-> FALSE,
+  channelCutoff |-> {a},
+  nodeDue |-> FALSE,
+  seen |->
+      ( <<a, "send">> :> {"ready"} @@
+        <<a, "recv">> :> {"ready"} @@
+        <<b, "send">> :> {"ready", "active"} @@
+        <<b, "recv">> :> {"ready", "active"} @@
+        <<c, "send">> :> {"ready", "active"} @@
+        <<c, "recv">> :> {"ready", "active"} ),
+  endpoint |->
+      ( <<a, "send">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<a, "recv">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<b, "send">> :> [phase |-> "active", facts |-> {"ready", "active"}] @@
+        <<b, "recv">> :> [phase |-> "active", facts |-> {"ready", "active"}] @@
+        <<c, "send">> :> [phase |-> "active", facts |-> {"ready", "active"}] @@
+        <<c, "recv">> :> [phase |-> "active", facts |-> {"ready", "active"}] ),
+  commit |-> TRUE,
+  dispatch |-> TRUE,
+  bytes |-> 2,
+  worker |-> TRUE,
+  access |-> FALSE,
+  ready |-> TRUE,
+  exitSeen |-> FALSE,
+  cutoff |-> FALSE,
+  channelClosing |-> {a},
+  revision |-> 6,
+  retained |-> TRUE,
+  record |-> TRUE,
+  grant |-> TRUE,
+  init |-> FALSE,
+  channelDue |-> {},
+  cleanupDue |-> FALSE,
+  channelCleanupDue |-> {a},
+  removalDue |-> FALSE,
+  activated |-> {<<b, "send">>, <<b, "recv">>, <<c, "send">>, <<c, "recv">>},
+  cleanupIssued |-> {},
+  notification |-> (a :> "none" @@ b :> "enabled" @@ c :> "none"),
+  errors |-> 0,
+  exchange |-> [kind |-> "empty"],
+  attempts |-> 0,
+  acknowledged |-> 0,
+  snapshot |-> [kind |-> "empty"],
+  backgroundDue |-> TRUE,
+  backgroundMailbox |-> FALSE ]
+
+State 9: <Action line 27, col 16 to line 29, col 70 of module HostExecutionWitness>
+s = [ prepared |->
+      { <<a, "send">>,
+        <<a, "recv">>,
+        <<b, "send">>,
+        <<b, "recv">>,
+        <<c, "send">>,
+        <<c, "recv">> },
+  success |-> FALSE,
+  phase |-> "main",
+  closing |-> FALSE,
+  removalCutoff |-> FALSE,
+  background |-> "clean",
+  nodeClean |-> FALSE,
+  endpointAccess |-> {},
+  packet |-> [kind |-> "empty"],
+  queue |-> (a :> 0 @@ b :> 0 @@ c :> 0),
+  generation |-> 0,
+  wire |-> [kind |-> "empty"],
+  ack |-> [kind |-> "empty"],
+  removal |-> FALSE,
+  channelCutoff |-> {a},
+  nodeDue |-> FALSE,
+  seen |->
+      ( <<a, "send">> :> {"ready"} @@
+        <<a, "recv">> :> {"ready"} @@
+        <<b, "send">> :> {"ready", "active"} @@
+        <<b, "recv">> :> {"ready", "active"} @@
+        <<c, "send">> :> {"ready", "active"} @@
+        <<c, "recv">> :> {"ready", "active"} ),
+  endpoint |->
+      ( <<a, "send">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<a, "recv">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<b, "send">> :> [phase |-> "active", facts |-> {"ready", "active"}] @@
+        <<b, "recv">> :> [phase |-> "active", facts |-> {"ready", "active"}] @@
+        <<c, "send">> :> [phase |-> "active", facts |-> {"ready", "active"}] @@
+        <<c, "recv">> :> [phase |-> "active", facts |-> {"ready", "active"}] ),
+  commit |-> TRUE,
+  dispatch |-> TRUE,
+  bytes |-> 2,
+  worker |-> TRUE,
+  access |-> FALSE,
+  ready |-> TRUE,
+  exitSeen |-> FALSE,
+  cutoff |-> FALSE,
+  channelClosing |-> {a},
+  revision |-> 6,
+  retained |-> TRUE,
+  record |-> TRUE,
+  grant |-> TRUE,
+  init |-> FALSE,
+  channelDue |-> {},
+  cleanupDue |-> FALSE,
+  channelCleanupDue |-> {a},
+  removalDue |-> FALSE,
+  activated |-> {<<b, "send">>, <<b, "recv">>, <<c, "send">>, <<c, "recv">>},
+  cleanupIssued |-> {},
+  notification |-> (a :> "none" @@ b :> "enabled" @@ c :> "none"),
+  errors |-> 0,
+  exchange |-> [kind |-> "empty"],
+  attempts |-> 0,
+  acknowledged |-> 0,
+  snapshot |-> [kind |-> "empty"],
+  backgroundDue |-> TRUE,
+  backgroundMailbox |-> FALSE ]
+
+State 10: <Action line 27, col 16 to line 29, col 70 of module HostExecutionWitness>
+s = [ prepared |->
+      { <<a, "send">>,
+        <<a, "recv">>,
+        <<b, "send">>,
+        <<b, "recv">>,
+        <<c, "send">>,
+        <<c, "recv">> },
+  success |-> FALSE,
+  phase |-> "main",
+  closing |-> FALSE,
+  removalCutoff |-> FALSE,
+  background |-> "clean",
+  nodeClean |-> FALSE,
+  endpointAccess |-> {},
+  packet |-> [kind |-> "empty"],
+  queue |-> (a :> 0 @@ b :> 0 @@ c :> 0),
+  generation |-> 0,
+  wire |-> [kind |-> "empty"],
+  ack |-> [kind |-> "empty"],
+  removal |-> FALSE,
+  channelCutoff |-> {a},
+  nodeDue |-> FALSE,
+  seen |->
+      ( <<a, "send">> :> {"ready"} @@
+        <<a, "recv">> :> {"ready"} @@
+        <<b, "send">> :> {"ready", "active"} @@
+        <<b, "recv">> :> {"ready", "active"} @@
+        <<c, "send">> :> {"ready", "active"} @@
+        <<c, "recv">> :> {"ready", "active"} ),
+  endpoint |->
+      ( <<a, "send">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<a, "recv">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<b, "send">> :> [phase |-> "active", facts |-> {"ready", "active"}] @@
+        <<b, "recv">> :> [phase |-> "active", facts |-> {"ready", "active"}] @@
+        <<c, "send">> :> [phase |-> "active", facts |-> {"ready", "active"}] @@
+        <<c, "recv">> :> [phase |-> "active", facts |-> {"ready", "active"}] ),
+  commit |-> TRUE,
+  dispatch |-> TRUE,
+  bytes |-> 2,
+  worker |-> TRUE,
+  access |-> FALSE,
+  ready |-> TRUE,
+  exitSeen |-> FALSE,
+  cutoff |-> FALSE,
+  channelClosing |-> {a},
+  revision |-> 6,
+  retained |-> TRUE,
+  record |-> TRUE,
+  grant |-> TRUE,
+  init |-> TRUE,
+  channelDue |-> {},
+  cleanupDue |-> FALSE,
+  channelCleanupDue |-> {a},
+  removalDue |-> FALSE,
+  activated |-> {<<b, "send">>, <<b, "recv">>, <<c, "send">>, <<c, "recv">>},
+  cleanupIssued |-> {},
+  notification |-> (a :> "none" @@ b :> "enabled" @@ c :> "none"),
+  errors |-> 0,
+  exchange |-> [kind |-> "empty"],
+  attempts |-> 0,
+  acknowledged |-> 0,
+  snapshot |-> [kind |-> "empty"],
+  backgroundDue |-> TRUE,
+  backgroundMailbox |-> FALSE ]
+
+State 11: <Action line 27, col 16 to line 29, col 70 of module HostExecutionWitness>
+s = [ prepared |->
+      { <<a, "send">>,
+        <<a, "recv">>,
+        <<b, "send">>,
+        <<b, "recv">>,
+        <<c, "send">>,
+        <<c, "recv">> },
+  success |-> TRUE,
+  phase |-> "main",
+  closing |-> FALSE,
+  removalCutoff |-> FALSE,
+  background |-> "clean",
+  nodeClean |-> FALSE,
+  endpointAccess |-> {},
+  packet |-> [kind |-> "empty"],
+  queue |-> (a :> 0 @@ b :> 0 @@ c :> 0),
+  generation |-> 0,
+  wire |-> [kind |-> "empty"],
+  ack |-> [kind |-> "empty"],
+  removal |-> FALSE,
+  channelCutoff |-> {a},
+  nodeDue |-> FALSE,
+  seen |->
+      ( <<a, "send">> :> {"ready"} @@
+        <<a, "recv">> :> {"ready"} @@
+        <<b, "send">> :> {"ready", "active"} @@
+        <<b, "recv">> :> {"ready", "active"} @@
+        <<c, "send">> :> {"ready", "active"} @@
+        <<c, "recv">> :> {"ready", "active"} ),
+  endpoint |->
+      ( <<a, "send">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<a, "recv">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<b, "send">> :> [phase |-> "active", facts |-> {"ready", "active"}] @@
+        <<b, "recv">> :> [phase |-> "active", facts |-> {"ready", "active"}] @@
+        <<c, "send">> :> [phase |-> "active", facts |-> {"ready", "active"}] @@
+        <<c, "recv">> :> [phase |-> "active", facts |-> {"ready", "active"}] ),
+  commit |-> TRUE,
+  dispatch |-> TRUE,
+  bytes |-> 2,
+  worker |-> TRUE,
+  access |-> FALSE,
+  ready |-> TRUE,
+  exitSeen |-> FALSE,
+  cutoff |-> FALSE,
+  channelClosing |-> {a},
+  revision |-> 7,
+  retained |-> TRUE,
+  record |-> TRUE,
+  grant |-> TRUE,
+  init |-> FALSE,
+  channelDue |-> {},
+  cleanupDue |-> FALSE,
+  channelCleanupDue |-> {a},
+  removalDue |-> FALSE,
+  activated |-> {<<b, "send">>, <<b, "recv">>, <<c, "send">>, <<c, "recv">>},
+  cleanupIssued |-> {},
+  notification |-> (a :> "none" @@ b :> "enabled" @@ c :> "none"),
+  errors |-> 0,
+  exchange |-> [kind |-> "empty"],
+  attempts |-> 0,
+  acknowledged |-> 0,
+  snapshot |-> [kind |-> "empty"],
+  backgroundDue |-> TRUE,
+  backgroundMailbox |-> FALSE ]
+
+State 12: <Action line 27, col 16 to line 29, col 70 of module HostExecutionWitness>
+s = [ prepared |->
+      { <<a, "send">>,
+        <<a, "recv">>,
+        <<b, "send">>,
+        <<b, "recv">>,
+        <<c, "send">>,
+        <<c, "recv">> },
+  success |-> TRUE,
+  phase |-> "main",
+  closing |-> TRUE,
+  removalCutoff |-> FALSE,
+  background |-> "clean",
+  nodeClean |-> FALSE,
+  endpointAccess |-> {},
+  packet |-> [kind |-> "empty"],
+  queue |-> (a :> 0 @@ b :> 0 @@ c :> 0),
+  generation |-> 0,
+  wire |-> [kind |-> "empty"],
+  ack |-> [kind |-> "empty"],
+  removal |-> TRUE,
+  channelCutoff |-> {a},
+  nodeDue |-> FALSE,
+  seen |->
+      ( <<a, "send">> :> {"ready"} @@
+        <<a, "recv">> :> {"ready"} @@
+        <<b, "send">> :> {"ready", "active"} @@
+        <<b, "recv">> :> {"ready", "active"} @@
+        <<c, "send">> :> {"ready", "active"} @@
+        <<c, "recv">> :> {"ready", "active"} ),
+  endpoint |->
+      ( <<a, "send">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<a, "recv">> :> [phase |-> "ready", facts |-> {"ready"}] @@
+        <<b, "send">> :> [phase |-> "active", facts |-> {"ready", "active"}] @@
+        <<b, "recv">> :> [phase |-> "active", facts |-> {"ready", "active"}] @@
+        <<c, "send">> :> [phase |-> "active", facts |-> {"ready", "active"}] @@
+        <<c, "recv">> :> [phase |-> "active", facts |-> {"ready", "active"}] ),
+  commit |-> TRUE,
+  dispatch |-> TRUE,
+  bytes |-> 2,
+  worker |-> TRUE,
+  access |-> FALSE,
+  ready |-> TRUE,
+  exitSeen |-> FALSE,
+  cutoff |-> FALSE,
+  channelClosing |-> {a, b, c},
+  revision |-> 8,
+  retained |-> TRUE,
+  record |-> TRUE,
+  grant |-> TRUE,
+  init |-> FALSE,
+  channelDue |-> {},
+  cleanupDue |-> FALSE,
+  channelCleanupDue |-> {a},
+  removalDue |-> FALSE,
+  activated |-> {<<b, "send">>, <<b, "recv">>, <<c, "send">>, <<c, "recv">>},
+  cleanupIssued |-> {},
+  notification |-> (a :> "none" @@ b :> "enabled" @@ c :> "none"),
+  errors |-> 0,
+  exchange |-> [kind |-> "empty"],
+  attempts |-> 0,
+  acknowledged |-> 0,
+  snapshot |-> [kind |-> "empty"],
+  backgroundDue |-> TRUE,
+  backgroundMailbox |-> FALSE ]
+
+100020 states generated, 21955 distinct states found, 6994 states left on queue.
+The depth of the complete state graph search is 12.
+The average outdegree of the complete state graph is 1 (minimum is 0, the maximum 8 and the 95th percentile is 3).
+Finished in 08s at (2026-10-20 17:22:25)

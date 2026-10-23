@@ -1,0 +1,78 @@
+[OUTPUT] 
+Internal ctest changing into directory: /tmp/kaos-refactor-four
+
+[HANDLER_OUTPUT] 
+Test project /tmp/kaos-refactor-four
+
+      Start  1: graph_runtime_phase_barriers
+ 1/34 Test  #1: graph_runtime_phase_barriers ......   Passed    0.02 sec
+      Start  2: graph_native_runtime
+ 2/34 Test  #2: graph_native_runtime ..............   Passed    0.05 sec
+      Start  3: graph_native_removal
+ 3/34 Test  #3: graph_native_removal ..............   Passed    0.03 sec
+      Start  4: graph_native_request
+ 4/34 Test  #4: graph_native_request ..............   Passed    0.02 sec
+      Start  5: graph_native_protocol
+ 5/34 Test  #5: graph_native_protocol .............   Passed    0.24 sec
+      Start  6: graph_native_process
+ 6/34 Test  #6: graph_native_process ..............   Passed    1.11 sec
+      Start  7: graph_lifecycle_barriers
+ 7/34 Test  #7: graph_lifecycle_barriers ..........   Passed    0.17 sec
+      Start  8: graph_wamr_phase_barriers
+ 8/34 Test  #8: graph_wamr_phase_barriers .........   Passed    0.11 sec
+      Start  9: graph_host_transport_scheduling
+ 9/34 Test  #9: graph_host_transport_scheduling ...   Passed    0.04 sec
+      Start 10: graph_workload_stalls
+10/34 Test #10: graph_workload_stalls .............   Passed    0.10 sec
+      Start 11: graph_observation_loss
+11/34 Test #11: graph_observation_loss ............   Passed    1.07 sec
+      Start 12: graph_collector_crash
+12/34 Test #12: graph_collector_crash .............   Passed    0.80 sec
+      Start 13: graph_relay_overflow
+13/34 Test #13: graph_relay_overflow ..............   Passed    0.63 sec
+      Start 14: graph_host_crash
+14/34 Test #14: graph_host_crash ..................   Passed    0.98 sec
+      Start 15: graph_optional_expiry
+15/34 Test #15: graph_optional_expiry .............   Passed    8.28 sec
+      Start 16: graph_p8_workloads
+16/34 Test #16: graph_p8_workloads ................   Passed    3.05 sec
+      Start 17: graph_p8_workload_timing
+17/34 Test #17: graph_p8_workload_timing ..........   Passed    1.50 sec
+      Start 18: graph_p8_alternatives
+18/34 Test #18: graph_p8_alternatives .............   Passed    7.48 sec
+      Start 19: graph_p8_mixed
+19/34 Test #19: graph_p8_mixed ....................   Passed   13.02 sec
+      Start 20: graph_p4_capacity
+20/34 Test #20: graph_p4_capacity .................   Passed    3.11 sec
+      Start 21: graph_p5_capacity
+21/34 Test #21: graph_p5_capacity .................   Passed    3.11 sec
+      Start 22: graph_p5
+22/34 Test #22: graph_p5 ..........................   Passed    0.04 sec
+      Start 23: graph_admission_reuse
+23/34 Test #23: graph_admission_reuse .............   Passed    0.03 sec
+      Start 24: graph_host_control
+24/34 Test #24: graph_host_control ................   Passed    0.02 sec
+      Start 25: graph_p6
+25/34 Test #25: graph_p6 ..........................   Passed    0.03 sec
+      Start 26: graph_p6_admission
+26/34 Test #26: graph_p6_admission ................   Passed    0.02 sec
+      Start 27: graph_p6_control
+27/34 Test #27: graph_p6_control ..................   Passed    0.02 sec
+      Start 28: graph_p7
+28/34 Test #28: graph_p7 ..........................   Passed    0.06 sec
+      Start 29: graph_p7_control
+29/34 Test #29: graph_p7_control ..................   Passed    0.02 sec
+      Start 30: graph_p7_lifecycle
+30/34 Test #30: graph_p7_lifecycle ................   Passed    0.03 sec
+      Start 31: graph_p6_capacity
+31/34 Test #31: graph_p6_capacity .................   Passed    0.14 sec
+      Start 32: graph_p7_capacity
+32/34 Test #32: graph_p7_capacity .................   Passed    0.13 sec
+      Start 33: graph_control_decoded
+33/34 Test #33: graph_control_decoded .............   Passed    0.03 sec
+      Start 34: graph_wamr_startup_unwind
+34/34 Test #34: graph_wamr_startup_unwind .........   Passed    0.03 sec
+
+100% tests passed, 0 tests failed out of 34
+
+Total Test time (real) =  45.58 sec

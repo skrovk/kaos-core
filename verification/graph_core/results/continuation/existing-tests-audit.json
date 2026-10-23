@@ -1,0 +1,8 @@
+{
+  "baseline_count": 86,
+  "unchanged": 85,
+  "changed": [
+    "verification/graph_core/tests/p5_test.c"
+  ],
+  "approved_initializer_only_patch_verified": true
+}

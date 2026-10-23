@@ -1,0 +1,106 @@
+[0/1] Re-running CMake...
+-- WAMR version: 2.4.1
+-- Build Configurations:
+     Build as target X86_64
+     Build for platform linux
+     CMAKE_BUILD_TYPE 
+     BUILD_SHARED_LIBS 
+     WAMR Interpreter enabled
+     Fast interpreter disabled
+     WAMR AOT disabled
+     WAMR Fast JIT disabled
+     WAMR LLVM ORC JIT disabled
+     Libc builtin disabled
+     Libc WASI disabled
+     Thread manager enabled
+     Multiple modules disabled
+     Hardware boundary check disabled
+     Wakeup of blocking operations enabled
+     GC performance profiling disabled
+     Write linear memory base addr to x86 GS register enabled
+     Shrunk memory enabled
+     Extended constant expression disabled
+-- About Wasm Proposals:
+     Always-on:
+       "Multi-value"
+       "Non-trapping float-to-int conversions"
+       "Sign-extension operators"
+       "WebAssembly C and C++ API"
+     Configurable. 0 is OFF. 1 is ON:
+       "Bulk Memory Operation" via WAMR_BUILD_BULK_MEMORY: 1
+       "Extended Constant Expressions" via WAMR_BUILD_EXTENDED_CONST_EXPR: 0
+       "Fixed-width SIMD" via WAMR_BUILD_SIMD: 0
+       "Garbage collection" via WAMR_BUILD_GC: 0
+       "Legacy Exception handling" via WAMR_BUILD_EXCE_HANDLING: 0
+       "Memory64" via WAMR_BUILD_MEMORY64: 0
+       "Multiple memories" via WAMR_BUILD_MULTI_MEMORY: 0
+       "Reference Types" via WAMR_BUILD_REF_TYPES: 0
+       "Reference-Typed Strings" via WAMR_BUILD_STRINGREF: 0
+       "Tail call" via WAMR_BUILD_TAIL_CALL: 0
+       "Threads" via WAMR_BUILD_SHARED_MEMORY: 0
+       "Typed Function References" via WAMR_BUILD_GC: 0
+     Unsupported (>= Phase4):
+       "Branch Hinting"
+       "Custom Annotation Syntax in the Text Format"
+       "Exception handling"
+       "Import/Export of Mutable Globals"
+       "JS String Builtins"
+       "Relaxed SIMD"
+
+-- Configuring done (0.2s)
+-- Generating done (0.0s)
+-- Build files have been written to: /tmp/kaos-timing-host
+[1/54] Building C object CMakeFiles/graph_wamr_startup_unwind_test.dir/tests/wamr_startup_unwind_test.c.o
+[2/54] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_request.c.o
+[3/54] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_node.c.o
+[4/54] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_endpoint.c.o
+[5/54] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/thread_manager.c.o
+[6/54] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_edge.c.o
+[7/54] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_admission.c.o
+[8/54] Linking C static library core/libkaos_graph_core.a
+[9/54] Linking C executable graph_core_test
+[10/54] Linking C executable graph_runtime_phase_barrier_test
+[11/54] Linking C executable graph_native_request_test
+[12/54] Linking C executable graph_admission_test
+[13/54] Linking C executable graph_admission_reuse_test
+[14/54] Linking C executable graph_request_test
+[15/54] Linking C executable graph_report_test
+[16/54] Linking C executable graph_dynamic_binding_test
+[17/54] Linking C executable graph_object_facts_test
+[18/54] Linking C executable graph_coap_server_test
+[19/54] Linking C executable graph_coap_test
+[20/54] Linking C executable graph_artifact_test
+[21/54] Linking C executable graph_control_test
+[22/54] Linking C executable graph_host_control_test
+[23/54] Linking C executable graph_p2_host_test
+[24/54] Linking C executable graph_node_test
+[25/54] Linking C executable graph_endpoint_test
+[26/54] Linking C executable graph_edge_test
+[27/54] Linking C executable graph_p5_test
+[28/54] Linking C executable graph_channel_admission_test
+[29/54] Linking C executable graph_p6_test
+[30/54] Linking C executable graph_p6_admission_test
+[31/54] Linking C executable graph_p6_control_test
+[32/54] Linking C executable graph_p7_test
+[33/54] Linking C executable graph_p7_control_test
+[34/54] Linking C executable graph_p7_lifecycle_test
+[35/54] Linking C executable graph_control_decoded_test
+[36/54] Linking C executable core/kaos_p2_host
+[37/54] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/wasm_interp_classic.c.o
+[38/54] Linking C static library core/runtime/libkaos_wamr_engine.a
+[39/54] Linking C executable graph_wamr_phase_barrier_test
+[40/54] Linking C executable graph_native_removal_test
+[41/54] Linking C executable graph_native_runtime_test
+[42/54] Linking C executable graph_lifecycle_barrier_test
+[43/54] Linking C executable graph_host_udp_test
+[44/54] Linking C executable graph_host_test
+[45/54] Linking C executable graph_workload_stalls
+[46/54] Linking C executable graph_host_transport_scheduling_test
+[47/54] Linking C executable graph_host_scheduling_test
+[48/54] Linking C executable graph_wamr_test
+[49/54] Linking C executable graph_wamr_channel_test
+[50/54] Linking C executable graph_wamr_entry_test
+[51/54] Linking C executable graph_wamr_capacity_test
+[52/54] Linking C executable graph_wamr_budget_test
+[53/54] Linking C executable graph_wamr_startup_unwind_test
+[54/54] Linking C executable core/kaos_host

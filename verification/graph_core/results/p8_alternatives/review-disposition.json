@@ -1,0 +1,16 @@
+{
+  "standards": {
+    "hard_violations": 0,
+    "blocking_findings": 0,
+    "judgment_calls": [
+      "Added comments explaining history mask, endpoint order and OR token encoding.",
+      "Kept short setup helpers local; a shared runner framework was not justified."
+    ],
+    "disposition": "Both addressed without changing behavior or expanding interfaces."
+  },
+  "specification": {
+    "blocking_findings": 0,
+    "coverage_limit": "APP03 late joining and explicit removal are covered; optional expiry/cleanup before joining remains outside this application fixture."
+  },
+  "scope": "Read-only reviews of new guest, runner, tests and CMake changes. Earlier dirty changes are not included. review.diff is the reviewed snapshot; subsequent source edits only added explanatory comments."
+}

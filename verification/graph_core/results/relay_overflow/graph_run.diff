@@ -1,0 +1,42 @@
+--- graph_run.before.py
++++ graph_run.py
+@@ -58,6 +58,7 @@
+         self._locks = {device: threading.Lock() for device in self.devices}
+         self._log_lock = threading.Lock()
+         self._events = None
++        self._relay_overflow_drops = 0
+         self._processes = {}
+         self._readers = []
+         self._reader_errors = []
+@@ -68,6 +69,8 @@
+ 
+     def emit(self, kind, **fields):
+         with self._log_lock:
++            if kind == "packet_dropped" and fields.get("reason") == "relay_overflow":
++                self._relay_overflow_drops += 1
+             self._events.write(
+                 json.dumps(
+                     {
+@@ -363,12 +366,21 @@
+                 self.network.check()
+             except (OSError, RuntimeError) as error:
+                 failures.append(str(error))
++        if self._relay_overflow_drops:
++            failures.append(
++                f"relay queue overflow dropped {self._relay_overflow_drops} packet copies"
++            )
+         for process in self._processes.values():
+             process.stdout.close()
+         if self._reader_errors:
+             failures.append("host observation reader failed")
+         if self._events is not None:
+-            record("teardown", errors=list(failures), proves_graph_cleanup=False)
++            record(
++                "teardown",
++                errors=list(failures),
++                proves_graph_cleanup=False,
++                relay_overflow_drops=self._relay_overflow_drops,
++            )
+             self._events.close()
+         return failures
+ 

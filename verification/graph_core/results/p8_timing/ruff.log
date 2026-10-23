@@ -1,0 +1,5 @@
+$ ../sim_env/.venv/bin/ruff check --no-cache --config ../sim_env/pyproject.toml ../sim_env/sim_env/graph_workload_timing.py ../sim_env/tests/test_graph_workload_timing.py
+All checks passed!
+
+$ ../sim_env/.venv/bin/ruff format --check --config ../sim_env/pyproject.toml ../sim_env/sim_env/graph_workload_timing.py ../sim_env/tests/test_graph_workload_timing.py
+2 files already formatted

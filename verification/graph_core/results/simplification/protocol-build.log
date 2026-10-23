@@ -1,0 +1,92 @@
+[  1%] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_predicate.c.o
+[  3%] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_admission.c.o
+[  4%] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_graph.c.o
+[  6%] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_request.c.o
+[  7%] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_report.c.o
+[  9%] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_coap.c.o
+[ 10%] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_artifact.c.o
+[ 12%] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_control.c.o
+[ 13%] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_node.c.o
+[ 15%] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_endpoint.c.o
+[ 16%] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_edge.c.o
+[ 18%] Building C object core/CMakeFiles/kaos_graph_core.dir/ports/clock_posix.c.o
+[ 20%] Linking C static library libkaos_graph_core.a
+[ 20%] Built target kaos_graph_core
+[ 26%] Building C object CMakeFiles/graph_admission_reuse_test.dir/tests/admission_reuse_test.c.o
+[ 26%] Building C object CMakeFiles/graph_core_test.dir/tests/core_test.c.o
+[ 26%] Building C object CMakeFiles/graph_admission_test.dir/tests/admission_test.c.o
+[ 26%] Building C object CMakeFiles/graph_runtime_phase_barrier_test.dir/tests/runtime_phase_barrier_test.c.o
+[ 29%] Linking C executable graph_admission_reuse_test
+[ 29%] Linking C executable graph_core_test
+[ 30%] Linking C executable graph_runtime_phase_barrier_test
+[ 30%] Built target graph_admission_reuse_test
+[ 30%] Built target graph_core_test
+[ 32%] Linking C executable graph_admission_test
+[ 33%] Building C object CMakeFiles/graph_request_test.dir/tests/request_test.c.o
+[ 33%] Built target graph_runtime_phase_barrier_test
+[ 35%] Building C object CMakeFiles/graph_dynamic_binding_test.dir/tests/dynamic_binding_test.c.o
+[ 36%] Building C object CMakeFiles/graph_report_test.dir/tests/report_test.c.o
+[ 36%] Built target graph_admission_test
+[ 38%] Building C object CMakeFiles/graph_object_facts_test.dir/tests/object_facts_test.c.o
+[ 40%] Linking C executable graph_dynamic_binding_test
+[ 41%] Linking C executable graph_request_test
+[ 43%] Linking C executable graph_report_test
+[ 43%] Built target graph_dynamic_binding_test
+[ 44%] Linking C executable graph_object_facts_test
+[ 44%] Built target graph_request_test
+[ 44%] Built target graph_report_test
+[ 46%] Building C object CMakeFiles/graph_coap_test.dir/tests/coap_test.c.o
+[ 47%] Building C object CMakeFiles/graph_coap_server_test.dir/tests/coap_server_test.c.o
+[ 49%] Building C object CMakeFiles/graph_artifact_test.dir/tests/artifact_test.c.o
+[ 49%] Built target graph_object_facts_test
+[ 50%] Building C object CMakeFiles/graph_control_test.dir/tests/control_test.c.o
+[ 52%] Linking C executable graph_coap_server_test
+[ 55%] Linking C executable graph_coap_test
+[ 55%] Linking C executable graph_artifact_test
+[ 55%] Built target graph_coap_server_test
+[ 55%] Built target graph_artifact_test
+[ 55%] Built target graph_coap_test
+[ 56%] Linking C executable graph_control_test
+[ 58%] Building C object CMakeFiles/graph_host_control_test.dir/tests/host_control_test.c.o
+[ 60%] Building C object CMakeFiles/graph_p2_host_test.dir/tests/p2_host_test.c.o
+[ 61%] Building C object CMakeFiles/graph_node_test.dir/tests/node_test.c.o
+[ 61%] Built target graph_control_test
+[ 63%] Building C object CMakeFiles/graph_endpoint_test.dir/tests/endpoint_test.c.o
+[ 64%] Linking C executable graph_host_control_test
+[ 64%] Built target graph_host_control_test
+[ 66%] Linking C executable graph_node_test
+[ 67%] Linking C executable graph_p2_host_test
+[ 69%] Building C object CMakeFiles/graph_edge_test.dir/tests/edge_test.c.o
+[ 69%] Built target graph_node_test
+[ 69%] Built target graph_p2_host_test
+[ 70%] Linking C executable graph_endpoint_test
+[ 72%] Building C object CMakeFiles/graph_p5_test.dir/tests/p5_test.c.o
+[ 73%] Building C object CMakeFiles/graph_channel_admission_test.dir/tests/channel_admission_test.c.o
+[ 73%] Built target graph_endpoint_test
+[ 75%] Building C object CMakeFiles/graph_p6_test.dir/tests/p6_test.c.o
+[ 76%] Linking C executable graph_channel_admission_test
+[ 78%] Linking C executable graph_edge_test
+[ 78%] Built target graph_channel_admission_test
+[ 78%] Built target graph_edge_test
+[ 80%] Linking C executable graph_p5_test
+[ 81%] Building C object CMakeFiles/graph_p6_admission_test.dir/tests/p6_admission_test.c.o
+[ 83%] Building C object CMakeFiles/graph_p6_control_test.dir/tests/p6_control_test.c.o
+[ 83%] Built target graph_p5_test
+[ 84%] Building C object CMakeFiles/graph_p7_test.dir/tests/p7_test.c.o
+[ 86%] Linking C executable graph_p6_admission_test
+[ 87%] Linking C executable graph_p6_test
+[ 89%] Linking C executable graph_p6_control_test
+[ 89%] Built target graph_p6_admission_test
+[ 89%] Built target graph_p6_test
+[ 90%] Linking C executable graph_p7_test
+[ 90%] Built target graph_p6_control_test
+[ 92%] Building C object CMakeFiles/graph_p7_control_test.dir/tests/p7_control_test.c.o
+[ 93%] Building C object CMakeFiles/graph_p7_lifecycle_test.dir/tests/p7_lifecycle_test.c.o
+[ 95%] Building C object CMakeFiles/graph_control_decoded_test.dir/tests/control_decoded_test.c.o
+[ 95%] Built target graph_p7_test
+[ 96%] Linking C executable graph_p7_control_test
+[ 98%] Linking C executable graph_control_decoded_test
+[ 98%] Built target graph_control_decoded_test
+[ 98%] Built target graph_p7_control_test
+[100%] Linking C executable graph_p7_lifecycle_test
+[100%] Built target graph_p7_lifecycle_test

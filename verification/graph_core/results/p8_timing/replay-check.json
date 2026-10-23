@@ -1,0 +1,28 @@
+{
+  "commands": [
+    [
+      "/home/karolina/Research/Code/sim_env/.venv/bin/python",
+      "-m",
+      "sim_env.graph_workload_timing",
+      "/home/karolina/Research/Code/kaos_core/verification/graph_core/results/p8_workloads/pipeline-example",
+      "--budget-us",
+      "50000",
+      "--output",
+      "/home/karolina/Research/Code/kaos_core/verification/graph_core/results/p8_timing/pipeline-timing.json"
+    ],
+    [
+      "/home/karolina/Research/Code/sim_env/.venv/bin/python",
+      "-m",
+      "sim_env.graph_workload_timing",
+      "/home/karolina/Research/Code/kaos_core/verification/graph_core/results/p8_workloads/pipeline-example",
+      "--budget-us",
+      "50000"
+    ]
+  ],
+  "exit_codes": [
+    1,
+    1
+  ],
+  "identical_report_bytes": true,
+  "note": "Exit 1 is the expected budget failure; original graph/sample result remains passed."
+}

@@ -1,0 +1,225 @@
+P4 graph core RAM layout — actual ESP32/Xtensa ABI
+Profile: CORE_FOUR_NODE_PROFILE; 4 nodes, 32 endpoint roles, 24 operation records,
+8 incident channels/ports per node, 17 report objects, 4 queued messages x 256 B.
+Compiler: xtensa-esp-elf-gcc esp-14.2.0_20241119, -std=c11 -DCORE_FOUR_NODE_PROFILE=1.
+Source: /tmp/kaos-p4-session/core-layout.c; object: core-layout.o.
+Values below are target sizeof/offsetof emitted as ELF symbol lengths; no host sizeof.
+
+CHECKED AGAINST CURRENT FIRMWARE
+fixture: address 0x3ffb2bc8, 74200 bytes, symbol type b
+global_storage: address 0x3ffc5200, 32768 bytes, symbol type b
+service: address 0x3ffc4da0, 1088 bytes, symbol type b
+The fixture is 74200 B: core admission 39272 + endpoint service 33232 + edge service 592
++ node service 760 = 73856 B core; 344 B remaining fixture bookkeeping (IDs, counters,
+stack/task observations, flags, padding). Separate service/global_storage belong to WAMR.
+These are static BSS pools. Endpoint payload ledger charges account for the static queue
+slots and are not additional heap allocations. Node arena/artifact charges DO correspond
+to separate heap allocations, outside the 73856 B core static total above.
+
+TOP-LEVEL ADMISSION: 39272 bytes
+  Header/enrollment/quota fields including padding: 104
+  4 node records x 496: 1984
+  32 endpoint records x 184: 5888
+  24 operation records x 1304: 31296
+
+OPERATION RECORD: 1304 bytes; 24 slots = 31296 bytes
+  Identity/deadline/node pointer: 20
+  report[128], currently unused encoded-report reservation: 128
+  evidence, the actual retained aggregate report: 40
+  local_facts, independently observed owner facts: 17
+  node request/artifact/configuration copy: 136
+  immutable request scope: 944
+  flags: 4
+  alignment/tail padding: 15
+  Total: 1304
+
+REQUEST SCOPE: 944 bytes
+  Kind/counts and node/coordinator/instance/allowance fields with padding: 48
+  8 manifest port descriptors x 8: 64
+  8 full binding descriptors x 88: 704
+  Boolean predicate capacity (63 two-byte tokens + count): 127
+  Tail padding: 1
+
+ENDPOINT FIFO SERVICE: 33232 bytes
+  32 x 1024-byte payload storage: 32768
+  32 x 14-byte queue metadata/padding: 448
+  Service pointer/cursor/callback/context: 16
+  Each queue: four uint16 lengths (8), head+count (2), three bool flags (3), padding (1).
+  Sender and receiver each have a FIFO: 16 local channels consume 32 endpoint queues.
+  No second heap allocation of these 32768 payload bytes occurs during prepare;
+  prepare charges the endpoint ownership ledger for its existing reserved pool slot.
+
+WHY COPIES EXIST / WHAT IS RESERVED BUT UNUSED IN THIS P4 WORKLOAD
+  Node records own live instances, lifetime/access state, the manifest and 8 notification slots.
+  Endpoint records own exact current binding identity and lifetime/access state per role.
+  Operation scopes stay immutable after cleanup for evidence, authorization and conflict checks.
+  Thus current endpoint descriptors and historical operation descriptors have different lifetimes;
+  simply replacing immutable scopes with pointers to reusable endpoint slots is unsafe.
+  local_facts must remain separate from accepted aggregate evidence: coordinator timing/phase
+  guards can reject or delay acceptance of an owner observation.
+  record.report[128] is unused: rg report[ in graph_core finds only its declaration.
+  In each single-edge P4 record: seven of eight bindings are unused (616 B); all 8 manifest
+  ports are unused (64 B); predicate storage is unused (127 B); node request is unused (136 B).
+  For 16 retained edge creators these four categories occupy 15088 B, plus 2048 B of unused
+  report[] arrays. Much of this is fixed maximum capacity for P5/P6 multi-channel node work.
+  In each no-edge node creator, all eight binding slots (704 B) and predicate storage (127 B)
+  are unused: 3324 B across four nodes. The 4 spare operation slots reserve 5216 B.
+  None of this automatically becomes heap-free when an operation is retired: it remains
+  reusable static pool capacity until the compiled layout/limits are changed.
+
+POTENTIAL CUTS — NOT IMPLEMENTED; SAVINGS ARE NON-ADDITIVE WHERE THEY OVERLAP
+1. Remove unused record.report[128]: projected target sizeof(record) 1176 (currently1304).
+   Exact total saving 3072 B for24 records; no node/endpoint/message-limit change.
+   Keep aggregate evidence and existing bounded transport response storage.
+2. Queue depth 4 -> 2 at256 B: target queue1038 ->522 B; save16512 B for32 queues.
+   Same4nodes/8endpoints, smaller burst tolerance, earlier FULL/drop-incoming.
+3. Maximum payload256 ->64 at depth4: target queue1038 ->270 B; save24576 B for32 queues.
+   Same topology/depth, but messages above64 B rejected; workload/manifest contract changes.
+4. Operation slots24 ->22: admission saves2608 B; edge execution and node deadline tables
+   each save48 B; total core savings2704 B. 20 live creators leave2 spare operations.
+   Slots24 ->21: total core saving4056 B; only1 spare. Needs serial cleanup and prompt
+   legitimate report retirement; less room for overlap or retained history.
+5. Separate compact per-kind operation storage from full node-operation scopes: substantial
+   savings possible, but requires pool/interface/ownership work and P5/P6 planning.
+   Illustrative target edge record preserving current non-binding scope fields, omitting
+   unused report[] and node request, and keeping one binding is424 B, saving880 B/edge.
+   16 such records would save14080 B before any extra pool/index bookkeeping.
+   A union in every existing fixed-size record alone does NOT save space if its largest
+   multi-channel-node variant still determines the same maximum size.
+6. Reducing endpoint count32 ->16 saves19552 B in FIFO+endpoint-record storage alone,
+   but reduces average supported endpoints from8 to4 pernode; conflicts with desired topology.
+
+DETAILED TARGET FIELD OFFSETS AND SIZES
+
+core_admission: sizeof=39272
+     0..3    node_bytes: 4
+     4..7    byte_limit: 4
+     8..11   reserved_bytes: 4
+    12..15   peak_reserved_bytes: 4
+    16..23   local_device: 8
+    24..31   authority: 8
+    32..95   peers: 64
+    96..96   peer_count: 1
+    97..97   configured: 1
+    98..103  padding 6
+   104..2087 nodes: 1984
+  2088..7975 endpoints: 5888
+  7976..39271 records: 31296
+
+core_admission_record: sizeof=1304
+     0..7    id: 8
+     8..15   deadline_us: 8
+    16..19   node: 4
+    20..147  report: 128
+   148..151  padding 4
+   152..191  evidence: 40
+   192..208  local_facts: 17
+   209..215  padding 7
+   216..351  request: 136
+   352..1295 scope: 944
+  1296..1296 request_present: 1
+  1297..1297 cleanup_selected: 1
+  1298..1298 endpoint_only: 1
+  1299..1299 occupied: 1
+  1300..1303 tail padding 4
+
+core_request_scope: sizeof=944
+     0..0    kind: 1
+     1..1    channel_count: 1
+     2..2    port_count: 1
+     3..3    object_count: 1
+     4..7    padding 4
+     8..15   logical_node_id: 8
+    16..23   coordinator: 8
+    24..31   instance: 8
+    32..39   allowance_us: 8
+    40..47   cleanup_allowance_us: 8
+    48..111  ports: 64
+   112..815  bindings: 704
+   816..942  predicate: 127
+   943..943  tail padding 1
+
+core_node_request: sizeof=136
+     0..7    logical_node_id: 8
+     8..15   addition_allowance_us: 8
+    16..23   cleanup_allowance_us: 8
+    24..27   artifact_bytes: 4
+    28..31   artifact_crc32: 4
+    32..35   required_bytes: 4
+    36..36   artifact_ref_size: 1
+    37..37   configuration_size: 1
+    38..69   artifact_ref: 32
+    70..133  configuration: 64
+   134..135  tail padding 2
+
+core_reserved_node: sizeof=496
+     0..7    instance: 8
+     8..71   lifetime: 64
+    72..95   prepare: 24
+    96..103  logical_node_id: 8
+   104..167  ports: 64
+   168..487  notifications: 320
+   488..488  port_count: 1
+   489..489  established: 1
+   490..490  occupied: 1
+   491..495  tail padding 5
+
+core_reserved_endpoint: sizeof=184
+     0..87   binding: 88
+    88..151  lifetime: 64
+   152..175  prepare: 24
+   176..176  sender: 1
+   177..177  occupied: 1
+   178..183  tail padding 6
+
+core_endpoint_service: sizeof=33232
+     0..3    admission: 4
+     4..33219 queues: 33216
+  33220..33223 next_sender: 4
+  33224..33227 notify: 4
+  33228..33231 context: 4
+
+core_endpoint_queue: sizeof=1038
+     0..1023 payload: 1024
+  1024..1031 sizes: 8
+  1032..1032 head: 1
+  1033..1033 count: 1
+  1034..1034 prepared: 1
+  1035..1035 active: 1
+  1036..1036 closed: 1
+  1037..1037 tail padding 1
+
+core_channel_notification: sizeof=40
+     0..23   channel: 24
+    24..31   creating_op: 8
+    32..32   permissions: 1
+    33..33   attached: 1
+    34..34   pending: 1
+    35..35   occupied: 1
+    36..39   tail padding 4
+
+core_lifetime: sizeof=64
+     0..3    byte_limit: 4
+     4..7    bytes: 4
+     8..11   peak_bytes: 4
+    12..15   allocations: 4
+    16..23   last_ticket: 8
+    24..55   accesses: 32
+    56..56   closing: 1
+    57..63   tail padding 7
+
+OTHER TARGET sizeof RESULTS
+  core_action: 24
+  core_binding: 88
+  core_channel: 80
+  core_edge_execution: 24
+  core_edge_service: 592
+  core_node_deadline: 24
+  core_node_service: 760
+  core_predicate: 127
+  core_report: 40
+  projected_p4_edge_record: 424
+  projected_queue_64_byte_payload: 270
+  projected_queue_two_messages: 522
+  projected_record_no_report: 1176
+  projected_scope_one_binding: 328

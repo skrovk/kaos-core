@@ -1,0 +1,26 @@
+/tmp/kaos-simplification-20261022/before/graph_core/ports/host_udp.c: In function ‘wait_input’:
+/tmp/kaos-simplification-20261022/before/graph_core/ports/host_udp.c:93:15: warning: ignoring return value of ‘read’ declared with attribute ‘warn_unused_result’ [-Wunused-result]
+   93 |         (void)read(udp->wake_fd, &count, sizeof(count));
+      |               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/tmp/kaos-simplification-20261022/before/graph_core/ports/host_udp.c: In function ‘wait_input’:
+/tmp/kaos-simplification-20261022/before/graph_core/ports/host_udp.c:93:15: warning: ignoring return value of ‘read’ declared with attribute ‘warn_unused_result’ [-Wunused-result]
+   93 |         (void)read(udp->wake_fd, &count, sizeof(count));
+      |               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/karolina/Research/Code/kaos_core/graph_core/host_udp.c: In function ‘wait_input’:
+/home/karolina/Research/Code/kaos_core/graph_core/host_udp.c:93:15: warning: ignoring return value of ‘read’ declared with attribute ‘warn_unused_result’ [-Wunused-result]
+   93 |         (void)read(udp->wake_fd, &count, sizeof(count));
+      |               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/tmp/kaos-simplification-20261022/before/graph_core/ports/host_udp.c: In function ‘wait_input’:
+/tmp/kaos-simplification-20261022/before/graph_core/ports/host_udp.c:93:15: warning: ignoring return value of ‘read’ declared with attribute ‘warn_unused_result’ [-Wunused-result]
+   93 |         (void)read(udp->wake_fd, &count, sizeof(count));
+      |               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/tmp/kaos-simplification-20261022/before/graph_core/ports/host_udp.c: In function ‘wait_input’:
+/tmp/kaos-simplification-20261022/before/graph_core/ports/host_udp.c:93:15: warning: ignoring return value of ‘read’ declared with attribute ‘warn_unused_result’ [-Wunused-result]
+   93 |         (void)read(udp->wake_fd, &count, sizeof(count));
+      |               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/karolina/Research/Code/kaos_core/graph_core/host_udp.c: In function ‘wait_input’:
+/home/karolina/Research/Code/kaos_core/graph_core/host_udp.c:93:15: warning: ignoring return value of ‘read’ declared with attribute ‘warn_unused_result’ [-Wunused-result]
+   93 |         (void)read(udp->wake_fd, &count, sizeof(count));
+      |               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Built: /tmp/kaos-simplification-20261022/differential/default/compare
+Built: /tmp/kaos-simplification-20261022/differential/four/compare

@@ -1,0 +1,11 @@
+{"kind":"host_stdout","timestamp_us":169026230999,"device":1,"line":"LISTENING 51750"}
+{"kind":"run_ready","timestamp_us":169026231377}
+{"kind":"packet_decision","timestamp_us":169026232084,"packet_id":1,"copy":0,"source":99,"destination":1,"plane":"control","payload_hex":"480200000000000000000000b57175657279113cff840407182a40","received_us":169026231898,"due_us":169026231898,"delay_us":0,"drop":false,"reason":null}
+{"kind":"packet_delivered","timestamp_us":169026232303,"packet_id":1,"copy":0,"source":99,"destination":1,"plane":"control","payload_hex":"480200000000000000000000b57175657279113cff840407182a40","received_us":169026231898,"due_us":169026231898,"delay_us":0,"delivered_us":169026232286,"actual_delay_us":388,"lateness_us":388}
+{"kind":"packet_decision","timestamp_us":169026232618,"packet_id":2,"copy":0,"source":1,"destination":99,"plane":"control","payload_hex":"688400000000000000000000c13cff85040e182a0180","received_us":169026232527,"due_us":169026232527,"delay_us":0,"drop":false,"reason":null}
+{"kind":"packet_delivered","timestamp_us":169026232732,"packet_id":2,"copy":0,"source":1,"destination":99,"plane":"control","payload_hex":"688400000000000000000000c13cff85040e182a0180","received_us":169026232527,"due_us":169026232527,"delay_us":0,"delivered_us":169026232720,"actual_delay_us":193,"lateness_us":193}
+{"kind":"link_policy","timestamp_us":169026232983,"source":99,"destination":1,"loss":1,"delay_us":0,"duplicate":0.0}
+{"kind":"packet_decision","timestamp_us":169026233384,"packet_id":3,"copy":0,"source":99,"destination":1,"plane":"control","payload_hex":"480200010000000000000001b57175657279113cff840407182b40","received_us":169026233352,"due_us":169026233352,"delay_us":0,"drop":true,"reason":"loss"}
+{"kind":"packet_dropped","timestamp_us":169026233455,"packet_id":3,"copy":0,"source":99,"destination":1,"plane":"control","payload_hex":"480200010000000000000001b57175657279113cff840407182b40","received_us":169026233352,"due_us":169026233352,"delay_us":0,"reason":"loss"}
+{"kind":"process_exit","timestamp_us":169026349047,"device":1,"returncode":0}
+{"kind":"teardown","timestamp_us":169026395138,"errors":[],"proves_graph_cleanup":false}

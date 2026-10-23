@@ -1,0 +1,7 @@
+[01:12:13:061 - 7D9ADFEFF6C0]: Init vector failed: alloc memory failed.
+
+[01:12:13:067 - 7D9ADFEFF6C0]: Init vector failed: alloc memory failed.
+
+minimum_fixture_arena=28976 artifact=665 native_stack=262144 slots=2
+concurrent=2 candidate_arena=29696
+capacity probe PASS

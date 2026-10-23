@@ -1,0 +1,14 @@
+/tmp/kaos-simplification-20261022/before/graph_core/ports/host_udp.c:35:34:peer_address	32	static
+/tmp/kaos-simplification-20261022/before/graph_core/ports/host_udp.c:54:17:retry_delay	32	static
+/tmp/kaos-simplification-20261022/before/graph_core/ports/host_udp.c:126:13:same_address	32	static
+/tmp/kaos-simplification-20261022/before/graph_core/ports/host_udp.c:18:13:clock_now	32	static
+/tmp/kaos-simplification-20261022/before/graph_core/ports/host_udp.c:40:13:send_packet	32	static
+/tmp/kaos-simplification-20261022/before/graph_core/ports/host_udp.c:97:24:receive_packet	1216	static
+/tmp/kaos-simplification-20261022/before/graph_core/ports/host_udp.c:64:24:wait_input	64	static
+/tmp/kaos-simplification-20261022/before/graph_core/ports/host_udp.c:25:13:notify	48	static
+/tmp/kaos-simplification-20261022/before/graph_core/ports/host_udp.c:24:13:registry_unlock	32	static
+/tmp/kaos-simplification-20261022/before/graph_core/ports/host_udp.c:23:13:registry_lock	32	static
+/tmp/kaos-simplification-20261022/before/graph_core/ports/host_udp.c:183:6:core_host_udp_stop	32	static
+/tmp/kaos-simplification-20261022/before/graph_core/ports/host_udp.c:188:6:core_host_udp_close	32	static
+/tmp/kaos-simplification-20261022/before/graph_core/ports/host_udp.c:132:6:core_host_udp_open	96	static
+/tmp/kaos-simplification-20261022/before/graph_core/ports/host_udp.c:204:6:core_host_udp_parse_peer	80	static

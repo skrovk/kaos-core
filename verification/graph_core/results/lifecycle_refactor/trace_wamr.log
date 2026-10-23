@@ -1,0 +1,16 @@
+Internal ctest changing into directory: /tmp/kaos-refactor-trace
+Test project /tmp/kaos-refactor-trace
+    Start 4: graph_wamr
+1/5 Test #4: graph_wamr .......................   Passed    0.15 sec
+    Start 5: graph_wamr_entry
+2/5 Test #5: graph_wamr_entry .................   Passed    0.08 sec
+    Start 6: graph_wamr_channel
+3/5 Test #6: graph_wamr_channel ...............   Passed    0.03 sec
+    Start 7: graph_wamr_budget
+4/5 Test #7: graph_wamr_budget ................   Passed    0.03 sec
+    Start 8: graph_wamr_capacity
+5/5 Test #8: graph_wamr_capacity ..............   Passed    0.20 sec
+
+100% tests passed, 0 tests failed out of 5
+
+Total Test time (real) =   0.49 sec

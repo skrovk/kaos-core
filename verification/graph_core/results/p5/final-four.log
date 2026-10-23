@@ -1,0 +1,12 @@
+Internal ctest changing into directory: /tmp/kaos-p4-session/four
+Test project /tmp/kaos-p4-session/four
+    Start 1: graph_p4_capacity
+1/3 Test #1: graph_p4_capacity ................   Passed    3.11 sec
+    Start 2: graph_p5_capacity
+2/3 Test #2: graph_p5_capacity ................   Passed    3.11 sec
+    Start 3: graph_p5
+3/3 Test #3: graph_p5 .........................   Passed    0.05 sec
+
+100% tests passed, 0 tests failed out of 3
+
+Total Test time (real) =   6.27 sec

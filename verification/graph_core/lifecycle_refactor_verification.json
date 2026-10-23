@@ -1,0 +1,333 @@
+{
+  "scope": "Seven function refactors across six candidate groups: endpoint lifecycle, node execution, edge lifecycle, edge effect construction, compact channel/removal admission, WAMR preparation.",
+  "source_sha256": {
+    "graph_core/kaos_admission.c": "ea44039a8323be64bc46e57a5979a027313a41ea1e098466802f3b9daa5798ce",
+    "graph_core/kaos_endpoint.c": "e57e108bafc22fc91d317b6c61a0b68f3f08ff14f511dff5e0cb987b2881a25f",
+    "graph_core/kaos_node.c": "0e86538b31c9ff244d7b4cd90532dd1f540664838bc29307a4c5d44b8215ad94",
+    "graph_core/kaos_edge.c": "e935e7ad4e5195f5d768bb921d57141077d63d26f88a5aea6337583dd93b0501",
+    "graph_core/runtime/kaos_wamr.c": "a48ae6b55b0061745a961d0474e14c75cbff16169940fa5594adb2a6f8066433",
+    "verification/graph_core/tests/edge_test.c": "cfbf4084cf01464fd44a168aaa41468418e8a8707e4b490254b03cbeb07eaa16",
+    "verification/graph_core/tests/p7_test.c": "ad76aeec524996b1c3290b6a1e2841dcf6178fc457be6673a0987cd759fdef99",
+    "guide/node-addition-walkthrough.md": "03f6b06f5356c434bf1607a6ef9b32db43b680a1c260e4cdc90e3ff14255d50a"
+  },
+  "existing_host_control_edits_preserved": true,
+  "public_interfaces_and_wire_formats": "Unchanged; helpers and channel reservation scratch state are private.",
+  "checks": {
+    "baseline_host": {
+      "passed": 36,
+      "total": 36
+    },
+    "baseline_four": {
+      "passed": 12,
+      "total": 12
+    },
+    "final_host": {
+      "passed": 36,
+      "total": 36,
+      "includes": "ASan/UBSan, WAMR, P4-P7 process scenarios and sibling Python regression discovery"
+    },
+    "final_four": {
+      "passed": 12,
+      "total": 12
+    },
+    "trace_wamr": {
+      "passed": 5,
+      "total": 5,
+      "configuration": "CORE_BUILD_P3_HOST=ON CORE_SANITIZE=ON CORE_WAMR_TRACE_PREPARE=ON"
+    },
+    "new_cases_against_original_sources": {
+      "passed": 2,
+      "total": 2,
+      "method": "Compile the extended edge and P7 tests with all four original affected graph source files, linked with unchanged library dependencies."
+    },
+    "esp32": "All five changed C files cross-compiled with baseline and final sources; complete espidf_p7 firmware configured, built and linked successfully. No flashing or hardware execution."
+  },
+  "new_regression_cases": [
+    "Rejected compact channel preparation preserves selected reclaimable history and caller output; cancellation then reuses that history without endpoint capacity.",
+    "Owner-report exchange-deadline overflow preserves pending evidence and the selection cursor."
+  ],
+  "commands": [
+    "cmake -S verification/graph_core -B /tmp/kaos-refactor-host -G Ninja -DCORE_BUILD_HOST=ON -DCORE_BUILD_P2_HOST=ON -DCORE_SANITIZE=ON -DCMAKE_C_FLAGS=-fstack-usage",
+    "cmake --build /tmp/kaos-refactor-host -j4",
+    "ctest --test-dir /tmp/kaos-refactor-host --output-on-failure",
+    "cmake -S verification/graph_core/four -B /tmp/kaos-refactor-four -G Ninja -DCORE_SANITIZE=ON",
+    "cmake --build /tmp/kaos-refactor-four -j4",
+    "ctest --test-dir /tmp/kaos-refactor-four --output-on-failure",
+    "cmake -S verification/graph_core -B /tmp/kaos-refactor-trace -G Ninja -DCORE_BUILD_P3_HOST=ON -DCORE_SANITIZE=ON -DCORE_WAMR_TRACE_PREPARE=ON",
+    "cmake --build /tmp/kaos-refactor-trace -j4",
+    "ctest --test-dir /tmp/kaos-refactor-trace --output-on-failure -R '^graph_wamr'",
+    ". /home/karolina/esp/esp-idf/export.sh",
+    "idf.py -C verification/graph_core/espidf_p7 -B /tmp/kaos-refactor-esp32 build"
+  ],
+  "stack_estimates": {
+    "host_sanitized": [
+      {
+        "segment": "node runtime failure",
+        "source": "kaos_node.c",
+        "before_frames": {
+          "execution_step": 272
+        },
+        "after_frames": {
+          "advance_node_execution": 112,
+          "observe_node_runtime_failure": 64
+        },
+        "before_bytes": 272,
+        "after_bytes": 176,
+        "delta_bytes": -96
+      },
+      {
+        "segment": "node reclamation",
+        "source": "kaos_node.c",
+        "before_frames": {
+          "execution_step": 272
+        },
+        "after_frames": {
+          "advance_node_execution": 112,
+          "reclaim_node_execution": 240
+        },
+        "before_bytes": 272,
+        "after_bytes": 352,
+        "delta_bytes": 80
+      },
+      {
+        "segment": "binding release",
+        "source": "kaos_endpoint.c",
+        "before_frames": {
+          "core_endpoint_step": 400
+        },
+        "after_frames": {
+          "core_endpoint_step": 32,
+          "release_reclaimed_bindings": 288
+        },
+        "before_bytes": 400,
+        "after_bytes": 320,
+        "delta_bytes": -80
+      },
+      {
+        "segment": "local channel activation",
+        "source": "kaos_edge.c",
+        "before_frames": {
+          "core_edge_step": 144
+        },
+        "after_frames": {
+          "core_edge_step": 32,
+          "advance_edge_activation": 80,
+          "activate_local_channel_endpoints": 96
+        },
+        "before_bytes": 144,
+        "after_bytes": 208,
+        "delta_bytes": 64
+      },
+      {
+        "segment": "owner report encoding",
+        "source": "kaos_edge.c",
+        "before_frames": {
+          "next_record": 624
+        },
+        "after_frames": {
+          "issue_next_edge_effect": 480,
+          "encode_endpoint_owner_report": 208
+        },
+        "before_bytes": 624,
+        "after_bytes": 688,
+        "delta_bytes": 64
+      },
+      {
+        "segment": "channel node capacity",
+        "source": "kaos_admission.c",
+        "before_frames": {
+          "core_admission_reserve_channel": 608
+        },
+        "after_frames": {
+          "core_admission_reserve_channel": 368,
+          "check_node_channel_capacity": 256
+        },
+        "before_bytes": 608,
+        "after_bytes": 624,
+        "delta_bytes": 16
+      },
+      {
+        "segment": "channel publication",
+        "source": "kaos_admission.c",
+        "before_frames": {
+          "core_admission_reserve_channel": 608
+        },
+        "after_frames": {
+          "core_admission_reserve_channel": 368,
+          "publish_channel_reservation": 192
+        },
+        "before_bytes": 608,
+        "after_bytes": 560,
+        "delta_bytes": -48
+      },
+      {
+        "segment": "removal publication",
+        "source": "kaos_admission.c",
+        "before_frames": {
+          "core_admission_reserve_removal": 384
+        },
+        "after_frames": {
+          "core_admission_reserve_removal": 112,
+          "publish_removal_observer": 224
+        },
+        "before_bytes": 384,
+        "after_bytes": 336,
+        "delta_bytes": -48
+      },
+      {
+        "segment": "module loading",
+        "source": "kaos_wamr.c",
+        "before_frames": {
+          "prepare": 320
+        },
+        "after_frames": {
+          "prepare_wamr_slot": 320,
+          "load_wasm_module": 48
+        },
+        "before_bytes": 320,
+        "after_bytes": 368,
+        "delta_bytes": 48
+      }
+    ],
+    "esp32": [
+      {
+        "segment": "node runtime failure",
+        "source": "kaos_node.c",
+        "before_frames": {
+          "execution_step": 80
+        },
+        "after_frames": {
+          "advance_node_execution": 64,
+          "observe_node_runtime_failure": 32
+        },
+        "before_bytes": 80,
+        "after_bytes": 96,
+        "delta_bytes": 16
+      },
+      {
+        "segment": "node reclamation",
+        "source": "kaos_node.c",
+        "before_frames": {
+          "execution_step": 80
+        },
+        "after_frames": {
+          "advance_node_execution": 64,
+          "reclaim_node_execution": 64
+        },
+        "before_bytes": 80,
+        "after_bytes": 128,
+        "delta_bytes": 48
+      },
+      {
+        "segment": "binding release",
+        "source": "kaos_endpoint.c",
+        "before_frames": {
+          "core_endpoint_step": 144
+        },
+        "after_frames": {
+          "core_endpoint_step": 32,
+          "release_reclaimed_bindings": 128
+        },
+        "before_bytes": 144,
+        "after_bytes": 160,
+        "delta_bytes": 16
+      },
+      {
+        "segment": "local channel activation",
+        "source": "kaos_edge.c",
+        "before_frames": {
+          "core_edge_step": 64
+        },
+        "after_frames": {
+          "core_edge_step": 32,
+          "advance_edge_activation": 48,
+          "activate_local_channel_endpoints": 48
+        },
+        "before_bytes": 64,
+        "after_bytes": 128,
+        "delta_bytes": 64
+      },
+      {
+        "segment": "owner report encoding",
+        "source": "kaos_edge.c",
+        "before_frames": {
+          "next_record": 112
+        },
+        "after_frames": {
+          "issue_next_edge_effect": 80,
+          "encode_endpoint_owner_report": 64
+        },
+        "before_bytes": 112,
+        "after_bytes": 144,
+        "delta_bytes": 32
+      },
+      {
+        "segment": "channel node capacity",
+        "source": "kaos_admission.c",
+        "before_frames": {
+          "core_admission_reserve_channel": 256
+        },
+        "after_frames": {
+          "core_admission_reserve_channel": 176,
+          "check_node_channel_capacity": 96
+        },
+        "before_bytes": 256,
+        "after_bytes": 272,
+        "delta_bytes": 16
+      },
+      {
+        "segment": "channel publication",
+        "source": "kaos_admission.c",
+        "before_frames": {
+          "core_admission_reserve_channel": 256
+        },
+        "after_frames": {
+          "core_admission_reserve_channel": 176,
+          "publish_channel_reservation": 96
+        },
+        "before_bytes": 256,
+        "after_bytes": 272,
+        "delta_bytes": 16
+      },
+      {
+        "segment": "removal publication",
+        "source": "kaos_admission.c",
+        "before_frames": {
+          "core_admission_reserve_removal": 96
+        },
+        "after_frames": {
+          "core_admission_reserve_removal": 80,
+          "publish_removal_observer": 80
+        },
+        "before_bytes": 96,
+        "after_bytes": 160,
+        "delta_bytes": 64
+      },
+      {
+        "segment": "module loading",
+        "source": "kaos_wamr.c",
+        "before_frames": {
+          "prepare": 224
+        },
+        "after_frames": {
+          "prepare_wamr_slot": 224,
+          "load_wasm_module": 32
+        },
+        "before_bytes": 224,
+        "after_bytes": 256,
+        "delta_bytes": 32
+      }
+    ]
+  },
+  "stack_qualification": "GCC -fstack-usage frame sums for selected refactored call segments, excluding unchanged downstream calls, platform/interrupt frames and task high-water. ESP32 uses the existing P7 four-node profile, -Og, Xtensa GCC 14.2.0, tracing enabled. Host uses the sanitizer build without optimization. Extracted ESP32 segments grow by 16-64 bytes; this is not proof of total task stack headroom.",
+  "execution_environment": "Sanitizer and process checks ran with approved access outside sandbox tracing. WAMR tests retain the existing detect_stack_use_after_return=0 setting. Dependency configuration required access to generated WAMR headers.",
+  "logs": {
+    "baseline_host": "results/lifecycle_refactor/baseline_host.log",
+    "baseline_four": "results/lifecycle_refactor/baseline_four.log",
+    "final_host": "results/lifecycle_refactor/final_host.log",
+    "final_four": "results/lifecycle_refactor/final_four.log",
+    "trace_wamr": "results/lifecycle_refactor/trace_wamr.log",
+    "esp32_build": "results/lifecycle_refactor/esp32_build.log",
+    "original_characterization": "results/lifecycle_refactor/original_characterization.log"
+  }
+}

@@ -1,0 +1,92 @@
+Internal ctest changing into directory: /tmp/kaos-p3-session/host
+Test project /tmp/kaos-p3-session/host
+      Start  1: graph_p4_process
+ 1/32 Test  #1: graph_p4_process .................   Passed    0.56 sec
+      Start  2: graph_p5_process
+ 2/32 Test  #2: graph_p5_process .................   Passed    3.73 sec
+      Start  3: graph_p6_process
+ 3/32 Test  #3: graph_p6_process .................***Failed    0.88 sec
+test_authorized_edge_in_flight_is_fenced_at_other_coordinator (__main__.RemovalProcessTests.test_authorized_edge_in_flight_is_fenced_at_other_coordinator) ... FAIL
+test_local_incoming_and_outgoing (__main__.RemovalProcessTests.test_local_incoming_and_outgoing) ... ok
+test_missing_owner_retains_all_remote_obligations (__main__.RemovalProcessTests.test_missing_owner_retains_all_remote_obligations) ... ok
+test_remote_incoming_and_outgoing (__main__.RemovalProcessTests.test_remote_incoming_and_outgoing) ... ok
+
+======================================================================
+FAIL: test_authorized_edge_in_flight_is_fenced_at_other_coordinator (__main__.RemovalProcessTests.test_authorized_edge_in_flight_is_fenced_at_other_coordinator)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/p6_process_test.py", line 68, in test_authorized_edge_in_flight_is_fenced_at_other_coordinator
+    self.assertEqual(response.code, 128, response)
+AssertionError: 65 != 128 : Message(type=2, code=65, message_id=9, token=b'\x00\x00\x00\x00\x00\x00\x00\t', options=(), payload=b'')
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.652s
+
+FAILED (failures=1)
+
+      Start  4: graph_p7_process
+ 4/32 Test  #4: graph_p7_process .................   Passed    0.83 sec
+      Start  5: graph_python_regression
+ 5/32 Test  #5: graph_python_regression ..........   Passed    8.00 sec
+      Start  6: graph_wamr
+ 6/32 Test  #6: graph_wamr .......................   Passed    0.12 sec
+      Start  7: graph_wamr_entry
+ 7/32 Test  #7: graph_wamr_entry .................   Passed    0.08 sec
+      Start  8: graph_wamr_channel
+ 8/32 Test  #8: graph_wamr_channel ...............   Passed    0.03 sec
+      Start  9: graph_wamr_budget
+ 9/32 Test  #9: graph_wamr_budget ................   Passed    0.03 sec
+      Start 10: graph_wamr_capacity
+10/32 Test #10: graph_wamr_capacity ..............   Passed    0.20 sec
+      Start 11: graph_core_foundations
+11/32 Test #11: graph_core_foundations ...........   Passed    0.03 sec
+      Start 12: graph_admission
+12/32 Test #12: graph_admission ..................   Passed    0.02 sec
+      Start 13: graph_request
+13/32 Test #13: graph_request ....................   Passed    0.02 sec
+      Start 14: graph_dynamic_binding
+14/32 Test #14: graph_dynamic_binding ............   Passed    0.02 sec
+      Start 15: graph_report
+15/32 Test #15: graph_report .....................   Passed    0.02 sec
+      Start 16: graph_object_facts
+16/32 Test #16: graph_object_facts ...............   Passed    0.02 sec
+      Start 17: graph_coap
+17/32 Test #17: graph_coap .......................   Passed    0.05 sec
+      Start 18: graph_coap_server
+18/32 Test #18: graph_coap_server ................   Passed    0.02 sec
+      Start 19: graph_artifact
+19/32 Test #19: graph_artifact ...................   Passed    0.04 sec
+      Start 20: graph_control
+20/32 Test #20: graph_control ....................   Passed    0.02 sec
+      Start 21: graph_p2_host
+21/32 Test #21: graph_p2_host ....................   Passed    0.02 sec
+      Start 22: graph_node
+22/32 Test #22: graph_node .......................   Passed    0.02 sec
+      Start 23: graph_endpoint
+23/32 Test #23: graph_endpoint ...................   Passed    0.02 sec
+      Start 24: graph_edge
+24/32 Test #24: graph_edge .......................   Passed    0.02 sec
+      Start 25: graph_p5
+25/32 Test #25: graph_p5 .........................   Passed    0.04 sec
+      Start 26: graph_channel_admission
+26/32 Test #26: graph_channel_admission ..........   Passed    0.02 sec
+      Start 27: graph_p6
+27/32 Test #27: graph_p6 .........................   Passed    0.03 sec
+      Start 28: graph_p6_admission
+28/32 Test #28: graph_p6_admission ...............   Passed    0.02 sec
+      Start 29: graph_p6_control
+29/32 Test #29: graph_p6_control .................   Passed    0.02 sec
+      Start 30: graph_p7
+30/32 Test #30: graph_p7 .........................   Passed    0.03 sec
+      Start 31: graph_p7_control
+31/32 Test #31: graph_p7_control .................   Passed    0.02 sec
+      Start 32: graph_p7_lifecycle
+32/32 Test #32: graph_p7_lifecycle ...............   Passed    0.02 sec
+
+97% tests passed, 1 tests failed out of 32
+
+Total Test time (real) =  14.98 sec
+
+The following tests FAILED:
+	  3 - graph_p6_process (Failed)
+Errors while running CTest

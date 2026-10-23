@@ -1,0 +1,58 @@
+--- kaos_node.c before
++++ kaos_node.c after
+@@ -212,5 +212,6 @@
+ const core_runtime_state *state, uint64_t now)
+ {
+-if (state->exited || state->prepare_failed) {
++if (!state->exited && !state->prepare_failed)
++return;
+ if (state->exited)
+ observe(r, CORE_OBJECT_EXITED);
+@@ -219,9 +220,9 @@
+ select_cleanup(s, r, now);
+ }
+-}
+ static void advance_node_startup(const core_node_service *s, core_admission_record *r,
+ core_runtime_state *state)
+ {
+-if (!r->cleanup_selected && !r->node->lifetime.closing && state->prepared) {
++if (r->cleanup_selected || r->node->lifetime.closing || !state->prepared)
++return;
+ observe(r, CORE_OBJECT_READY);
+ if (!(r->evidence.history & CORE_HISTORY_COMMIT) &&
+@@ -236,11 +237,12 @@
+ }
+ }
+-}
+ static void accept_node_init(core_node_service *s, core_admission_record *r,
+ core_runtime_state *state, uint64_t now)
+ {
+-if (state->init_pending) {
++if (!state->init_pending)
++return;
+ state->init_pending = false;
+-if (init_acceptable(s, r, state, now)) {
++if (!init_acceptable(s, r, state, now))
++return;
+ if (core_admission_establish_node(s->admission, r->node->instance)) {
+ (void)core_report_record(&r->evidence, CORE_HISTORY_STARTED | CORE_HISTORY_SUCCESS);
+@@ -249,6 +251,4 @@
+ }
+ }
+-}
+-}
+ static void request_node_runtime_cleanup(core_node_service *s, core_admission_record *r,
+ core_access worker, core_runtime_state *state,
+@@ -256,10 +256,10 @@
+ {
+ const core_reserved_node *node = r->node;
+-if (r->cleanup_selected || node->lifetime.closing) {
++if (!r->cleanup_selected && !node->lifetime.closing)
++return;
+ select_cleanup(s, r, now);
+ state->cancel_requested = true;
+ if (worker_only(&node->lifetime, worker))
+ state->dispose_requested = true;
+-}
+ }
+ /* Called only after disposal was observed under the runtime lock. Charges and

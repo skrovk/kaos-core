@@ -1,0 +1,16 @@
+{
+  "baseline": {
+    "admission_bytes": 39272,
+    "record_bytes": 1304,
+    "nodes_bytes": 760,
+    "edges_bytes": 592,
+    "control_bytes": 6848
+  },
+  "p5": {
+    "admission_bytes": 36392,
+    "record_bytes": 1184,
+    "nodes_bytes": 184,
+    "edges_bytes": 2704,
+    "control_bytes": 6848
+  }
+}

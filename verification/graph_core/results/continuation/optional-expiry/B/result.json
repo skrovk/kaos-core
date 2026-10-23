@@ -1,0 +1,214 @@
+{
+  "status": "passed",
+  "trace_complete": true,
+  "observations": 6128,
+  "phases": [
+    {
+      "name": "before_expiry",
+      "status": "passed",
+      "branches": {
+        "A": {
+          "received": 0,
+          "unique_sequences": 0
+        },
+        "B": {
+          "received": 219,
+          "unique_sequences": 219
+        }
+      },
+      "unexpected_copies": 0
+    },
+    {
+      "name": "expired_unresolved",
+      "status": "passed",
+      "branches": {
+        "A": {
+          "received": 0,
+          "unique_sequences": 0
+        },
+        "B": {
+          "received": 210,
+          "unique_sequences": 210
+        }
+      },
+      "unexpected_copies": 0
+    },
+    {
+      "name": "expired_cleaned",
+      "status": "passed",
+      "branches": {
+        "A": {
+          "received": 0,
+          "unique_sequences": 0
+        },
+        "B": {
+          "received": 189,
+          "unique_sequences": 189
+        }
+      },
+      "unexpected_copies": 0
+    }
+  ],
+  "scope": "APP03 optional expiry and cleanup after success; existing branch keeps carrying samples",
+  "first": "B",
+  "startup_report": [
+    4,
+    8,
+    2,
+    1,
+    9,
+    1,
+    39,
+    [
+      1,
+      1,
+      0,
+      3,
+      3
+    ]
+  ],
+  "expired_report": [
+    4,
+    8,
+    2,
+    1,
+    13,
+    1,
+    39,
+    [
+      1,
+      185,
+      8,
+      3,
+      3
+    ]
+  ],
+  "cleaned_report": [
+    4,
+    8,
+    2,
+    1,
+    14,
+    1,
+    39,
+    [
+      1,
+      185,
+      56,
+      3,
+      3
+    ]
+  ],
+  "windows": [
+    {
+      "name": "before_expiry",
+      "begin_us": 148499725626,
+      "end_us": 148499977265,
+      "active": [
+        "B"
+      ]
+    },
+    {
+      "name": "expired_unresolved",
+      "begin_us": 148500720360,
+      "end_us": 148500970522,
+      "active": [
+        "B"
+      ]
+    },
+    {
+      "name": "expired_cleaned",
+      "begin_us": 148503325165,
+      "end_us": 148503575308,
+      "active": [
+        "B"
+      ]
+    }
+  ],
+  "instances": {
+    "10": 2,
+    "20": 0,
+    "30": 1
+  },
+  "outcomes": [
+    [
+      4,
+      8,
+      0,
+      2,
+      4,
+      1,
+      39,
+      [
+        1
+      ]
+    ],
+    [
+      4,
+      8,
+      1,
+      3,
+      4,
+      1,
+      39,
+      [
+        1
+      ]
+    ],
+    [
+      4,
+      8,
+      2,
+      1,
+      9,
+      1,
+      39,
+      [
+        1,
+        1,
+        0,
+        3,
+        3
+      ]
+    ],
+    [
+      4,
+      8,
+      3,
+      1,
+      6,
+      1,
+      8,
+      [
+        56,
+        56,
+        56
+      ]
+    ],
+    [
+      4,
+      8,
+      4,
+      2,
+      2,
+      1,
+      8,
+      [
+        56
+      ]
+    ],
+    [
+      4,
+      8,
+      5,
+      3,
+      2,
+      1,
+      8,
+      [
+        56
+      ]
+    ]
+  ],
+  "remaining_instances_at_teardown": []
+}

@@ -1,0 +1,97 @@
+{
+  "date": "2026-10-12T23:10:05+02:00",
+  "scope": "Explicit host scheduling and separation of control/worker responsibilities",
+  "status": "Implemented; 36 host and 12 four-node CTest entries pass; ESP32 cross-build passes.",
+  "decisions": {
+    "task_topology": "User confirmed keeping the existing control task and WAMR workers.",
+    "skill": "User-approved codebase-design guidance; requested refactor skill unavailable.",
+    "control": "The host schedules paired lifecycle passes at explicit pre-input, post-input and staging-release checkpoints. Input and its consequences share the registry lock; output follows.",
+    "worker": "Entry guard only reads current time and startup authorization while retaining the registry lock through the WAMR execution marker. Workers no longer advance graph lifecycles or consume unrelated mailboxes.",
+    "ordering": "Apply node cleanup first, then two bounded edge/node rounds. Node expiry beats longer channel setup allowances; edge removals beat node startup evidence; local READY/COMMIT/ACTIVE/DISPATCH can progress without another packet.",
+    "existing_interfaces": "Edge effects/owner-evidence interfaces retain their deadline guards and synchronous cleanup replies remain in control. These run on the control task.",
+    "readability": "Named helpers cover platform/enrollment validation, artifact eligibility/staging selection/handoff, packet classification, output, diagnostics, deadline selection, local-role liveness and shared startup authorization.",
+    "modules": "Existing host and node modules extended; no production module or concurrent task added."
+  },
+  "baseline": {
+    "git_head": "2488ab4617f245b22c399feebbb2bc9278ede903",
+    "snapshot": "/tmp/kaos-scheduling-refactor/baseline",
+    "snapshot_manifest_sha256": "5adea30038883bb832151b364b7dc41cf7753beba03f0ffd1c81a05706afb4fd",
+    "note": "Earlier host refactor and other uncommitted work preserved. Scope is compared with this turn snapshot."
+  },
+  "changed_files": [
+    "docs/graph_operation_implementation_plan.md",
+    "docs/guide/architecture.md",
+    "docs/guide/verification.md",
+    "graph_core/include/kaos_host.h",
+    "graph_core/include/kaos_node.h",
+    "graph_core/kaos_host.c",
+    "graph_core/kaos_node.c",
+    "verification/graph_core/CMakeLists.txt"
+  ],
+  "added_test_files": [
+    "verification/graph_core/tests/host_scheduling_test.c"
+  ],
+  "source_sha256": "verification/graph_core/results/scheduling_refactor/source-sha256.json",
+  "preserved_tests": "verification/graph_core/results/scheduling_refactor/test-preservation.json",
+  "host": {
+    "configuration": "CORE_BUILD_HOST=ON, CORE_BUILD_P2_HOST=ON, CORE_BUILD_P3_HOST=OFF, CORE_BUILD_P4_HOST=OFF, CORE_SANITIZE=ON",
+    "build": "cmake --build /tmp/kaos-p3-session/host -j4",
+    "test": "ctest --test-dir /tmp/kaos-p3-session/host --output-on-failure",
+    "passed_entries": 36,
+    "failed_entries": 0,
+    "seconds": 14.96,
+    "sanitizers": [
+      "ASan",
+      "UBSan fail-fast",
+      "LSan"
+    ],
+    "exception": "WAMR tests disable ASan fake stacks because the engine checks native stack addresses.",
+    "python_regression": {
+      "discovered": 96,
+      "passed": 76,
+      "skipped": 20,
+      "skip_reason": "Preexisting SIM_INTEGRATION-gated legacy cases; P4-P7 graph process scenarios ran."
+    },
+    "new_scheduling_cases": [
+      "Actual worker configure/main entry does not expire an unrelated operation or consume its evidence",
+      "Actual worker entry at its own deadline is denied without worker-side lifecycle mutation",
+      "Local channels reach ACTIVE and node dispatch in a control turn without network input; admitted edge removal defeats blocked worker entry",
+      "Node expiry suppresses activation even while channel setup allowance remains live"
+    ],
+    "log": "verification/graph_core/results/scheduling_refactor/final-host.log",
+    "details": "verification/graph_core/results/scheduling_refactor/host-details.log"
+  },
+  "four_node": {
+    "build": "cmake --build /tmp/kaos-p4-session/four -j4",
+    "test": "ctest --test-dir /tmp/kaos-p4-session/four --output-on-failure",
+    "passed_entries": 12,
+    "failed_entries": 0,
+    "seconds": 6.74,
+    "profile": "CORE_FOUR_NODE_PROFILE=ON, CORE_SANITIZE=ON",
+    "log": "verification/graph_core/results/scheduling_refactor/final-four.log",
+    "details": "verification/graph_core/results/scheduling_refactor/four-details.log"
+  },
+  "esp32": {
+    "command": "source /home/karolina/esp/esp-idf/export.sh && idf.py -C graph_core/ports/espidf -B /tmp/kaos-host-refactor/esp32 build",
+    "result": "Cross-build passed",
+    "idf_version": "5.5",
+    "firmware_bytes": 912560,
+    "flashed": false,
+    "physical_run": false,
+    "log": "verification/graph_core/results/scheduling_refactor/esp32-build.log"
+  },
+  "artifacts_sha256": "verification/graph_core/results/scheduling_refactor/artifact-sha256.json",
+  "logs_sha256": "verification/graph_core/results/scheduling_refactor/log-sha256.json",
+  "review": {
+    "existing_tests_modified": 0,
+    "new_trailing_whitespace": 0,
+    "preexisting_whitespace": "git diff --check reports an unchanged preexisting blank line at graph_core/kaos_edge.c:216.",
+    "sandbox": "Approved escalation used for WAMR generated header outside the workspace and UDP/sanitizer test execution."
+  },
+  "limits": [
+    "No physical board/network, stack-budget or timing qualification claimed.",
+    "Final composed formal verification remains P9 work; existing model files were unchanged and not rerun.",
+    "P8 application work and P9 distributed Wi-Fi/collector qualification remain open.",
+    "Protocol/guest interfaces, operation cutoffs, cleanup ownership, retention policy and the single-WAMR-per-process contract are retained."
+  ]
+}

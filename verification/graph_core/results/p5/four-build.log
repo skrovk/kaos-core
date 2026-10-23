@@ -1,0 +1,15 @@
+[  1%] Built target capacity_guest
+[  3%] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_control.c.o
+[ 62%] Built target kaos_wamr_engine
+[ 67%] Built target kaos_wamr
+[ 69%] Linking C static library libkaos_graph_core.a
+[ 87%] Built target kaos_graph_core
+[ 90%] Building C object CMakeFiles/graph_p5_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/p5_test.c.o
+[ 90%] Linking C executable graph_p4_capacity
+[ 91%] Linking C executable kaos_p3_host
+[ 93%] Linking C executable graph_p5_capacity
+[ 95%] Built target kaos_p3_host
+[ 96%] Built target graph_p4_capacity
+[ 98%] Built target graph_p5_capacity
+[100%] Linking C executable graph_p5_test
+[100%] Built target graph_p5_test

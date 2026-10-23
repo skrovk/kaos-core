@@ -1,0 +1,116 @@
+-- WAMR version: 2.4.1
+-- Build Configurations:
+     Build as target X86_64
+     Build for platform linux
+     CMAKE_BUILD_TYPE 
+     BUILD_SHARED_LIBS 
+     WAMR Interpreter enabled
+     Fast interpreter disabled
+     WAMR AOT disabled
+     WAMR Fast JIT disabled
+     WAMR LLVM ORC JIT disabled
+     Libc builtin disabled
+     Libc WASI disabled
+     Thread manager enabled
+     Multiple modules disabled
+     Hardware boundary check disabled
+     Wakeup of blocking operations enabled
+     GC performance profiling disabled
+     Write linear memory base addr to x86 GS register enabled
+     Shrunk memory enabled
+     Extended constant expression disabled
+-- About Wasm Proposals:
+     Always-on:
+       "Multi-value"
+       "Non-trapping float-to-int conversions"
+       "Sign-extension operators"
+       "WebAssembly C and C++ API"
+     Configurable. 0 is OFF. 1 is ON:
+       "Bulk Memory Operation" via WAMR_BUILD_BULK_MEMORY: 1
+       "Extended Constant Expressions" via WAMR_BUILD_EXTENDED_CONST_EXPR: 0
+       "Fixed-width SIMD" via WAMR_BUILD_SIMD: 0
+       "Garbage collection" via WAMR_BUILD_GC: 0
+       "Legacy Exception handling" via WAMR_BUILD_EXCE_HANDLING: 0
+       "Memory64" via WAMR_BUILD_MEMORY64: 0
+       "Multiple memories" via WAMR_BUILD_MULTI_MEMORY: 0
+       "Reference Types" via WAMR_BUILD_REF_TYPES: 0
+       "Reference-Typed Strings" via WAMR_BUILD_STRINGREF: 0
+       "Tail call" via WAMR_BUILD_TAIL_CALL: 0
+       "Threads" via WAMR_BUILD_SHARED_MEMORY: 0
+       "Typed Function References" via WAMR_BUILD_GC: 0
+     Unsupported (>= Phase4):
+       "Branch Hinting"
+       "Custom Annotation Syntax in the Text Format"
+       "Exception handling"
+       "Import/Export of Mutable Globals"
+       "JS String Builtins"
+       "Relaxed SIMD"
+
+-- Configuring done (0.2s)
+-- Generating done (0.1s)
+-- Build files have been written to: /tmp/kaos-p4-session/four
+[  1%] Built target capacity_guest
+[  2%] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_request.c.o
+[  3%] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_admission.c.o
+[  4%] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_report.c.o
+[  5%] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/thread_manager.c.o
+[  8%] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_artifact.c.o
+[  8%] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/wasm_interp_classic.c.o
+[  9%] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_control.c.o
+[ 10%] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_node.c.o
+[ 11%] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_endpoint.c.o
+[ 12%] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_edge.c.o
+[ 14%] Linking C static library libkaos_graph_core.a
+[ 18%] Built target kaos_graph_core
+[ 20%] Building C object CMakeFiles/graph_host_control_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/host_control_test.c.o
+[ 21%] Building C object CMakeFiles/graph_p5_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/p5_test.c.o
+[ 22%] Building C object CMakeFiles/graph_p6_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/p6_test.c.o
+[ 23%] Linking C executable graph_host_control_test
+[ 23%] Built target graph_host_control_test
+[ 24%] Building C object CMakeFiles/graph_p6_admission_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/p6_admission_test.c.o
+[ 25%] Linking C executable graph_p5_test
+[ 27%] Linking C static library libkaos_wamr_engine.a
+[ 28%] Linking C executable graph_p6_admission_test
+[ 28%] Built target graph_p5_test
+[ 29%] Building C object CMakeFiles/graph_p6_control_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/p6_control_test.c.o
+[ 69%] Built target kaos_wamr_engine
+[ 69%] Built target graph_p6_admission_test
+[ 70%] Linking C executable graph_p6_test
+[ 71%] Building C object CMakeFiles/graph_p7_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/p7_test.c.o
+[ 72%] Building C object CMakeFiles/graph_p7_control_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/p7_control_test.c.o
+[ 72%] Built target graph_p6_test
+[ 74%] Building C object CMakeFiles/graph_p7_lifecycle_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/p7_lifecycle_test.c.o
+[ 75%] Linking C executable graph_p6_control_test
+[ 76%] Linking C executable graph_p7_control_test
+[ 77%] Linking C executable graph_p7_test
+[ 77%] Built target graph_p6_control_test
+[ 78%] Building C object core/runtime/CMakeFiles/kaos_wamr.dir/kaos_wamr.c.o
+[ 78%] Built target graph_p7_test
+[ 78%] Built target graph_p7_control_test
+[ 80%] Building C object core/runtime/CMakeFiles/kaos_wamr.dir/profile.c.o
+[ 81%] Linking C static library libkaos_wamr.a
+[ 81%] Built target kaos_wamr
+[ 84%] Building C object CMakeFiles/graph_p6_capacity.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/p6_capacity.c.o
+[ 84%] Building C object CMakeFiles/graph_p4_capacity.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/p4_capacity.c.o
+[ 84%] Building C object CMakeFiles/graph_p5_capacity.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/p5_capacity.c.o
+[ 85%] Linking C executable graph_p7_lifecycle_test
+[ 85%] Built target graph_p7_lifecycle_test
+[ 87%] Building C object CMakeFiles/graph_p7_capacity.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/p7_capacity.c.o
+[ 88%] Linking C executable graph_p4_capacity
+[ 89%] Linking C executable graph_p6_capacity
+[ 90%] Linking C executable graph_p5_capacity
+[ 90%] Built target graph_p4_capacity
+[ 91%] Building C object core/CMakeFiles/kaos_graph_host.dir/kaos_host.c.o
+[ 92%] Linking C executable graph_p7_capacity
+[ 92%] Built target graph_p6_capacity
+[ 94%] Building C object core/CMakeFiles/kaos_graph_host.dir/ports/host_udp.c.o
+[ 94%] Built target graph_p5_capacity
+[ 94%] Built target graph_p7_capacity
+[ 95%] Linking C static library libkaos_graph_host.a
+[ 95%] Built target kaos_graph_host
+[ 97%] Building C object core/CMakeFiles/kaos_host.dir/ports/posix/main.c.o
+[ 97%] Building C object core/CMakeFiles/kaos_p3_host.dir/ports/posix/main.c.o
+[100%] Linking C executable kaos_host
+[100%] Linking C executable kaos_p3_host
+[100%] Built target kaos_host
+[100%] Built target kaos_p3_host

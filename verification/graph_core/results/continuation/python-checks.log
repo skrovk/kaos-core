@@ -1,0 +1,4 @@
+ruff check: All checks passed!
+ruff format --check: 5 files already formatted
+Files: native_process_test.py, optional_expiry_test.py, sim_env/graph_protocol.py, sim_env/orchestrator.py, tests/test_graph_native_protocol.py
+Initial checks required one import blank line and formatting the new expiry startup assertion; both corrected.

@@ -1,0 +1,213 @@
+{
+  "date": "2026-10-11",
+  "stage": "P5 multi-channel node addition",
+  "status": "Implementation and host qualification complete; ESP32 cross-build passed; physical/networked target and final formal qualification remain open.",
+  "baseline": {
+    "git_head": "026bc3b67f3ee172c46f43d9c21f6f9f39965a2d",
+    "working_tree_snapshot": "/tmp/kaos-p5-session/baseline",
+    "note": "P3/P4 changes already existed at session start; all were preserved. This record hashes the P5 files against that snapshot rather than HEAD."
+  },
+  "changed_since_session_start": [
+    "graph_core/include/kaos_admission.h",
+    "graph_core/include/kaos_edge.h",
+    "graph_core/include/kaos_node.h",
+    "graph_core/include/kaos_wamr.h",
+    "graph_core/kaos_admission.c",
+    "graph_core/kaos_admission_internal.h",
+    "graph_core/kaos_control.c",
+    "graph_core/kaos_edge.c",
+    "graph_core/kaos_endpoint.c",
+    "graph_core/kaos_node.c",
+    "graph_core/kaos_request.c",
+    "graph_core/ports/p2_host.c",
+    "graph_core/ports/p4_host.inc",
+    "graph_core/runtime/kaos_wamr.c",
+    "verification/graph_core/CMakeLists.txt",
+    "verification/graph_core/four/CMakeLists.txt",
+    "docs/graph_operation_implementation_plan.md",
+    "docs/graph_p4_memory.md"
+  ],
+  "added_sources": [
+    "verification/graph_core/espidf_p5/CMakeLists.txt",
+    "verification/graph_core/espidf_p5/build.sh",
+    "verification/graph_core/espidf_p5/main/CMakeLists.txt",
+    "verification/graph_core/espidf_p5/main/main.c",
+    "verification/graph_core/espidf_p5/sdkconfig.defaults",
+    "verification/graph_core/p5_capacity.c",
+    "verification/graph_core/tests/channel_admission_test.c",
+    "verification/graph_core/tests/p5_process_test.py",
+    "verification/graph_core/tests/p5_test.c",
+    "verification/graph_core/tests/wamr_entry_test.c",
+    "docs/graph_p5_contract.md"
+  ],
+  "source_sha256": {
+    "graph_core/include/kaos_admission.h": "70d59f291019ab60cf9c5ff34a6817e7633eefe2dc947da7cc1078f7960a4239",
+    "graph_core/include/kaos_edge.h": "1d98f18e8de77751274180950eb7353d08e4516e9b0e5b0ed0fdd55ec89f01fc",
+    "graph_core/include/kaos_node.h": "9329097844d6b21c48349f9fd5fe279902f5f9097bab14bfd84a825ed39aeaf1",
+    "graph_core/include/kaos_wamr.h": "6abe1e110a8e7b60fa0821de8a7c23baf215145daf6a1dfccdd6cbd4b2c1ed4d",
+    "graph_core/kaos_admission.c": "7910dac8a2e33813d19b4c190c4102024fb69d927a62fd1df8b23126d5f718a3",
+    "graph_core/kaos_admission_internal.h": "dd8711f0a43e63c90ab7b716549943f66cd6a82a1fc9388b04b334678e42a86b",
+    "graph_core/kaos_control.c": "4b017ba1d94b9d43082fffe9911f48ab6002f07c5adedbe7e077dc80fc40c425",
+    "graph_core/kaos_edge.c": "615495caf9d4c7892ac90f5e0545a700fee1e5608e33b43e243e4215535aad4c",
+    "graph_core/kaos_endpoint.c": "0874c2488b8d968fece7504fb01193559967f353e74a5a0ec2e372b2466a4d42",
+    "graph_core/kaos_node.c": "57263b6a87f1936fdd7637b9a1634fc7737ed4b93d51c60200e0a405cdc65f16",
+    "graph_core/kaos_request.c": "e835357f2f2ee18bbb892688a90e2a8df556d95e8ea161fcc4acb8b262b88c1c",
+    "graph_core/ports/p2_host.c": "ee837c44b5b7940f05095a740c84f9dfebd93791fd8d0e7e246df370669e4b3e",
+    "graph_core/ports/p4_host.inc": "af14db8c2e6033dde5172fa18c416899c5cce2e3d4ac9fe1a81af8f2ecd0b809",
+    "graph_core/runtime/kaos_wamr.c": "d324de68eaddaebccf4c65eed9649a87f58ff6dc68df62e1f23a40966d9cab35",
+    "verification/graph_core/CMakeLists.txt": "4624688faa87edc1cb1574a44722e0d021489631fbbea90d35901f85166ef235",
+    "verification/graph_core/four/CMakeLists.txt": "52c7bb364fc1e6283e3082e412c37c94cc73af3ab84ef3eee7112024fae766ca",
+    "docs/graph_operation_implementation_plan.md": "9072046d9cf47fe06b3e2818366dede24380271529f4fded64fab4a98fcf9c93",
+    "docs/graph_p4_memory.md": "c0b723fb3351dff699946c0308b3b39af53c89ff44a2d9d98f76c2126754c39d",
+    "verification/graph_core/espidf_p5/CMakeLists.txt": "5064d938fbab0193405b9e541016b1a4fd3bafc8e15ac948c050c725e872dff8",
+    "verification/graph_core/espidf_p5/build.sh": "789fa17078657ce91047a243e5e880567a8252faa5026222936d1c4a26ef09a9",
+    "verification/graph_core/espidf_p5/main/CMakeLists.txt": "3c02f43c4b6d251ce40b9f5703eac3bb3616a7e4da9c4aa2fae0bc2d4c638b26",
+    "verification/graph_core/espidf_p5/main/main.c": "fd9cf471348c7446e0c340b030491e7f1ebce622d0acd92772ebbb76402f93d1",
+    "verification/graph_core/espidf_p5/sdkconfig.defaults": "cddeb7b8459d45b37fa4cc952cd97ada69010a6275b48616261b15e3552eae6d",
+    "verification/graph_core/p5_capacity.c": "a47727b430255fa94f2940d74b6191cce926ab45ce010d732ff20b760a7ab7ff",
+    "verification/graph_core/tests/channel_admission_test.c": "32aa1511c1dc4d159ecefca1f471ce13e4f2d4f3ea8488b8ad94e50374b314ae",
+    "verification/graph_core/tests/p5_process_test.py": "3600c542bb0970a3472eba857812c413c1f7e136d3090ba110452065bbe169eb",
+    "verification/graph_core/tests/p5_test.c": "be15920ced1f1c6a7ea745fdc6480e2d2052bba7dd6eeb86bb2a6ea41874724c",
+    "verification/graph_core/tests/wamr_entry_test.c": "f7e2da1cc96d3dc85debe8612badf8c34c12a2469036b857a594215937c35495",
+    "docs/graph_p5_contract.md": "1bd621c95b836ea98f5360f926ab089295d15a922052b9b47e79531701692fc2"
+  },
+  "preexisting_verification_sources": {
+    "baseline_sha256": {
+      "verification/graph_core/p4_capacity.c": "c436ad48dcb9cd4a306e3c8ae3b74b9d9c490d9cb78f6788d3d0a0144be779fa",
+      "verification/graph_core/read_serial.py": "3e4fb8428d23508a30e89ff65eb33f47c1c566860756b5e90f0b97baae05124b",
+      "verification/graph_core/profile_sizes.c": "5ad65524e02becc14108fa253ed98e0ad0a8f2421bd92647b69e8c2df9f59ed8",
+      "verification/graph_core/tests/request_test.c": "eee17fd121fc9a1523f11b30c2adb2e4739b69eb5c9fed38056e2c7d4ef709fa",
+      "verification/graph_core/tests/wamr_test.c": "0fb5c460de9edcfd8feb3f59d74bce7ab62e038568a58bc4f59956cba9f2f84b",
+      "verification/graph_core/tests/dynamic_binding_test.c": "2e9c61d6e77a7a3d7a04ceb4c93e9f0bf05e3072705af9eea4e90a3c51243fb5",
+      "verification/graph_core/tests/wamr_budget_test.c": "e09b0a87f943eff688de7ae9480511682936dd88da24fc96f5ffb759e53ec298",
+      "verification/graph_core/tests/edge_test.c": "3aef1e31706f9423c5429a31085137dfd2038b1f0d6b4079f1e58671f73cc634",
+      "verification/graph_core/tests/p2_host_test.c": "ab0a7472366cdcbe0c0698e2aa7e3d5face0d0d36c2c2abf9fbed5032805bbd5",
+      "verification/graph_core/tests/coap_test.c": "12c5b3a3da9c01f69fad2e10511ddd410b1c1ea7c4cf6cf2d1a8685642657a92",
+      "verification/graph_core/tests/core_test.c": "9fd73b5b7b853f88344205d7dc067f0bbddbd6544f20092f37805d39458e1788",
+      "verification/graph_core/tests/p4_process_test.py": "1e3ee30f991840bd69682576a9cca6ef552bc559c66d57e8034c46756c2868bd",
+      "verification/graph_core/tests/wamr_channel_test.c": "0792e7de9a342e180e258cd43635854c4ab1fcd97cc6088c8750f4eb320537b8",
+      "verification/graph_core/tests/artifact_test.c": "221a6286321e6f1b73dea05ea6dbf2aab9632876295f7c2bb2a23b65f514c48e",
+      "verification/graph_core/tests/runtime_guest.c": "42a6be5c16eeb6cfd37f1ef52926eac3f7daf05596f888fc5945f9d29715aade",
+      "verification/graph_core/tests/control_test.c": "e162aae95b7e8982a138cb194b8afea3f1b7427d1c6cd45b4be203892f93f188",
+      "verification/graph_core/tests/admission_fixture.h": "fbaf1626fc63be3f18e8238f71959e73c567400a30cca3a8758438da3ea3ed87",
+      "verification/graph_core/tests/endpoint_test.c": "421daa9e41eb86f8eaeac6ac36bd04290a259062897580a408a64265ab0a12d8",
+      "verification/graph_core/tests/object_facts_test.c": "d511e48e77cec6e4b8776db65f07cd15c12ea7a9772c66e3f74f5c16bf69aee0",
+      "verification/graph_core/tests/report_test.c": "56b76751e40234a7df9e36f096eb6c48b6a1a14b50d5f0fb6bdd52668f100e74",
+      "verification/graph_core/tests/coap_server_test.c": "4abb9467491d301a86c9c383c92eb09530bc9df5cc3043e10636fec62329f7a7",
+      "verification/graph_core/tests/admission_test.c": "680d1323c1ad87d6c8eb81d03f373f4c5d1bae9e3e4fdd24e8ed3cfb84c67ff5",
+      "verification/graph_core/tests/node_test.c": "ebec8d4731540896a33ea91af19d05f15abdc8f362f1c0cd54af504ef91f7263",
+      "verification/graph_core/capacity/probe.c": "c15dc456d670b5443e0cf211852d09b2effb402155d856a6c8aa8d16845a8bc0",
+      "verification/graph_core/capacity/stage.py": "33a7576622f91c54979fdbea64c0e17f192257250dee4305150ad8c8b81cd5cc",
+      "verification/graph_core/guests/traffic.c": "46f141c4d6d14e0cc77d6a15a2fee8fb140744014f80ba9bcbcddf75ec2abc64",
+      "verification/graph_core/guests/node.c": "de8c848986dbe1cc78568a1b5f7ad87b0f93dd301ec8f3cea8462feaf1c01f78",
+      "verification/graph_core/guests/capacity.c": "c14b625930ef1ec8185596c0de08a2d798cf54e4f8406236bec4f5fc96162872",
+      "verification/graph_core/guests/channel.c": "8589c8fa41cfd9b5ddf157cda73a74a0afd572e84f0cfb1f90cf7718ab696d13",
+      "verification/graph_core/espidf_p3/main/main.c": "ffae4629d7fdcd1e684cbda013de07230436b36de43b4b4b7f6c2e78e30fdacf",
+      "verification/graph_core/espidf_p3/main/node_lifecycle.c": "da99e7799a7e08f0424c66acd4b6e7246bc292ebc7c5f3921a3ce195d89be791",
+      "verification/graph_core/espidf_p4/main/main.c": "e02529b9e53eca898613a0c47514b68d6ae2ceaa3023361e10ce13286955e897",
+      "verification/graph_core/espidf/main/main.c": "08c2cd3e342115adf380c35b99eec45964108228a374705518fe2e7dbad3a382",
+      "verification/graph_core/results/p4/platform-layout.c": "18aa1a92f587af234eb70b2e3282a0c872a60f6d48c8ff8a518578f165f8c188",
+      "verification/graph_core/results/p4/core-layout.c": "f842c3f5e3ff3275ab63d4f4d3020bf8172bfe2b09dc03a5211118914809a8ea"
+    },
+    "changed": []
+  },
+  "host": {
+    "commands": [
+      "cmake -S verification/graph_core -B /tmp/kaos-p3-session/host -G Ninja -DCORE_BUILD_P2_HOST=ON -DCORE_BUILD_P3_HOST=ON -DCORE_BUILD_P4_HOST=ON -DCORE_SANITIZE=ON",
+      "cmake --build /tmp/kaos-p3-session/host -j 4",
+      "ctest --test-dir /tmp/kaos-p3-session/host --output-on-failure"
+    ],
+    "ctest_passed": 24,
+    "ctest_failed": 0,
+    "seconds": 12.78,
+    "new_real_udp_wamr_cases": 5,
+    "sanitizers": "ASan, fail-fast UBSan, LSan. WAMR retains detect_stack_use_after_return=0 as previously qualified; final runs did not disable leak detection.",
+    "log": "verification/graph_core/results/p5/final-host.log",
+    "detail_log": "verification/graph_core/results/p5/host-details.log"
+  },
+  "four_node_host": {
+    "commands": [
+      "cmake -S verification/graph_core/four -B /tmp/kaos-p4-session/four -DCORE_SANITIZE=ON",
+      "cmake --build /tmp/kaos-p4-session/four -j 4",
+      "ctest --test-dir /tmp/kaos-p4-session/four --output-on-failure"
+    ],
+    "passed": 3,
+    "failed": 0,
+    "seconds": 6.27,
+    "cases": [
+      "unchanged P4 capacity",
+      "P5 capacity: fourth node with eight initial channels, three full traffic/reclamation cycles",
+      "P5 deterministic scenarios at eight-channel bounds"
+    ],
+    "log": "verification/graph_core/results/p5/final-four.log",
+    "detail_log": "verification/graph_core/results/p5/four-details.log"
+  },
+  "esp32": {
+    "command": "bash verification/graph_core/espidf_p5/build.sh",
+    "result": "build passed",
+    "profile": "original ESP32, no PSRAM, four node slots, eight incident channels, four 256-byte messages per queue",
+    "firmware_bytes": 310944,
+    "physical_run": false,
+    "reason": "No /dev/ttyUSB* or /dev/ttyACM* serial board connected during session.",
+    "flashed": false,
+    "log": "verification/graph_core/results/p5/esp32-build.log",
+    "artifact_sha256": {
+      "/tmp/kaos-p5-session/esp32/kaos_p5_qualification.elf": "bff418659d16f530c84decd74d66d479331f01978d25455d222f107d6ee69ffe",
+      "/tmp/kaos-p5-session/esp32/kaos_p5_qualification.bin": "1b839c43f40149eb44e62ff230f763774a5370df11b6eef5f6a3bf05a870a6f8",
+      "/tmp/kaos-p5-session/esp32/kaos_p5_qualification.map": "1a13e837797141f7a2c69ea5bab6dfa9661db5f06c380f537d1bc9702a7d09b5",
+      "/tmp/kaos-p5-session/esp32/sdkconfig": "d9f68ca5718a1081f6a4208d9b2eaf805aa58cb8ac546957dc521129ae39ee98"
+    }
+  },
+  "target_structure_sizes": {
+    "baseline": {
+      "admission_bytes": 39272,
+      "record_bytes": 1304,
+      "nodes_bytes": 760,
+      "edges_bytes": 592,
+      "control_bytes": 6848
+    },
+    "p5": {
+      "admission_bytes": 36392,
+      "record_bytes": 1184,
+      "nodes_bytes": 184,
+      "edges_bytes": 2704,
+      "control_bytes": 6848
+    }
+  },
+  "review": {
+    "spec_findings_corrected": [
+      "Entry timestamp sampled before registry/mailbox acquisition",
+      "Delayed rejection starting distributed cleanup of an already successful active channel"
+    ],
+    "standards_findings_corrected": [
+      "Redundant node/edge whole-cleanup deadline copies removed",
+      "P5 capacity fixture checks full lifetime/notification reclamation, repeated target heap baseline and worker stack margin"
+    ],
+    "additional_regressions": [
+      "Shared whole-cleanup origin despite delayed channel servicing",
+      "Release Block1 assembly after compact channel command"
+    ]
+  },
+  "limits": [
+    "No new physical or Wi-Fi measurement; P4 networked capacity gap remains open.",
+    "256-byte queues and 32 KiB global arena retained; proposed 128-byte payload/1 KiB global arena not qualified here.",
+    "The new sparse owner command is an additive schema-4 tag; mixed implementation deployments are not supported.",
+    "P6 full-node removal and P7 collector/ACK integration remain separate work.",
+    "Final composed TLA+/TLC safety/liveness and distributed target verification remain mandatory P9 work.",
+    "Q05 stale construction after retired rejection history, crash-stop assumptions and unauthenticated enrolled-peer transport remain unchanged."
+  ],
+  "evidence_sha256": {
+    "verification/graph_core/results/p5/baseline-layout.s": "9a76142982a7e5e08cb9e5f42dc2b013f593830cba155c78c46af6c56a91ab52",
+    "verification/graph_core/results/p5/esp32-build.log": "1ba4e58e831f86a1693e554b690b5017b186aa08a956404a37f2bf8333030781",
+    "verification/graph_core/results/p5/final-four.log": "07edb1b40f71708a09203c93e4e5150b7546703bf0d6568f96820b316a8022f5",
+    "verification/graph_core/results/p5/final-host.log": "0b4dcb220c82926ccdf1c4348066b61693327947e8680d04f6ec40ea08fe6b82",
+    "verification/graph_core/results/p5/four-build.log": "e5ddb60311390db711925389432f91d93ef65bb27058b36a569b352cf837100b",
+    "verification/graph_core/results/p5/four-details.log": "6713689f4454bc2481c0565321cdab352c93c7a167f1185d4239f41693016b3d",
+    "verification/graph_core/results/p5/host-build.log": "bb4d426d0f511c972ae57905e1f6b0fdb7da44c4ea538236c4e87c6bfc129a0f",
+    "verification/graph_core/results/p5/host-details.log": "104d677162fdd01c5e7d9cbf3b3db8d635974063390503f530425c43c879617c",
+    "verification/graph_core/results/p5/layout.c": "8cad6e5744655114b159ee7d7322b74cea8cd1da19e18e5aa7fb7033a8b5378e",
+    "verification/graph_core/results/p5/layout.json": "a47b1fb26bdf1d290eef7937bd00e90823e4cf2d4cd09ed3435ec977cfa0f883",
+    "verification/graph_core/results/p5/p5-layout.s": "4743ee1e26c9e5caf56fc7cdf8a1bf8d13230dc1d745c85e845a0a42dba0c016",
+    "verification/graph_core/results/p5/test-preservation.json": "6eaead0ad0b84452e4166546e9c84aa1248e56e15703010bcd409a89a966cbf3"
+  }
+}

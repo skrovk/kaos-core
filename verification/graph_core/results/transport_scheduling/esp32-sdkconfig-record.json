@@ -1,0 +1,7 @@
+{
+  "original_sha256": "3fc879973366b030ec318236360b899dd314a1df5ca3f2bdbc08aa0ecc15cbbc",
+  "redacted_keys": [
+    "CONFIG_EXAMPLE_WIFI_SSID",
+    "CONFIG_EXAMPLE_WIFI_PASSWORD"
+  ]
+}

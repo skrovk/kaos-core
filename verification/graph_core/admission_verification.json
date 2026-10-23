@@ -1,0 +1,154 @@
+{
+  "recorded_at_utc": "2026-10-06T09:16:11.810849+00:00",
+  "scope": "Local no-edge resource reservation prerequisite only; not full protocol admission or an implemented node operation.",
+  "repository_head": "d52d2c4ce782877b3153f31d23bc4639aadac069",
+  "working_tree": "Preserves pre-existing foundation changes, predicate slice and verification relocation. Source hashes identify evaluated content.",
+  "source_sha256": {
+    "graph_core/include/kaos_admission.h": "8d91872678abbafbe72ce8e36956afc5a8f265a052ed41db17db94eb6ed3faa0",
+    "graph_core/kaos_admission.c": "2316a7f5f95fa6614574d766a2822330f916f0ae231505fccf06d4b6a6af5fde",
+    "graph_core/include/kaos_graph.h": "4234e61954b468fef799cacd5aaddb0bc39958887668582b5d8ff477b9a512f0",
+    "graph_core/kaos_graph.c": "fc3e63bff1d5fa615fddd9e2b931274a0f610e19caa608dceffea6f256ceecac",
+    "graph_core/include/kaos_predicate.h": "da0a6b6e1281f32d604a0347daa556f0729f32e17e7bb8ca3bfa04be98d06221",
+    "graph_core/kaos_predicate.c": "f578bfd625987922f8dca4eeec43ee329e129eec12ea98f8c4412d27f27e9d2e",
+    "graph_core/CMakeLists.txt": "e3e2ab399c71f6901b6d3a16acb58ea06a0457725bac7a9f6d36a94ef808a702",
+    "verification/graph_core/CMakeLists.txt": "a709b36c69e4718a4daef9e41e28d00931da4eab8864c233fcfabf72cde21d8d",
+    "verification/graph_core/tests/core_test.c": "9fd73b5b7b853f88344205d7dc067f0bbddbd6544f20092f37805d39458e1788",
+    "verification/graph_core/evidence.csv": "ca5dfdf6b821a6c2a3553c13ed415907bf8102520ab6fd67073121f3e64a1419",
+    "verification/graph_core/espidf/CMakeLists.txt": "9f119b4e4443b2259632660682166d1d37208f26ba9ebb103adbf26cfaf895f0",
+    "verification/graph_core/espidf/main/CMakeLists.txt": "b39ad4a9184606511a5665e8814dd765b18e25d3e3c2f8652a38e90939ed9a5d",
+    "verification/graph_core/espidf/main/main.c": "08c2cd3e342115adf380c35b99eec45964108228a374705518fe2e7dbad3a382",
+    "docs/graph_operation_implementation_plan.md": "54ea7259d967a1e71971f589ed8ea838929f102296ca86b3a770d83860a1c0b3",
+    "docs/graph_operation_design_questions.md": "8055d51aa3bbbde7e90570547da572f1aaf3f46794a2027399ba66dc37bdc078",
+    "docs/graph_operation_test_plan.md": "5ce5c51a2198556f138aab08f565790638d5d75897bf8fe064826d1b536c726c"
+  },
+  "profile": {
+    "instance_slots": 2,
+    "operation_report_slots": 4,
+    "report_bytes_per_slot": 128,
+    "instance_resource_quota": "Fixed positive bytes supplied once at pool initialization; enforced by each lifetime ledger.",
+    "total_variable_resource_quota": "Supplied once at initialization; zero disables acceptance.",
+    "host_layout_bytes": {
+      "pool": 912,
+      "operation_record": 160,
+      "node": 120
+    },
+    "esp32_layout_bytes": {
+      "pool": 832,
+      "operation_record": 152,
+      "node": 104
+    },
+    "qualification": "Provisional fixed storage plus separate runtime byte budget; no workload capacity claim."
+  },
+  "design_comparison": "Separate stable instance slots from operation/report retention; two tables avoid a third report pool while permitting node release with retained duplicate/report state. Compared with combined all-lifetime slots and three separate pools.",
+  "host_foundations": {
+    "commands": [
+      "cmake -S verification/graph_core -B /tmp/kaos-admission-build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCORE_SANITIZE=ON",
+      "cmake --build /tmp/kaos-admission-build",
+      "ctest --test-dir /tmp/kaos-admission-build --output-on-failure"
+    ],
+    "result": "1/1 tests passed; seven unchanged foundation groups with ASan/UBSan/LeakSanitizer.",
+    "duration_seconds": 0.03
+  },
+  "standalone_sanitizer_checks": {
+    "commands": [
+      "cc -D_XOPEN_SOURCE=700 -std=c11 -Wall -Wextra -Wpedantic -Werror -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -pthread -Igraph_core/include /tmp/kaos-admission-check.c graph_core/kaos_admission.c graph_core/kaos_graph.c -o /tmp/kaos-admission-check",
+      "/usr/bin/time -p /tmp/kaos-admission-check"
+    ],
+    "result": "Passed; no sanitizer findings.",
+    "duration_seconds": 0.12,
+    "unchanged_memory_rejection_checks": 10,
+    "two_caller_races": 200,
+    "schedule": "Explicit lifecycle barriers and two POSIX threads synchronized at a barrier then serialized by the required caller mutex. Race winner is intentionally unspecified.",
+    "cases": [
+      "Last byte/report capacity and same-ID contention; exactly one accepted contender.",
+      "Changed invalid allowance discarded for retained IDs without changing deadlines or state.",
+      "Open owner, active access, unaccepted completion and unreleased allocation each block node release.",
+      "Node release keeps report capacity occupied; forgetting cannot retire a live node record.",
+      "Same physical node slot reused with preserved access tickets; stale callbacks cannot complete new work.",
+      "SIZE_MAX byte accounting; zero/MAX IDs; strict deadline boundary and overflow; exhausted lifetime tickets.",
+      "Explicit forgotten-history readmission characterizes Q05, not stronger no-resurrection conformance."
+    ]
+  },
+  "independent_state_oracle": {
+    "command": "/usr/bin/time -p python3 /tmp/kaos-admission-model-check.py",
+    "algorithm": "Independent ownership/retention map checked against the actual C library; compares transitions and global accounting after each decision.",
+    "seed": 20261007,
+    "generated_sequences": 150,
+    "decisions_per_sequence": 250,
+    "competing_caller_orders": 6,
+    "result": "Passed; no discrepancies.",
+    "duration_seconds": 1.47,
+    "counts": {
+      "admissions": 14206,
+      "accepted": 438,
+      "duplicate": 2347,
+      "invalid": 3916,
+      "full": 7505,
+      "releases": 4835,
+      "forgets": 4696,
+      "unchanged_memory_checks": 37201,
+      "unrelated_state_checks": 23737,
+      "stale_action_checks": 14430,
+      "invariant_checks": 30606
+    },
+    "retirement_policy": "The oracle supplies the documented upstream Q06 eligibility precondition; it does not validate a storage-ACK policy."
+  },
+  "static_analysis": {
+    "command": "cc -std=c11 -Wall -Wextra -Wpedantic -Werror -O2 -fanalyzer -fstack-usage -Igraph_core/include -c graph_core/kaos_admission.c -o /tmp/kaos-admission-host.o",
+    "result": "Passed with GCC 13.3.0.",
+    "object_text_bytes": 1171,
+    "compiler_stack_bytes": {
+      "init": 32,
+      "find": 8,
+      "admit": 64,
+      "release_node": 32,
+      "forget": 8
+    }
+  },
+  "esp32": {
+    "commands": [
+      ". /home/karolina/esp/esp-idf/export.sh",
+      "cmake --build /tmp/kaos-verification-esp32"
+    ],
+    "result": "Shared component compiled and foundation firmware linked; no hardware execution.",
+    "idf_revision": "8c750b088c7cd857d079c0eeb495da199b359461",
+    "compiler": "xtensa-esp32-elf-gcc 14.2.0",
+    "sdkconfig_sha256": "b9e0e87c067f0d67bd34775d7eb903671dfdc4426e282239a6f000dffbdd3aed",
+    "object_text_bytes": 775,
+    "compiler_stack_bytes": {
+      "init": 32,
+      "find": 32,
+      "admit": 64,
+      "release_node": 32,
+      "forget": 32
+    },
+    "measurement": "Same ESP-IDF compile flags plus -fstack-usage; static layout measured from sizeof-sized symbols. Stack numbers are compiler frame estimates, excluding callees, not measured task high-water use.",
+    "limitation": "Unchanged foundation fixture does not call the new API; component compilation/linking does not establish target admission behavior."
+  },
+  "temporary_artifact_sha256": {
+    "/tmp/kaos-admission-check.c": "1003cf1eb8eb218393f1f2436ac432b8faa5d8db131bf0f4ae3150605850503b",
+    "/tmp/kaos-admission-check": "f681e6b2b80950fa7314b8e2276f9f8452e901477e20720eb02d645b4880b876",
+    "/tmp/kaos-admission-model-check.py": "1779666cf00b39cee27a82c306f2707299b4c073cc545a3a5a9e4230cb265f9f",
+    "/tmp/kaos-admission-model-check.log": "c2e4f7979081b5ecf0e004c355107cf7ae37656c27b379a0fd21b2f91413e3bd",
+    "/tmp/kaos-admission-host.o": "32d5d870845a4c55cfd1a77a3b720618817382a17df4a44c3343c2dbdad66e8f",
+    "/tmp/kaos-admission-host.su": "6573a9801b0b86661d6dce0c30021133444f1ae97776927ecfcac73207e0c2b9",
+    "/tmp/kaos-admission-esp32.o": "025e14af7d76b82dda1277b45e9d904e4dfd19c4577af4f21c2c58162ea67d6b",
+    "/tmp/kaos-admission-esp32.su": "eb3b0d6f997d2dc01d6ab38e7246efa8cf865f62960c1a5ac2152ffea059604b",
+    "/tmp/kaos-admission-esp32-command.json": "d687bb6eff456ab43d8fda602efe6ea66d9f9d83514e9fae56e36c5b1e440318",
+    "/tmp/kaos-admission-esp32.log": "ba6e84ca74a4222561467e248cf2b02165cc8a80b12c4c9543fbc14dcb056ea7",
+    "/tmp/kaos-admission-size.c": "7502642c59ca3d2c0fa11d1dfce3b807847edd3a457ad5ca44fd59d27690866c",
+    "/tmp/kaos-admission-size.o": "eb8b3a38c60f817cf40bde724d46d0344157caf3dc83f4782b5d8f2facfe9fba",
+    "/tmp/kaos-admission-build/Testing/Temporary/LastTest.log": "56d5353bbe6294a36e4404bae54e5a1f22c933963f066d7158210d018dc40c99"
+  },
+  "test_preservation": "25 existing test/model/ESP fixture files matched pre-turn hashes. No repository test or model file added or changed.",
+  "sandbox_note": "Approved sanitizer runs outside the sandbox avoided LeakSanitizer process-tracing incompatibility.",
+  "observation": "Injected local integer timestamps; no clock reads, network traffic, actual runtime allocations, or protocol outcomes. State invariants observed directly with no telemetry-loss channel.",
+  "limits": [
+    "Authority, full request/schema validation, complete empty incidence/fencing and report/revision qualification remain upstream/pending before managed-work integration.",
+    "Reserved report bytes are storage only, not a self-contained result or wire schema.",
+    "Conservative retention prevents forgetting an operation record while its node is live; ACK/pressure-eviction policy and independent live-node report retirement remain pending.",
+    "Node release enforces tracked resources/completions; external service associations remain caller obligations.",
+    "Temporary check sources are not registered repository regression tests and /tmp is not durable storage.",
+    "Hardware workload qualification and final Q14 formal verification remain pending."
+  ]
+}

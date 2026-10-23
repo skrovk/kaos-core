@@ -1,0 +1,239 @@
+TLC2 Version 2.19 of 08 August 2024 (rev: 5a47802)
+Running breadth-first search Model-Checking with fp 52 and seed 42 with 1 worker on 14 cores with 491MB heap and 64MB offheap memory [pid: 171752] (Linux 7.0.0-38-generic amd64, Ubuntu 21.0.12.1 x86_64, MSBDiskFPSet, DiskStateQueue).
+Parsing file /tmp/kaos-p3-node-witness/NodeRuntime.tla
+Parsing file /tmp/Naturals.tla
+Parsing file /tmp/FiniteSets.tla
+Parsing file /tmp/Sequences.tla
+Semantic processing of module Naturals
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module NodeRuntime
+Starting... (2026-10-09 17:40:02)
+Computing initial states...
+Finished computing initial states: 1 distinct state generated at 2026-10-09 17:40:02.
+Error: Invariant NoQueuedExitRace is violated.
+Error: The behavior up to this point is:
+State 1: <Initial predicate>
+/\ ordinary = 0
+/\ node = ( a :>
+      [ admitted |-> FALSE,
+        retained |-> FALSE,
+        phase |-> "idle",
+        ready |-> FALSE,
+        start |-> FALSE,
+        closing |-> FALSE,
+        initSent |-> FALSE,
+        initPending |-> FALSE,
+        success |-> FALSE,
+        additionDue |-> FALSE,
+        cleanupDue |-> FALSE,
+        cutoff |-> FALSE,
+        remove |-> FALSE,
+        dispose |-> FALSE,
+        held |-> FALSE,
+        charges |-> 0,
+        accesses |-> 0,
+        cleaned |-> FALSE ] )
+
+State 2: <Admit line 19, col 13 to line 21, col 33 of module NodeRuntime>
+/\ ordinary = 0
+/\ node = ( a :>
+      [ admitted |-> TRUE,
+        retained |-> TRUE,
+        phase |-> "idle",
+        ready |-> FALSE,
+        start |-> FALSE,
+        closing |-> FALSE,
+        initSent |-> FALSE,
+        initPending |-> FALSE,
+        success |-> FALSE,
+        additionDue |-> FALSE,
+        cleanupDue |-> FALSE,
+        cutoff |-> FALSE,
+        remove |-> FALSE,
+        dispose |-> FALSE,
+        held |-> FALSE,
+        charges |-> 0,
+        accesses |-> 0,
+        cleaned |-> FALSE ] )
+
+State 3: <Dispatch line 26, col 16 to line 30, col 36 of module NodeRuntime>
+/\ ordinary = 0
+/\ node = ( a :>
+      [ admitted |-> TRUE,
+        retained |-> TRUE,
+        phase |-> "queued",
+        ready |-> FALSE,
+        start |-> FALSE,
+        closing |-> FALSE,
+        initSent |-> FALSE,
+        initPending |-> FALSE,
+        success |-> FALSE,
+        additionDue |-> FALSE,
+        cleanupDue |-> FALSE,
+        cutoff |-> FALSE,
+        remove |-> FALSE,
+        dispose |-> FALSE,
+        held |-> TRUE,
+        charges |-> 2,
+        accesses |-> 0,
+        cleaned |-> FALSE ] )
+
+State 4: <BeginPrepare line 31, col 20 to line 33, col 40 of module NodeRuntime>
+/\ ordinary = 0
+/\ node = ( a :>
+      [ admitted |-> TRUE,
+        retained |-> TRUE,
+        phase |-> "preparing",
+        ready |-> FALSE,
+        start |-> FALSE,
+        closing |-> FALSE,
+        initSent |-> FALSE,
+        initPending |-> FALSE,
+        success |-> FALSE,
+        additionDue |-> FALSE,
+        cleanupDue |-> FALSE,
+        cutoff |-> FALSE,
+        remove |-> FALSE,
+        dispose |-> FALSE,
+        held |-> TRUE,
+        charges |-> 2,
+        accesses |-> 0,
+        cleaned |-> FALSE ] )
+
+State 5: <Prepared line 34, col 16 to line 36, col 36 of module NodeRuntime>
+/\ ordinary = 0
+/\ node = ( a :>
+      [ admitted |-> TRUE,
+        retained |-> TRUE,
+        phase |-> "prepared",
+        ready |-> FALSE,
+        start |-> FALSE,
+        closing |-> FALSE,
+        initSent |-> FALSE,
+        initPending |-> FALSE,
+        success |-> FALSE,
+        additionDue |-> FALSE,
+        cleanupDue |-> FALSE,
+        cutoff |-> FALSE,
+        remove |-> FALSE,
+        dispose |-> FALSE,
+        held |-> TRUE,
+        charges |-> 2,
+        accesses |-> 0,
+        cleaned |-> FALSE ] )
+
+State 6: <AuthorizeStart line 40, col 22 to line 43, col 42 of module NodeRuntime>
+/\ ordinary = 0
+/\ node = ( a :>
+      [ admitted |-> TRUE,
+        retained |-> TRUE,
+        phase |-> "prepared",
+        ready |-> TRUE,
+        start |-> TRUE,
+        closing |-> FALSE,
+        initSent |-> FALSE,
+        initPending |-> FALSE,
+        success |-> FALSE,
+        additionDue |-> FALSE,
+        cleanupDue |-> FALSE,
+        cutoff |-> FALSE,
+        remove |-> FALSE,
+        dispose |-> FALSE,
+        held |-> TRUE,
+        charges |-> 2,
+        accesses |-> 0,
+        cleaned |-> FALSE ] )
+
+State 7: <BeginRun line 44, col 16 to line 47, col 36 of module NodeRuntime>
+/\ ordinary = 0
+/\ node = ( a :>
+      [ admitted |-> TRUE,
+        retained |-> TRUE,
+        phase |-> "configuring",
+        ready |-> TRUE,
+        start |-> TRUE,
+        closing |-> FALSE,
+        initSent |-> FALSE,
+        initPending |-> FALSE,
+        success |-> FALSE,
+        additionDue |-> FALSE,
+        cleanupDue |-> FALSE,
+        cutoff |-> FALSE,
+        remove |-> FALSE,
+        dispose |-> FALSE,
+        held |-> TRUE,
+        charges |-> 2,
+        accesses |-> 0,
+        cleaned |-> FALSE ] )
+
+State 8: <EnterMain line 48, col 17 to line 50, col 37 of module NodeRuntime>
+/\ ordinary = 0
+/\ node = ( a :>
+      [ admitted |-> TRUE,
+        retained |-> TRUE,
+        phase |-> "main",
+        ready |-> TRUE,
+        start |-> TRUE,
+        closing |-> FALSE,
+        initSent |-> FALSE,
+        initPending |-> FALSE,
+        success |-> FALSE,
+        additionDue |-> FALSE,
+        cleanupDue |-> FALSE,
+        cutoff |-> FALSE,
+        remove |-> FALSE,
+        dispose |-> FALSE,
+        held |-> TRUE,
+        charges |-> 2,
+        accesses |-> 0,
+        cleaned |-> FALSE ] )
+
+State 9: <EmitInit line 51, col 16 to line 54, col 36 of module NodeRuntime>
+/\ ordinary = 0
+/\ node = ( a :>
+      [ admitted |-> TRUE,
+        retained |-> TRUE,
+        phase |-> "main",
+        ready |-> TRUE,
+        start |-> TRUE,
+        closing |-> FALSE,
+        initSent |-> TRUE,
+        initPending |-> TRUE,
+        success |-> FALSE,
+        additionDue |-> FALSE,
+        cleanupDue |-> FALSE,
+        cutoff |-> FALSE,
+        remove |-> FALSE,
+        dispose |-> FALSE,
+        held |-> TRUE,
+        charges |-> 2,
+        accesses |-> 0,
+        cleaned |-> FALSE ] )
+
+State 10: <Exit line 64, col 12 to line 66, col 32 of module NodeRuntime>
+/\ ordinary = 0
+/\ node = ( a :>
+      [ admitted |-> TRUE,
+        retained |-> TRUE,
+        phase |-> "exited",
+        ready |-> TRUE,
+        start |-> TRUE,
+        closing |-> FALSE,
+        initSent |-> TRUE,
+        initPending |-> TRUE,
+        success |-> FALSE,
+        additionDue |-> FALSE,
+        cleanupDue |-> FALSE,
+        cutoff |-> FALSE,
+        remove |-> FALSE,
+        dispose |-> FALSE,
+        held |-> TRUE,
+        charges |-> 2,
+        accesses |-> 0,
+        cleaned |-> FALSE ] )
+
+880 states generated, 302 distinct states found, 78 states left on queue.
+The depth of the complete state graph search is 10.
+The average outdegree of the complete state graph is 1 (minimum is 0, the maximum 4 and the 95th percentile is 3).
+Finished in 01s at (2026-10-09 17:40:02)

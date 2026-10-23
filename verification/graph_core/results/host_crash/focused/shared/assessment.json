@@ -1,0 +1,26 @@
+{
+  "status": "passed",
+  "crashed_device": 2,
+  "active_instances_before_crash": [
+    0,
+    1
+  ],
+  "removal_report": [
+    4,
+    8,
+    3,
+    1,
+    11,
+    3,
+    24,
+    [
+      56,
+      56,
+      136,
+      56,
+      136
+    ]
+  ],
+  "retained_incidence": 2,
+  "scope": "positive shared-host crash and unresolved cleanup, not complete trace or recovery"
+}

@@ -1,0 +1,28 @@
+Internal ctest changing into directory: /tmp/kaos-p4-session/four
+Test project /tmp/kaos-p4-session/four
+      Start  1: graph_p4_capacity
+ 1/11 Test  #1: graph_p4_capacity ................   Passed    3.11 sec
+      Start  2: graph_p5_capacity
+ 2/11 Test  #2: graph_p5_capacity ................   Passed    3.12 sec
+      Start  3: graph_p5
+ 3/11 Test  #3: graph_p5 .........................   Passed    0.04 sec
+      Start  4: graph_p6
+ 4/11 Test  #4: graph_p6 .........................   Passed    0.03 sec
+      Start  5: graph_p6_admission
+ 5/11 Test  #5: graph_p6_admission ...............   Passed    0.02 sec
+      Start  6: graph_p6_control
+ 6/11 Test  #6: graph_p6_control .................   Passed    0.02 sec
+      Start  7: graph_p7
+ 7/11 Test  #7: graph_p7 .........................   Passed    0.06 sec
+      Start  8: graph_p7_control
+ 8/11 Test  #8: graph_p7_control .................   Passed    0.02 sec
+      Start  9: graph_p7_lifecycle
+ 9/11 Test  #9: graph_p7_lifecycle ...............   Passed    0.02 sec
+      Start 10: graph_p6_capacity
+10/11 Test #10: graph_p6_capacity ................   Passed    0.14 sec
+      Start 11: graph_p7_capacity
+11/11 Test #11: graph_p7_capacity ................   Passed    0.13 sec
+
+100% tests passed, 0 tests failed out of 11
+
+Total Test time (real) =   6.73 sec

@@ -1,0 +1,254 @@
+Start testing: Oct 12 23:08 CEST
+----------------------------------------------------------
+1/12 Testing: graph_p4_capacity
+1/12 Test: graph_p4_capacity
+Command: "/tmp/kaos-p4-session/four/graph_p4_capacity" "/tmp/kaos-p4-session/four/capacity.wasm"
+Directory: /tmp/kaos-p4-session/four
+"graph_p4_capacity" start time: Oct 12 23:08 CEST
+Output:
+----------------------------------------------------------
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=37368 endpoints=33248 edges=2904 nodes=232 arena=49152 artifact=1124 native_stack=262144
+capacity node=0 puts=1804 gets=1772 full=44 guest_validated=1772
+capacity node=1 puts=1944 gets=1788 full=48 guest_validated=1788
+capacity node=2 puts=1921 gets=1889 full=52 guest_validated=1889
+capacity node=3 puts=1936 gets=1892 full=52 guest_validated=1892
+capacity deliveries=7370
+capacity endpoints_reclaimed unread_notifications=32
+capacity cycle=0 reservations=0
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=37368 endpoints=33248 edges=2904 nodes=232 arena=49152 artifact=1124 native_stack=262144
+capacity node=0 puts=1792 gets=1760 full=3 guest_validated=1760
+capacity node=1 puts=1785 gets=1745 full=4 guest_validated=1745
+capacity node=2 puts=1823 gets=1763 full=0 guest_validated=1763
+capacity node=3 puts=1816 gets=1776 full=4 guest_validated=1776
+capacity deliveries=7068
+capacity endpoints_reclaimed unread_notifications=32
+capacity cycle=1 reservations=0
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=37368 endpoints=33248 edges=2904 nodes=232 arena=49152 artifact=1124 native_stack=262144
+capacity node=0 puts=1872 gets=1831 full=48 guest_validated=1831
+capacity node=1 puts=1872 gets=1836 full=48 guest_validated=1836
+capacity node=2 puts=1867 gets=1831 full=48 guest_validated=1831
+capacity node=3 puts=1857 gets=1817 full=48 guest_validated=1817
+capacity deliveries=7343
+capacity endpoints_reclaimed unread_notifications=32
+capacity cycle=2 reservations=0
+P4 capacity PASS: four WAMR nodes, eight endpoints each, 32 full queues, copied traffic and full reclamation
+<end of output>
+Test time =   3.10 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p4_capacity" end time: Oct 12 23:08 CEST
+"graph_p4_capacity" time elapsed: 00:00:03
+----------------------------------------------------------
+
+2/12 Testing: graph_p5_capacity
+2/12 Test: graph_p5_capacity
+Command: "/tmp/kaos-p4-session/four/graph_p5_capacity" "/tmp/kaos-p4-session/four/capacity.wasm"
+Directory: /tmp/kaos-p4-session/four
+"graph_p5_capacity" start time: Oct 12 23:08 CEST
+Output:
+----------------------------------------------------------
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=37368 endpoints=33248 edges=2904 nodes=232 arena=49152 artifact=1124 native_stack=262144
+capacity node=0 puts=1577 gets=1545 full=47 guest_validated=1543
+capacity node=1 puts=1664 gets=1556 full=47 guest_validated=1553
+capacity node=2 puts=1652 gets=1607 full=48 guest_validated=1603
+capacity node=3 puts=1670 gets=1626 full=50 guest_validated=1625
+capacity deliveries=6366
+P5 capacity cycle=0 reservations=0
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=37368 endpoints=33248 edges=2904 nodes=232 arena=49152 artifact=1124 native_stack=262144
+capacity node=0 puts=1455 gets=1410 full=47 guest_validated=1408
+capacity node=1 puts=1425 gets=1382 full=42 guest_validated=1382
+capacity node=2 puts=1447 gets=1361 full=46 guest_validated=1361
+capacity node=3 puts=1482 gets=1384 full=44 guest_validated=1382
+capacity deliveries=5570
+P5 capacity cycle=1 reservations=0
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=37368 endpoints=33248 edges=2904 nodes=232 arena=49152 artifact=1124 native_stack=262144
+capacity node=0 puts=1612 gets=1572 full=38 guest_validated=1560
+capacity node=1 puts=1629 gets=1573 full=45 guest_validated=1569
+capacity node=2 puts=1652 gets=1595 full=40 guest_validated=1590
+capacity node=3 puts=1628 gets=1592 full=44 guest_validated=1584
+capacity deliveries=6369
+P5 capacity cycle=2 reservations=0
+P5 capacity PASS: four WAMR nodes, eight initial channels, full queues and reclamation
+<end of output>
+Test time =   3.11 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p5_capacity" end time: Oct 12 23:08 CEST
+"graph_p5_capacity" time elapsed: 00:00:03
+----------------------------------------------------------
+
+3/12 Testing: graph_p5
+3/12 Test: graph_p5
+Command: "/tmp/kaos-p4-session/four/graph_p5_test"
+Directory: /tmp/kaos-p4-session/four
+"graph_p5" start time: Oct 12 23:08 CEST
+Output:
+----------------------------------------------------------
+P5: Boolean gates, independent channels, startup races, optional deadlines and cleanup passed
+<end of output>
+Test time =   0.05 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p5" end time: Oct 12 23:08 CEST
+"graph_p5" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/12 Testing: graph_host_control
+4/12 Test: graph_host_control
+Command: "/tmp/kaos-p4-session/four/graph_host_control_test"
+Directory: /tmp/kaos-p4-session/four
+"graph_host_control" start time: Oct 12 23:08 CEST
+Output:
+----------------------------------------------------------
+management exchange: late closure, stale effects and exhaustion passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_host_control" end time: Oct 12 23:08 CEST
+"graph_host_control" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/12 Testing: graph_p6
+5/12 Test: graph_p6
+Command: "/tmp/kaos-p4-session/four/graph_p6_test"
+Directory: /tmp/kaos-p4-session/four
+"graph_p6" start time: Oct 12 23:08 CEST
+Output:
+----------------------------------------------------------
+P6 full removal and overlapping observers passed
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p6" end time: Oct 12 23:08 CEST
+"graph_p6" time elapsed: 00:00:00
+----------------------------------------------------------
+
+6/12 Testing: graph_p6_admission
+6/12 Test: graph_p6_admission
+Command: "/tmp/kaos-p4-session/four/graph_p6_admission_test"
+Directory: /tmp/kaos-p4-session/four
+"graph_p6_admission" start time: Oct 12 23:08 CEST
+Output:
+----------------------------------------------------------
+P6 removal admission passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p6_admission" end time: Oct 12 23:08 CEST
+"graph_p6_admission" time elapsed: 00:00:00
+----------------------------------------------------------
+
+7/12 Testing: graph_p6_control
+7/12 Test: graph_p6_control
+Command: "/tmp/kaos-p4-session/four/graph_p6_control_test"
+Directory: /tmp/kaos-p4-session/four
+"graph_p6_control" start time: Oct 12 23:08 CEST
+Output:
+----------------------------------------------------------
+P6 control checks passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p6_control" end time: Oct 12 23:08 CEST
+"graph_p6_control" time elapsed: 00:00:00
+----------------------------------------------------------
+
+8/12 Testing: graph_p7
+8/12 Test: graph_p7
+Command: "/tmp/kaos-p4-session/four/graph_p7_test"
+Directory: /tmp/kaos-p4-session/four
+"graph_p7" start time: Oct 12 23:08 CEST
+Output:
+----------------------------------------------------------
+Q05 characterization: forgotten failed ADD admitted again and charged node capacity
+P7 retention: exact ACK, late closure, oldest eligible eviction, pressure and churn passed
+<end of output>
+Test time =   0.05 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p7" end time: Oct 12 23:08 CEST
+"graph_p7" time elapsed: 00:00:00
+----------------------------------------------------------
+
+9/12 Testing: graph_p7_control
+9/12 Test: graph_p7_control
+Command: "/tmp/kaos-p4-session/four/graph_p7_control_test"
+Directory: /tmp/kaos-p4-session/four
+"graph_p7_control" start time: Oct 12 23:08 CEST
+Output:
+----------------------------------------------------------
+P7 control: designated recipients, exact ACK and missing/history distinction passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p7_control" end time: Oct 12 23:08 CEST
+"graph_p7_control" time elapsed: 00:00:00
+----------------------------------------------------------
+
+10/12 Testing: graph_p7_lifecycle
+10/12 Test: graph_p7_lifecycle
+Command: "/tmp/kaos-p4-session/four/graph_p7_lifecycle_test"
+Directory: /tmp/kaos-p4-session/four
+"graph_p7_lifecycle" start time: Oct 12 23:08 CEST
+Output:
+----------------------------------------------------------
+Q05 characterization: retired removal command recreated its owner record; old callback rejected
+P7 lifecycle: optional ownership, closure preservation and owner delivery passed
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p7_lifecycle" end time: Oct 12 23:08 CEST
+"graph_p7_lifecycle" time elapsed: 00:00:00
+----------------------------------------------------------
+
+11/12 Testing: graph_p6_capacity
+11/12 Test: graph_p6_capacity
+Command: "/tmp/kaos-p4-session/four/graph_p6_capacity" "/tmp/kaos-p4-session/four/capacity.wasm"
+Directory: /tmp/kaos-p4-session/four
+"graph_p6_capacity" start time: Oct 12 23:08 CEST
+Output:
+----------------------------------------------------------
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=37368 endpoints=33248 edges=2904 nodes=232 arena=49152 artifact=1124 native_stack=262144
+P6 capacity cycle=0 reservations=0
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=37368 endpoints=33248 edges=2904 nodes=232 arena=49152 artifact=1124 native_stack=262144
+P6 capacity cycle=1 reservations=0
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=37368 endpoints=33248 edges=2904 nodes=232 arena=49152 artifact=1124 native_stack=262144
+P6 capacity cycle=2 reservations=0
+P6 capacity PASS: four WAMR nodes, overlapping full removals and occupied queues
+<end of output>
+Test time =   0.13 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p6_capacity" end time: Oct 12 23:08 CEST
+"graph_p6_capacity" time elapsed: 00:00:00
+----------------------------------------------------------
+
+12/12 Testing: graph_p7_capacity
+12/12 Test: graph_p7_capacity
+Command: "/tmp/kaos-p4-session/four/graph_p7_capacity" "/tmp/kaos-p4-session/four/capacity.wasm"
+Directory: /tmp/kaos-p4-session/four
+"graph_p7_capacity" start time: Oct 12 23:08 CEST
+Output:
+----------------------------------------------------------
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=37368 endpoints=33248 edges=2904 nodes=232 arena=49152 artifact=1124 native_stack=262144
+P7 capacity cycle=0 reservations=0
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=37368 endpoints=33248 edges=2904 nodes=232 arena=49152 artifact=1124 native_stack=262144
+P7 capacity cycle=1 reservations=0
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=37368 endpoints=33248 edges=2904 nodes=232 arena=49152 artifact=1124 native_stack=262144
+P7 capacity cycle=2 reservations=0
+P7 capacity PASS: live ACKs, later evidence, pressure eviction and full reclamation
+<end of output>
+Test time =   0.14 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p7_capacity" end time: Oct 12 23:08 CEST
+"graph_p7_capacity" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 12 23:08 CEST

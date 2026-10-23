@@ -1,0 +1,1 @@
+budget-before: verification/graph_core/tests/wamr_budget_test.c:47: main: Assertion `result.prepared == (i == 2)' failed.

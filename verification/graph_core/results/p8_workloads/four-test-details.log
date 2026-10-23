@@ -1,0 +1,300 @@
+Start testing: Oct 20 11:34 CEST
+----------------------------------------------------------
+1/14 Testing: graph_p8_workloads
+1/14 Test: graph_p8_workloads
+Command: "/usr/bin/cmake" "-E" "env" "KAOS_WORKLOAD_HOST=/tmp/kaos-refactor-four/core/kaos_host" "KAOS_WORKLOAD_GUESTS=/tmp/kaos-refactor-four" "KAOS_WORKLOAD_FOUR=1" "/home/karolina/.local/bin/uv" "--directory" "/home/karolina/Research/Code/kaos_core/verification/graph_core/../../../sim_env" "run" "--offline" "python" "-m" "unittest" "discover" "-s" "tests" "-p" "test_graph_workloads.py" "-v"
+Directory: /tmp/kaos-refactor-four
+"graph_p8_workloads" start time: Oct 20 11:34 CEST
+Output:
+----------------------------------------------------------
+test_complete_trace_without_samples_is_failure (test_graph_workloads.TraceTests.test_complete_trace_without_samples_is_failure) ... ok
+test_corrupt_payload_fails_even_with_complete_trace (test_graph_workloads.TraceTests.test_corrupt_payload_fails_even_with_complete_trace) ... ok
+test_missing_summary_gap_or_drop_is_inconclusive (test_graph_workloads.TraceTests.test_missing_summary_gap_or_drop_is_inconclusive) ... ok
+test_uncorrelated_get_is_rejected (test_graph_workloads.TraceTests.test_uncorrelated_get_is_rejected) ... ok
+test_zero_length_success_is_preserved (test_graph_workloads.TraceTests.test_zero_length_success_is_preserved) ... ok
+test_colocated_feedback (test_graph_workloads.WorkloadProcessTests.test_colocated_feedback) ... ok
+test_colocated_pipeline_observes_local_gets (test_graph_workloads.WorkloadProcessTests.test_colocated_pipeline_observes_local_gets) ... ok
+test_distributed_pipeline_replaces_transform_with_fresh_identity (test_graph_workloads.WorkloadProcessTests.test_distributed_pipeline_replaces_transform_with_fresh_identity) ... ok
+test_pipeline_outage_fails_sample_requirement (test_graph_workloads.WorkloadProcessTests.test_pipeline_outage_fails_sample_requirement) ... ok
+test_remote_feedback_with_asymmetric_loss_and_delayed_preparation (test_graph_workloads.WorkloadProcessTests.test_remote_feedback_with_asymmetric_loss_and_delayed_preparation) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 2.907s
+
+OK
+<end of output>
+Test time =   3.33 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p8_workloads" end time: Oct 20 11:34 CEST
+"graph_p8_workloads" time elapsed: 00:00:03
+----------------------------------------------------------
+
+2/14 Testing: graph_p4_capacity
+2/14 Test: graph_p4_capacity
+Command: "/tmp/kaos-refactor-four/graph_p4_capacity" "/tmp/kaos-refactor-four/capacity.wasm"
+Directory: /tmp/kaos-refactor-four
+"graph_p4_capacity" start time: Oct 20 11:34 CEST
+Output:
+----------------------------------------------------------
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=37368 endpoints=33248 edges=2904 nodes=232 arena=49152 artifact=1124 native_stack=262144
+capacity node=0 puts=1760 gets=1728 full=47 guest_validated=1728
+capacity node=1 puts=1872 gets=1744 full=50 guest_validated=1744
+capacity node=2 puts=1872 gets=1835 full=43 guest_validated=1835
+capacity node=3 puts=1880 gets=1832 full=44 guest_validated=1832
+capacity deliveries=7167
+capacity endpoints_reclaimed unread_notifications=31
+capacity cycle=0 reservations=0
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=37368 endpoints=33248 edges=2904 nodes=232 arena=49152 artifact=1124 native_stack=262144
+capacity node=0 puts=1775 gets=1744 full=46 guest_validated=1744
+capacity node=1 puts=1780 gets=1732 full=44 guest_validated=1732
+capacity node=2 puts=1740 gets=1708 full=44 guest_validated=1708
+capacity node=3 puts=1793 gets=1717 full=44 guest_validated=1717
+capacity deliveries=6933
+capacity endpoints_reclaimed unread_notifications=30
+capacity cycle=1 reservations=0
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=37368 endpoints=33248 edges=2904 nodes=232 arena=49152 artifact=1124 native_stack=262144
+capacity node=0 puts=1748 gets=1715 full=44 guest_validated=1709
+capacity node=1 puts=1796 gets=1720 full=48 guest_validated=1720
+capacity node=2 puts=1801 gets=1748 full=44 guest_validated=1744
+capacity node=3 puts=1808 gets=1768 full=43 guest_validated=1761
+capacity deliveries=6980
+capacity endpoints_reclaimed unread_notifications=31
+capacity cycle=2 reservations=0
+P4 capacity PASS: four WAMR nodes, eight endpoints each, 32 full queues, copied traffic and full reclamation
+<end of output>
+Test time =   3.11 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p4_capacity" end time: Oct 20 11:34 CEST
+"graph_p4_capacity" time elapsed: 00:00:03
+----------------------------------------------------------
+
+3/14 Testing: graph_p5_capacity
+3/14 Test: graph_p5_capacity
+Command: "/tmp/kaos-refactor-four/graph_p5_capacity" "/tmp/kaos-refactor-four/capacity.wasm"
+Directory: /tmp/kaos-refactor-four
+"graph_p5_capacity" start time: Oct 20 11:34 CEST
+Output:
+----------------------------------------------------------
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=37368 endpoints=33248 edges=2904 nodes=232 arena=49152 artifact=1124 native_stack=262144
+capacity node=0 puts=1488 gets=1456 full=40 guest_validated=1456
+capacity node=1 puts=1604 gets=1463 full=46 guest_validated=1463
+capacity node=2 puts=1612 gets=1556 full=41 guest_validated=1556
+capacity node=3 puts=1613 gets=1581 full=49 guest_validated=1581
+capacity deliveries=6081
+P5 capacity cycle=0 reservations=0
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=37368 endpoints=33248 edges=2904 nodes=232 arena=49152 artifact=1124 native_stack=262144
+capacity node=0 puts=1622 gets=1590 full=46 guest_validated=1590
+capacity node=1 puts=1648 gets=1576 full=47 guest_validated=1576
+capacity node=2 puts=1630 gets=1598 full=49 guest_validated=1598
+capacity node=3 puts=1647 gets=1589 full=48 guest_validated=1589
+capacity deliveries=6389
+P5 capacity cycle=1 reservations=0
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=37368 endpoints=33248 edges=2904 nodes=232 arena=49152 artifact=1124 native_stack=262144
+capacity node=0 puts=1472 gets=1395 full=46 guest_validated=1395
+capacity node=1 puts=1488 gets=1421 full=45 guest_validated=1421
+capacity node=2 puts=1484 gets=1424 full=45 guest_validated=1424
+capacity node=3 puts=1435 gets=1383 full=45 guest_validated=1383
+capacity deliveries=5654
+P5 capacity cycle=2 reservations=0
+P5 capacity PASS: four WAMR nodes, eight initial channels, full queues and reclamation
+<end of output>
+Test time =   3.11 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p5_capacity" end time: Oct 20 11:34 CEST
+"graph_p5_capacity" time elapsed: 00:00:03
+----------------------------------------------------------
+
+4/14 Testing: graph_p5
+4/14 Test: graph_p5
+Command: "/tmp/kaos-refactor-four/graph_p5_test"
+Directory: /tmp/kaos-refactor-four
+"graph_p5" start time: Oct 20 11:34 CEST
+Output:
+----------------------------------------------------------
+P5: Boolean gates, independent channels, startup races, optional deadlines and cleanup passed
+<end of output>
+Test time =   0.05 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p5" end time: Oct 20 11:34 CEST
+"graph_p5" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/14 Testing: graph_admission_reuse
+5/14 Test: graph_admission_reuse
+Command: "/tmp/kaos-refactor-four/graph_admission_reuse_test"
+Directory: /tmp/kaos-refactor-four
+"graph_admission_reuse" start time: Oct 20 11:34 CEST
+Output:
+----------------------------------------------------------
+Retired observer reuse preserves binding validation
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_admission_reuse" end time: Oct 20 11:34 CEST
+"graph_admission_reuse" time elapsed: 00:00:00
+----------------------------------------------------------
+
+6/14 Testing: graph_host_control
+6/14 Test: graph_host_control
+Command: "/tmp/kaos-refactor-four/graph_host_control_test"
+Directory: /tmp/kaos-refactor-four
+"graph_host_control" start time: Oct 20 11:34 CEST
+Output:
+----------------------------------------------------------
+management exchange: late closure, stale effects and exhaustion passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_host_control" end time: Oct 20 11:34 CEST
+"graph_host_control" time elapsed: 00:00:00
+----------------------------------------------------------
+
+7/14 Testing: graph_p6
+7/14 Test: graph_p6
+Command: "/tmp/kaos-refactor-four/graph_p6_test"
+Directory: /tmp/kaos-refactor-four
+"graph_p6" start time: Oct 20 11:34 CEST
+Output:
+----------------------------------------------------------
+P6 full removal and overlapping observers passed
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p6" end time: Oct 20 11:34 CEST
+"graph_p6" time elapsed: 00:00:00
+----------------------------------------------------------
+
+8/14 Testing: graph_p6_admission
+8/14 Test: graph_p6_admission
+Command: "/tmp/kaos-refactor-four/graph_p6_admission_test"
+Directory: /tmp/kaos-refactor-four
+"graph_p6_admission" start time: Oct 20 11:34 CEST
+Output:
+----------------------------------------------------------
+P6 removal admission passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p6_admission" end time: Oct 20 11:34 CEST
+"graph_p6_admission" time elapsed: 00:00:00
+----------------------------------------------------------
+
+9/14 Testing: graph_p6_control
+9/14 Test: graph_p6_control
+Command: "/tmp/kaos-refactor-four/graph_p6_control_test"
+Directory: /tmp/kaos-refactor-four
+"graph_p6_control" start time: Oct 20 11:34 CEST
+Output:
+----------------------------------------------------------
+P6 control checks passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p6_control" end time: Oct 20 11:34 CEST
+"graph_p6_control" time elapsed: 00:00:00
+----------------------------------------------------------
+
+10/14 Testing: graph_p7
+10/14 Test: graph_p7
+Command: "/tmp/kaos-refactor-four/graph_p7_test"
+Directory: /tmp/kaos-refactor-four
+"graph_p7" start time: Oct 20 11:34 CEST
+Output:
+----------------------------------------------------------
+Q05 characterization: forgotten failed ADD admitted again and charged node capacity
+P7 retention: exact ACK, late closure, oldest eligible eviction, pressure and churn passed
+<end of output>
+Test time =   0.06 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p7" end time: Oct 20 11:34 CEST
+"graph_p7" time elapsed: 00:00:00
+----------------------------------------------------------
+
+11/14 Testing: graph_p7_control
+11/14 Test: graph_p7_control
+Command: "/tmp/kaos-refactor-four/graph_p7_control_test"
+Directory: /tmp/kaos-refactor-four
+"graph_p7_control" start time: Oct 20 11:34 CEST
+Output:
+----------------------------------------------------------
+P7 control: designated recipients, exact ACK and missing/history distinction passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p7_control" end time: Oct 20 11:34 CEST
+"graph_p7_control" time elapsed: 00:00:00
+----------------------------------------------------------
+
+12/14 Testing: graph_p7_lifecycle
+12/14 Test: graph_p7_lifecycle
+Command: "/tmp/kaos-refactor-four/graph_p7_lifecycle_test"
+Directory: /tmp/kaos-refactor-four
+"graph_p7_lifecycle" start time: Oct 20 11:34 CEST
+Output:
+----------------------------------------------------------
+Q05 characterization: retired removal command recreated its owner record; old callback rejected
+P7 lifecycle: optional ownership, closure preservation and owner delivery passed
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p7_lifecycle" end time: Oct 20 11:34 CEST
+"graph_p7_lifecycle" time elapsed: 00:00:00
+----------------------------------------------------------
+
+13/14 Testing: graph_p6_capacity
+13/14 Test: graph_p6_capacity
+Command: "/tmp/kaos-refactor-four/graph_p6_capacity" "/tmp/kaos-refactor-four/capacity.wasm"
+Directory: /tmp/kaos-refactor-four
+"graph_p6_capacity" start time: Oct 20 11:34 CEST
+Output:
+----------------------------------------------------------
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=37368 endpoints=33248 edges=2904 nodes=232 arena=49152 artifact=1124 native_stack=262144
+P6 capacity cycle=0 reservations=0
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=37368 endpoints=33248 edges=2904 nodes=232 arena=49152 artifact=1124 native_stack=262144
+P6 capacity cycle=1 reservations=0
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=37368 endpoints=33248 edges=2904 nodes=232 arena=49152 artifact=1124 native_stack=262144
+P6 capacity cycle=2 reservations=0
+P6 capacity PASS: four WAMR nodes, overlapping full removals and occupied queues
+<end of output>
+Test time =   0.14 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p6_capacity" end time: Oct 20 11:34 CEST
+"graph_p6_capacity" time elapsed: 00:00:00
+----------------------------------------------------------
+
+14/14 Testing: graph_p7_capacity
+14/14 Test: graph_p7_capacity
+Command: "/tmp/kaos-refactor-four/graph_p7_capacity" "/tmp/kaos-refactor-four/capacity.wasm"
+Directory: /tmp/kaos-refactor-four
+"graph_p7_capacity" start time: Oct 20 11:34 CEST
+Output:
+----------------------------------------------------------
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=37368 endpoints=33248 edges=2904 nodes=232 arena=49152 artifact=1124 native_stack=262144
+P7 capacity cycle=0 reservations=0
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=37368 endpoints=33248 edges=2904 nodes=232 arena=49152 artifact=1124 native_stack=262144
+P7 capacity cycle=1 reservations=0
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=37368 endpoints=33248 edges=2904 nodes=232 arena=49152 artifact=1124 native_stack=262144
+P7 capacity cycle=2 reservations=0
+P7 capacity PASS: live ACKs, later evidence, pressure eviction and full reclamation
+<end of output>
+Test time =   0.12 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p7_capacity" end time: Oct 20 11:34 CEST
+"graph_p7_capacity" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 20 11:34 CEST

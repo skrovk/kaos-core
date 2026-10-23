@@ -1,0 +1,27 @@
+[1/27] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_admission.c.o
+[2/27] Linking C static library core/libkaos_graph_core.a
+[3/27] Linking C executable graph_request_test
+[4/27] Linking C executable graph_core_test
+[5/27] Linking C executable graph_admission_test
+[6/27] Linking C executable graph_dynamic_binding_test
+[7/27] Linking C executable graph_report_test
+[8/27] Linking C executable graph_object_facts_test
+[9/27] Linking C executable graph_coap_server_test
+[10/27] Linking C executable graph_coap_test
+[11/27] Linking C executable graph_artifact_test
+[12/27] Linking C executable graph_control_test
+[13/27] Linking C executable graph_node_test
+[14/27] Linking C executable graph_endpoint_test
+[15/27] Linking C executable graph_p2_host_test
+[16/27] Linking C executable graph_channel_admission_test
+[17/27] Linking C executable graph_edge_test
+[18/27] Linking C executable graph_p6_test
+[19/27] Linking C executable graph_p5_test
+[20/27] Linking C executable graph_p6_control_test
+[21/27] Linking C executable graph_p6_admission_test
+[22/27] Linking C executable graph_p7_test
+[23/27] Linking C executable graph_p7_control_test
+[24/27] Linking C executable core/kaos_p2_host
+[25/27] Linking C executable graph_p7_lifecycle_test
+[26/27] Linking C executable core/kaos_p3_host
+[27/27] Linking C executable core/kaos_p4_host

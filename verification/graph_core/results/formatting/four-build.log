@@ -1,0 +1,125 @@
+[0/1] Re-running CMake...
+-- WAMR version: 2.4.1
+-- Build Configurations:
+     Build as target X86_64
+     Build for platform linux
+     CMAKE_BUILD_TYPE 
+     BUILD_SHARED_LIBS 
+     WAMR Interpreter enabled
+     Fast interpreter disabled
+     WAMR AOT disabled
+     WAMR Fast JIT disabled
+     WAMR LLVM ORC JIT disabled
+     Libc builtin disabled
+     Libc WASI disabled
+     Thread manager enabled
+     Multiple modules disabled
+     Hardware boundary check disabled
+     Wakeup of blocking operations enabled
+     GC performance profiling disabled
+     Write linear memory base addr to x86 GS register enabled
+     Shrunk memory enabled
+     Extended constant expression disabled
+-- About Wasm Proposals:
+     Always-on:
+       "Multi-value"
+       "Non-trapping float-to-int conversions"
+       "Sign-extension operators"
+       "WebAssembly C and C++ API"
+     Configurable. 0 is OFF. 1 is ON:
+       "Bulk Memory Operation" via WAMR_BUILD_BULK_MEMORY: 1
+       "Extended Constant Expressions" via WAMR_BUILD_EXTENDED_CONST_EXPR: 0
+       "Fixed-width SIMD" via WAMR_BUILD_SIMD: 0
+       "Garbage collection" via WAMR_BUILD_GC: 0
+       "Legacy Exception handling" via WAMR_BUILD_EXCE_HANDLING: 0
+       "Memory64" via WAMR_BUILD_MEMORY64: 0
+       "Multiple memories" via WAMR_BUILD_MULTI_MEMORY: 0
+       "Reference Types" via WAMR_BUILD_REF_TYPES: 0
+       "Reference-Typed Strings" via WAMR_BUILD_STRINGREF: 0
+       "Tail call" via WAMR_BUILD_TAIL_CALL: 0
+       "Threads" via WAMR_BUILD_SHARED_MEMORY: 0
+       "Typed Function References" via WAMR_BUILD_GC: 0
+     Unsupported (>= Phase4):
+       "Branch Hinting"
+       "Custom Annotation Syntax in the Text Format"
+       "Exception handling"
+       "Import/Export of Mutable Globals"
+       "JS String Builtins"
+       "Relaxed SIMD"
+
+-- Configuring done (0.2s)
+-- Generating done (0.0s)
+-- Build files have been written to: /tmp/kaos-refactor-four
+[1/73] Building C object CMakeFiles/graph_native_runtime_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/native_runtime_test.c.o
+[2/73] Building C object CMakeFiles/graph_native_removal_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/native_removal_test.c.o
+[3/73] Building C object CMakeFiles/graph_p4_capacity.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/p4_capacity.c.o
+[4/73] Building C object CMakeFiles/graph_runtime_phase_barrier_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/runtime_phase_barrier_test.c.o
+[5/73] Building C object CMakeFiles/graph_native_request_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/native_request_test.c.o
+[6/73] Building C object CMakeFiles/graph_lifecycle_barrier_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/lifecycle_barrier_test.c.o
+[7/73] Building C object CMakeFiles/graph_wamr_phase_barrier_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/wamr_phase_barrier_test.c.o
+[8/73] Building C object CMakeFiles/graph_workload_stalls.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/workload_stalls_test.c.o
+[9/73] Building C object CMakeFiles/graph_admission_reuse_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/admission_reuse_test.c.o
+[10/73] Building C object CMakeFiles/graph_host_transport_scheduling_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/host_transport_scheduling_test.c.o
+[11/73] Building C object CMakeFiles/graph_host_control_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/host_control_test.c.o
+[12/73] Building C object CMakeFiles/graph_p5_capacity.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/p5_capacity.c.o
+[13/73] Building C object CMakeFiles/graph_p5_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/p5_test.c.o
+[14/73] Building C object CMakeFiles/graph_p6_control_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/p6_control_test.c.o
+[15/73] Building C object CMakeFiles/graph_p6_admission_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/p6_admission_test.c.o
+[16/73] Building C object CMakeFiles/graph_p7_control_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/p7_control_test.c.o
+[17/73] Building C object CMakeFiles/graph_p6_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/p6_test.c.o
+[18/73] Building C object CMakeFiles/graph_p7_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/p7_test.c.o
+[19/73] Building C object CMakeFiles/graph_control_decoded_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/control_decoded_test.c.o
+[20/73] Building C object CMakeFiles/graph_wamr_startup_unwind_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/wamr_startup_unwind_test.c.o
+[21/73] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_graph.c.o
+[22/73] Building C object CMakeFiles/graph_p7_capacity.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/p7_capacity.c.o
+[23/73] Building C object CMakeFiles/graph_p6_capacity.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/p6_capacity.c.o
+[24/73] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_predicate.c.o
+[25/73] Building C object CMakeFiles/graph_p7_lifecycle_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/p7_lifecycle_test.c.o
+[26/73] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_report.c.o
+[27/73] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_request.c.o
+[28/73] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_coap.c.o
+[29/73] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_artifact.c.o
+[30/73] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_control.c.o
+[31/73] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_node.c.o
+[32/73] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_admission.c.o
+[33/73] Building C object core/CMakeFiles/kaos_graph_core.dir/ports/posix/clock.c.o
+[34/73] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_endpoint.c.o
+[35/73] Building C object core/CMakeFiles/kaos_host.dir/ports/posix/main.c.o
+[36/73] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_edge.c.o
+[37/73] Building C object core/CMakeFiles/kaos_graph_host.dir/host_udp.c.o
+[38/73] Linking C static library core/libkaos_graph_core.a
+[39/73] Building C object core/CMakeFiles/kaos_graph_host.dir/kaos_host.c.o
+[40/73] Linking C executable graph_runtime_phase_barrier_test
+[41/73] Building C object core/CMakeFiles/kaos_p3_host.dir/ports/posix/main.c.o
+[42/73] Linking C executable graph_native_request_test
+[43/73] Linking C executable graph_p5_test
+[44/73] Linking C executable graph_admission_reuse_test
+[45/73] Linking C executable graph_p6_admission_test
+[46/73] Linking C executable graph_host_control_test
+[47/73] Linking C executable graph_p6_test
+[48/73] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/thread_manager.c.o
+[49/73] Linking C executable graph_p7_test
+[50/73] Linking C executable graph_p7_control_test
+[51/73] Linking C executable graph_p6_control_test
+[52/73] Linking C executable graph_p7_lifecycle_test
+[53/73] Linking C executable graph_control_decoded_test
+[54/73] Building C object core/runtime/CMakeFiles/kaos_wamr.dir/profile.c.o
+[55/73] Building C object core/runtime/CMakeFiles/kaos_wamr.dir/native_fixture.c.o
+[56/73] Building C object core/runtime/CMakeFiles/kaos_wamr.dir/kaos_wamr.c.o
+[57/73] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/wasm_interp_classic.c.o
+[58/73] Linking C static library core/runtime/libkaos_wamr_engine.a
+[59/73] Linking C static library core/runtime/libkaos_wamr.a
+[60/73] Linking C executable graph_lifecycle_barrier_test
+[61/73] Linking C executable graph_p4_capacity
+[62/73] Linking C executable graph_native_runtime_test
+[63/73] Linking C executable graph_native_removal_test
+[64/73] Linking C executable graph_wamr_phase_barrier_test
+[65/73] Linking C executable graph_p5_capacity
+[66/73] Linking C executable graph_workload_stalls
+[67/73] Linking C executable graph_p6_capacity
+[68/73] Linking C static library core/libkaos_graph_host.a
+[69/73] Linking C executable graph_p7_capacity
+[70/73] Linking C executable graph_wamr_startup_unwind_test
+[71/73] Linking C executable core/kaos_host
+[72/73] Linking C executable graph_host_transport_scheduling_test
+[73/73] Linking C executable core/kaos_p3_host

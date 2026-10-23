@@ -1,0 +1,64 @@
+{
+  "host": {
+    "path": "/tmp/kaos-refactor-four/core/kaos_host",
+    "sha256": "77ffab9a938d6a9f52c34330520d9369bc63de3a4cfc7ae27bcb687339b9917a"
+  },
+  "python_sources": {
+    "/home/karolina/Research/Code/sim_env/sim_env/graph_collector.py": "e1a4d9cd017441aa4f75aae7b85bfc1f56f30c0b0ea25776d621615b16298054",
+    "/home/karolina/Research/Code/sim_env/sim_env/graph_evidence.py": "0eb34d1ef10dd4d44e47f258b4365cb5b0950aaf6ccf10d4cdfa145504f71614",
+    "/home/karolina/Research/Code/sim_env/sim_env/graph_protocol.py": "ec61153d4c7c402bc2732a801260d01d058511943e9573a7d8e158da78d9e1cd",
+    "/home/karolina/Research/Code/sim_env/sim_env/graph_relay.py": "76cbcb90c1a91a18b6702567c90605a20b0f334ff448619ee77b27d3edc2ef8b",
+    "/home/karolina/Research/Code/sim_env/sim_env/graph_run.py": "ee2f8ac83346469fdf6f5061ed7e6fab52274075dde8274ce2f3b16e40bbd76f",
+    "/home/karolina/Research/Code/sim_env/sim_env/graph_transport.py": "6ce56ab3840b5e3db7a79b89d2dcdd245df61eebf761c5abcd727b734c886e37",
+    "/home/karolina/Research/Code/sim_env/sim_env/graph_workloads.py": "2db93aaf807670b1ec793b9b7cc44a9168b6de0649898a392361df6b98518faf",
+    "/home/karolina/Research/Code/sim_env/sim_env/orchestrator.py": "d4fecd890f4e02b23ef6e1d7988db8eb84872a93a1f1c4428cec793263f7cd94",
+    "/home/karolina/Research/Code/sim_env/sim_env/models.py": "c0d09d6d126a42ad4e4f7f3ee63b15b1a90fafe085940417eef5c5132ab2e14f"
+  },
+  "devices": [
+    1,
+    2,
+    3
+  ],
+  "authority": 99,
+  "seed": 42,
+  "actual_addresses": {
+    "1": [
+      "127.0.0.1",
+      48278
+    ],
+    "2": [
+      "127.0.0.1",
+      52025
+    ],
+    "3": [
+      "127.0.0.1",
+      39504
+    ],
+    "99": [
+      "127.0.0.1",
+      43776
+    ]
+  },
+  "proxy_addresses": {
+    "1": [
+      "127.0.0.1",
+      34691
+    ],
+    "2": [
+      "127.0.0.1",
+      39186
+    ],
+    "3": [
+      "127.0.0.1",
+      41106
+    ],
+    "99": [
+      "127.0.0.1",
+      51363
+    ]
+  },
+  "clock": "real monotonic time; host scheduling is not deterministic",
+  "diagnostics": "supplementary stdout; loss count unavailable",
+  "channel_trace": true,
+  "network": "bounded UDP proxy queue; kernel receive loss is not measured"
+}

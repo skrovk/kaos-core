@@ -1,0 +1,43 @@
+--- kaos_endpoint.c before
++++ kaos_endpoint.c after
+@@ -100,8 +100,8 @@
+ for (size_t e = 0; e < CORE_MAX_ENDPOINT_RESERVATIONS; ++e) {
+ core_reserved_endpoint *endpoint = &service->admission->endpoints[e];
+-if (endpoint->occupied && core_binding_equal(binding, &endpoint->binding)) {
++if (!endpoint->occupied || !core_binding_equal(binding, &endpoint->binding))
++continue;
+ core_lifetime_close(&endpoint->lifetime);
+ close_endpoint_queue(service, e);
+-}
+ }
+ }
+@@ -116,5 +116,6 @@
+ continue;
+ const core_reserved_node *node = endpoint_node(service, endpoint);
+-if (node == NULL || node->lifetime.closing) {
++if (node != NULL && !node->lifetime.closing)
++continue;
+ facts(service, &endpoint->binding, endpoint->sender, CORE_OBJECT_FAILED);
+ /* A co-located binding has no usable transfer path after either
+@@ -124,5 +125,4 @@
+ }
+ }
+-}
+ static void advance_endpoint_queues(core_endpoint_service *service)
+ {
+@@ -143,5 +143,8 @@
+ if (queue->prepared && core_lifetime_uncharge(&endpoint->lifetime, CORE_ENDPOINT_BYTES))
+ queue->prepared = false;
+-} else if (!queue->prepared) {
++continue;
++}
++if (queue->prepared)
++continue;
+ if (!core_lifetime_charge(&endpoint->lifetime, CORE_ENDPOINT_BYTES)) {
+ facts(service, &endpoint->binding, endpoint->sender, CORE_OBJECT_FAILED);
+@@ -153,5 +156,4 @@
+ queue->prepared = true;
+ facts(service, &endpoint->binding, endpoint->sender, CORE_OBJECT_READY);
+-}
+ }
+ }

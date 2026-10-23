@@ -1,0 +1,13 @@
+[1/11] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/thread_manager.c.o
+[2/11] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/wasm_interp_classic.c.o
+[3/11] Linking C static library core/runtime/libkaos_wamr_engine.a
+[4/11] Linking C executable graph_host_udp_test
+[5/11] Linking C executable graph_host_test
+[6/11] Linking C executable graph_wamr_test
+[7/11] Linking C executable graph_wamr_entry_test
+[8/11] Linking C executable graph_wamr_channel_test
+[9/11] Linking C executable graph_wamr_capacity_test
+[10/11] Linking C executable graph_wamr_budget_test
+[11/11] Linking C executable core/kaos_host
+[1/2] Building C object core/CMakeFiles/kaos_host.dir/ports/posix/main.c.o
+[2/2] Linking C executable core/kaos_host

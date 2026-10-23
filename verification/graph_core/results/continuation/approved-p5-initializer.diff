@@ -1,0 +1,7 @@
+--- a/verification/graph_core/tests/p5_test.c
++++ b/verification/graph_core/tests/p5_test.c
+@@
+-    d->nodes.runtime = (core_node_runtime){&d->runtime, runtime_prepare,
+-                                          runtime_lock, runtime_unlock};
++    d->nodes.runtime = (core_node_runtime){.context = &d->runtime,
++        .prepare = runtime_prepare, .lock = runtime_lock, .unlock = runtime_unlock};

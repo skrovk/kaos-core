@@ -1,0 +1,365 @@
+{
+  "scope": "post-capture observation corruption; not live fault injection",
+  "seed": 17,
+  "healthy_trace_sha256": "a97cd780109a234ffeb27a6cde36d24fdc0b870904266d832e74c17f7fc68550",
+  "healthy_sample_status": "passed",
+  "healthy_timing_status": "passed",
+  "graph_outcomes": [
+    {
+      "operation": 0,
+      "kind": 1,
+      "report": [
+        4,
+        8,
+        0,
+        2,
+        4,
+        1,
+        39,
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "operation": 1,
+      "kind": 2,
+      "report": [
+        4,
+        8,
+        1,
+        1,
+        12,
+        1,
+        39,
+        [
+          1,
+          3,
+          3,
+          3,
+          3
+        ]
+      ]
+    },
+    {
+      "operation": 2,
+      "kind": 5,
+      "report": [
+        4,
+        8,
+        2,
+        1,
+        10,
+        1,
+        8,
+        [
+          56,
+          56,
+          56,
+          56,
+          56
+        ]
+      ]
+    },
+    {
+      "operation": 3,
+      "kind": 4,
+      "report": [
+        4,
+        8,
+        3,
+        2,
+        2,
+        1,
+        8,
+        [
+          56
+        ]
+      ]
+    }
+  ],
+  "observation_faults": [
+    {
+      "device": 1,
+      "fault": "first_record",
+      "samples": {
+        "status": "inconclusive",
+        "reason": "incomplete channel trace"
+      },
+      "timing": {
+        "budget_us": 20000,
+        "scope": "first successful source PUT to first matching final GET",
+        "clock": "common POSIX host monotonic microseconds; not acquisition time",
+        "sample_status": "inconclusive",
+        "status": "inconclusive",
+        "trace_complete": false,
+        "reason": "incomplete channel trace"
+      }
+    },
+    {
+      "device": 1,
+      "fault": "middle_record",
+      "samples": {
+        "status": "inconclusive",
+        "reason": "incomplete channel trace"
+      },
+      "timing": {
+        "budget_us": 20000,
+        "scope": "first successful source PUT to first matching final GET",
+        "clock": "common POSIX host monotonic microseconds; not acquisition time",
+        "sample_status": "inconclusive",
+        "status": "inconclusive",
+        "trace_complete": false,
+        "reason": "incomplete channel trace"
+      }
+    },
+    {
+      "device": 1,
+      "fault": "last_record",
+      "samples": {
+        "status": "inconclusive",
+        "reason": "incomplete channel trace"
+      },
+      "timing": {
+        "budget_us": 20000,
+        "scope": "first successful source PUT to first matching final GET",
+        "clock": "common POSIX host monotonic microseconds; not acquisition time",
+        "sample_status": "inconclusive",
+        "status": "inconclusive",
+        "trace_complete": false,
+        "reason": "incomplete channel trace"
+      }
+    },
+    {
+      "device": 1,
+      "fault": "all_records",
+      "samples": {
+        "status": "inconclusive",
+        "reason": "incomplete channel trace"
+      },
+      "timing": {
+        "budget_us": 20000,
+        "scope": "first successful source PUT to first matching final GET",
+        "clock": "common POSIX host monotonic microseconds; not acquisition time",
+        "sample_status": "inconclusive",
+        "status": "inconclusive",
+        "trace_complete": false,
+        "reason": "incomplete channel trace"
+      }
+    },
+    {
+      "device": 1,
+      "fault": "terminal_summary",
+      "samples": {
+        "status": "inconclusive",
+        "reason": "incomplete channel trace"
+      },
+      "timing": {
+        "budget_us": 20000,
+        "scope": "first successful source PUT to first matching final GET",
+        "clock": "common POSIX host monotonic microseconds; not acquisition time",
+        "sample_status": "inconclusive",
+        "status": "inconclusive",
+        "trace_complete": false,
+        "reason": "incomplete channel trace"
+      }
+    },
+    {
+      "device": 1,
+      "fault": "reported_drop",
+      "samples": {
+        "status": "inconclusive",
+        "reason": "incomplete channel trace"
+      },
+      "timing": {
+        "budget_us": 20000,
+        "scope": "first successful source PUT to first matching final GET",
+        "clock": "common POSIX host monotonic microseconds; not acquisition time",
+        "sample_status": "inconclusive",
+        "status": "inconclusive",
+        "trace_complete": false,
+        "reason": "incomplete channel trace"
+      }
+    },
+    {
+      "device": 1,
+      "fault": "duplicate_record",
+      "samples": {
+        "status": "inconclusive",
+        "reason": "incomplete channel trace"
+      },
+      "timing": {
+        "budget_us": 20000,
+        "scope": "first successful source PUT to first matching final GET",
+        "clock": "common POSIX host monotonic microseconds; not acquisition time",
+        "sample_status": "inconclusive",
+        "status": "inconclusive",
+        "trace_complete": false,
+        "reason": "incomplete channel trace"
+      }
+    },
+    {
+      "device": 1,
+      "fault": "reordered_records",
+      "samples": {
+        "status": "inconclusive",
+        "reason": "incomplete channel trace"
+      },
+      "timing": {
+        "budget_us": 20000,
+        "scope": "first successful source PUT to first matching final GET",
+        "clock": "common POSIX host monotonic microseconds; not acquisition time",
+        "sample_status": "inconclusive",
+        "status": "inconclusive",
+        "trace_complete": false,
+        "reason": "incomplete channel trace"
+      }
+    },
+    {
+      "device": 2,
+      "fault": "first_record",
+      "samples": {
+        "status": "inconclusive",
+        "reason": "incomplete channel trace"
+      },
+      "timing": {
+        "budget_us": 20000,
+        "scope": "first successful source PUT to first matching final GET",
+        "clock": "common POSIX host monotonic microseconds; not acquisition time",
+        "sample_status": "inconclusive",
+        "status": "inconclusive",
+        "trace_complete": false,
+        "reason": "incomplete channel trace"
+      }
+    },
+    {
+      "device": 2,
+      "fault": "middle_record",
+      "samples": {
+        "status": "inconclusive",
+        "reason": "incomplete channel trace"
+      },
+      "timing": {
+        "budget_us": 20000,
+        "scope": "first successful source PUT to first matching final GET",
+        "clock": "common POSIX host monotonic microseconds; not acquisition time",
+        "sample_status": "inconclusive",
+        "status": "inconclusive",
+        "trace_complete": false,
+        "reason": "incomplete channel trace"
+      }
+    },
+    {
+      "device": 2,
+      "fault": "last_record",
+      "samples": {
+        "status": "inconclusive",
+        "reason": "incomplete channel trace"
+      },
+      "timing": {
+        "budget_us": 20000,
+        "scope": "first successful source PUT to first matching final GET",
+        "clock": "common POSIX host monotonic microseconds; not acquisition time",
+        "sample_status": "inconclusive",
+        "status": "inconclusive",
+        "trace_complete": false,
+        "reason": "incomplete channel trace"
+      }
+    },
+    {
+      "device": 2,
+      "fault": "all_records",
+      "samples": {
+        "status": "inconclusive",
+        "reason": "incomplete channel trace"
+      },
+      "timing": {
+        "budget_us": 20000,
+        "scope": "first successful source PUT to first matching final GET",
+        "clock": "common POSIX host monotonic microseconds; not acquisition time",
+        "sample_status": "inconclusive",
+        "status": "inconclusive",
+        "trace_complete": false,
+        "reason": "incomplete channel trace"
+      }
+    },
+    {
+      "device": 2,
+      "fault": "terminal_summary",
+      "samples": {
+        "status": "inconclusive",
+        "reason": "incomplete channel trace"
+      },
+      "timing": {
+        "budget_us": 20000,
+        "scope": "first successful source PUT to first matching final GET",
+        "clock": "common POSIX host monotonic microseconds; not acquisition time",
+        "sample_status": "inconclusive",
+        "status": "inconclusive",
+        "trace_complete": false,
+        "reason": "incomplete channel trace"
+      }
+    },
+    {
+      "device": 2,
+      "fault": "reported_drop",
+      "samples": {
+        "status": "inconclusive",
+        "reason": "incomplete channel trace"
+      },
+      "timing": {
+        "budget_us": 20000,
+        "scope": "first successful source PUT to first matching final GET",
+        "clock": "common POSIX host monotonic microseconds; not acquisition time",
+        "sample_status": "inconclusive",
+        "status": "inconclusive",
+        "trace_complete": false,
+        "reason": "incomplete channel trace"
+      }
+    },
+    {
+      "device": 2,
+      "fault": "duplicate_record",
+      "samples": {
+        "status": "inconclusive",
+        "reason": "incomplete channel trace"
+      },
+      "timing": {
+        "budget_us": 20000,
+        "scope": "first successful source PUT to first matching final GET",
+        "clock": "common POSIX host monotonic microseconds; not acquisition time",
+        "sample_status": "inconclusive",
+        "status": "inconclusive",
+        "trace_complete": false,
+        "reason": "incomplete channel trace"
+      }
+    },
+    {
+      "device": 2,
+      "fault": "reordered_records",
+      "samples": {
+        "status": "inconclusive",
+        "reason": "incomplete channel trace"
+      },
+      "timing": {
+        "budget_us": 20000,
+        "scope": "first successful source PUT to first matching final GET",
+        "clock": "common POSIX host monotonic microseconds; not acquisition time",
+        "sample_status": "inconclusive",
+        "status": "inconclusive",
+        "trace_complete": false,
+        "reason": "incomplete channel trace"
+      }
+    }
+  ],
+  "collector": {
+    "proper_prefixes_rejected": 11,
+    "complete_snapshot_stored": true
+  },
+  "limitations": [
+    "No kernel loss accounting",
+    "No collector crash or relay overflow",
+    "No delayed injector qualification",
+    "No full execution replay"
+  ]
+}

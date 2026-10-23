@@ -1,0 +1,12 @@
+[OUTPUT] 
+Internal ctest changing into directory: /tmp/kaos-simplification-20261022/protocol
+
+[HANDLER_OUTPUT] 
+Test project /tmp/kaos-simplification-20261022/protocol
+
+    Start 26: graph_control_decoded
+1/1 Test #26: graph_control_decoded ............   Passed    0.00 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.01 sec

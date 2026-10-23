@@ -1,0 +1,34 @@
+Internal ctest changing into directory: /tmp/kaos-p3-session/host
+Test project /tmp/kaos-p3-session/host
+      Start  1: graph_wamr
+ 1/14 Test  #1: graph_wamr .......................   Passed    0.12 sec
+      Start  2: graph_wamr_budget
+ 2/14 Test  #2: graph_wamr_budget ................   Passed    0.03 sec
+      Start  3: graph_core_foundations
+ 3/14 Test  #3: graph_core_foundations ...........   Passed    0.03 sec
+      Start  4: graph_admission
+ 4/14 Test  #4: graph_admission ..................   Passed    0.02 sec
+      Start  5: graph_request
+ 5/14 Test  #5: graph_request ....................   Passed    0.02 sec
+      Start  6: graph_dynamic_binding
+ 6/14 Test  #6: graph_dynamic_binding ............   Passed    0.02 sec
+      Start  7: graph_report
+ 7/14 Test  #7: graph_report .....................   Passed    0.02 sec
+      Start  8: graph_object_facts
+ 8/14 Test  #8: graph_object_facts ...............   Passed    0.02 sec
+      Start  9: graph_coap
+ 9/14 Test  #9: graph_coap .......................   Passed    0.05 sec
+      Start 10: graph_coap_server
+10/14 Test #10: graph_coap_server ................   Passed    0.02 sec
+      Start 11: graph_artifact
+11/14 Test #11: graph_artifact ...................   Passed    0.03 sec
+      Start 12: graph_control
+12/14 Test #12: graph_control ....................   Passed    0.02 sec
+      Start 13: graph_p2_host
+13/14 Test #13: graph_p2_host ....................   Passed    0.02 sec
+      Start 14: graph_node
+14/14 Test #14: graph_node .......................   Passed    0.02 sec
+
+100% tests passed, 0 tests failed out of 14
+
+Total Test time (real) =   0.43 sec

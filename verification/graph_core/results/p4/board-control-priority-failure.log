@@ -1,0 +1,186 @@
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:6380
+ho 0 tail 12 room 4
+load:0x40078000,len:15916
+load:0x40080400,len:3860
+entry 0x40080638
+I (29) boot: ESP-IDF v5.5 2nd stage bootloader
+I (29) boot: compile time Oct  9 2026 20:04:23
+I (29) boot: Multicore bootloader
+I (30) boot: chip revision: v3.0
+I (33) boot.esp32: SPI Speed      : 40MHz
+I (37) boot.esp32: SPI Mode       : DIO
+I (40) boot.esp32: SPI Flash Size : 4MB
+I (44) boot: Enabling RNG early entropy source...
+I (49) boot: Partition Table:
+I (51) boot: ## Label            Usage          Type ST Offset   Length
+I (57) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (64) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (71) boot:  2 factory          factory app      00 00 00010000 00100000
+I (77) boot: End of partition table
+I (80) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0cb2ch ( 52012) map
+I (106) esp_image: segment 1: paddr=0001cb54 vaddr=3ff80000 size=00020h (    32) load
+I (106) esp_image: segment 2: paddr=0001cb7c vaddr=3ffb0000 size=02478h (  9336) load
+I (113) esp_image: segment 3: paddr=0001effc vaddr=40080000 size=0101ch (  4124) load
+I (119) esp_image: segment 4: paddr=00020020 vaddr=400d0020 size=2f274h (193140) map
+I (191) esp_image: segment 5: paddr=0004f29c vaddr=4008101c size=0c71ch ( 50972) load
+I (217) boot: Loaded app from partition at offset 0x10000
+I (217) boot: Disabling RNG early entropy source...
+I (228) cpu_start: Multicore app
+I (237) cpu_start: Pro cpu start user code
+I (237) cpu_start: cpu freq: 160000000 Hz
+I (237) app_init: Application information:
+I (237) app_init: Project name:     kaos_p4_qualification
+I (242) app_init: App version:      026bc3b-dirty
+I (246) app_init: Compile time:     Oct  9 2026 20:04:16
+I (251) app_init: ELF file SHA256:  8792241c2...
+I (256) app_init: ESP-IDF:          v5.5
+I (259) efuse_init: Min chip rev:     v0.0
+I (263) efuse_init: Max chip rev:     v3.99 
+I (267) efuse_init: Chip rev:         v3.0
+I (271) heap_init: Initializing. RAM available for dynamic allocation:
+I (277) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (282) heap_init: At 3FFCD448 len 00012BB8 (74 KiB): DRAM
+I (287) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (293) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (298) heap_init: At 4008D738 len 000128C8 (74 KiB): IRAM
+W (305) spi_flash: boya detected but related driver is not linked, please check option `SPI_FLASH_SUPPORT_BOYA_CHIP`
+I (314) spi_flash: detected chip: generic
+I (318) spi_flash: flash io: dio
+I (321) main_task: Started on CPU0
+I (331) main_task: Calling app_main()
+memory phase=before_runtime heap_total=212072 heap_free=188016 heap_min_free=188016 largest=110592 exec_free=202704
+WAMR memory owner=global slot=0 capacity=32768 used=40 unused=32728 runtime_payload=20 linear_payload=0 headers=16 padding=4 allocations=1
+WAMR records service=1088 arena=28 trace_counters=16 trace_total=80 allocation_header=16 allocation_alignment=8
+memory phase=workers_ready heap_total=212072 heap_free=152628 heap_min_free=152628 largest=110592 exec_free=202704
+capacity before_node=0 free=152516 largest=110592 arena=26624 artifact=1124 native_stack=8192
+capacity before_node=1 free=151360 largest=110592 arena=26624 artifact=1124 native_stack=8192
+WAMR memory owner=node slot=0 capacity=26624 used=25448 unused=1176 runtime_payload=12419 linear_payload=12288 headers=688 paddicapacity before_node=2 free=96052 largest=59392 arena=26624 artifact=1124 native_stack=8192
+ng=53 allocations=43
+WAMR stages slot=0 thread_payload=0 loader_payload=1646 instance_payload=908 exec_payload=9865 exec_stack_requested=8192 app_heacapacity before_node=3 free=67820 largest=32768 arena=26624 artifact=1124 native_stack=8192
+p_requested=4096 layout=1 heap_base=5888 data_end=1792 artifact=1124
+WAMR memory owner=node slot=2 capacity=26624 used=25448 unused=1176 runtime_payload=12419 linear_payload=12288 headers=688 padding=53 allocations=43
+WAMR memory owner=node slot=1 capacity=26624 used=25448 unused=1176 runtime_payload=12419 linear_payload=12288 headers=688 padding=53 allocations=43
+WAMR stages slot=1 thread_payload=0 loader_payload=1646 instance_payload=908 exec_payload=9865 exec_stack_requested=8192 app_heap_requested=4096 layout=1 heap_base=5888 data_end=1792 artifact=1124
+WAMR stages slot=2 thread_payload=0 loader_payload=1646 instance_payload=908 exec_payload=9865 exec_stack_requested=8192 app_heap_requested=4096 layout=1 heap_base=5888 data_end=1792 artifact=1124
+WAMR memory owner=node slot=3 capacity=26624 used=25448 unused=1176 runtime_payload=12419 linear_payload=12288 headers=688 padding=53 allocations=43
+WAMR stages slot=3 thread_payload=0 loader_payload=1646 instance_payload=908 exec_payload=9865 exec_stack_requested=8192 app_heap_requested=4096 layout=1 heap_base=5888 data_end=1792 artifact=1124
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=143760 registry=39272 endpoints=33232 edges=592 nodes=760 arena=26624 artifact=1124 native_stack=8192
+memory phase=all_queues_full heap_total=212072 heap_free=39588 heap_min_free=39588 largest=18432 exec_free=96192
+memory task=main number=3 stack_free=6908
+memory task=IDLE1 number=5 stack_free=900
+memory task=IDLE0 number=4 stack_free=904
+memory task=pthread number=6 stack_free=5888
+memory task=pthread number=8 stack_free=6008
+memory task=pthread number=9 stack_free=6012
+memory task=pthread number=7 stack_free=6004
+memory task=ipc1 number=2 stack_free=488
+memory task=ipc0 number=1 stack_free=480
+capacity full_free=39588 largest=18432 control_stack_free=6908
+capacity node=0 puts=444 gets=412 full=68 guest_validated=403
+capacity node=0 worker_stack_free=5888
+capacity node=1 puts=432 gets=400 full=58 guest_validated=396
+capacity node=1 worker_stack_free=6004
+capacity node=2 puts=501 gets=420 full=61 guest_validated=398
+capacity node=2 worker_stack_free=6008
+capacity node=3 puts=436 gets=404 full=10 guest_validated=399
+capacity node=3 worker_stack_free=5932
+capacity deliveries=1652
+E (47021) task_wdt: Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:
+E (47021) task_wdt:  - IDLE0 (CPU 0)
+E (47021) task_wdt: Tasks currently running:
+E (47021) task_wdt: CPU 0: pthread
+E (47021) task_wdt: CPU 1: IDLE1
+E (47021) task_wdt: Print CPU 0 (current core) backtrace
+
+
+Backtrace: 0x400EE23A:0x3FFB10F0 0x400EE5FC:0x3FFB1110 0x40082E35:0x3FFB1140 0x4000BFED:0x3FFD3000 0x40086352:0x3FFD3010 0x40085E90:0x3FFD3030 0x400D44F4:0x3FFD3070 0x400D49EF:0x3FFD3090 0x400E1B29:0x3FFD30B0 0x400DD85E:0x3FFD30D0 0x400DB58D:0x3FFD30F0 0x400DB621:0x3FFD3110 0x400DBB0B:0x3FFD3130 0x400DDD7A:0x3FFD31F0 0x400E16F2:0x3FFD32C0 0x400E19E9:0x3FFD3440 0x400DC7D8:0x3FFD34F0 0x400DB559:0x3FFD3510 0x400D9ED8:0x3FFD3530 0x400DA02E:0x3FFD3560 0x400D489C:0x3FFD3580 0x40085FF5:0x3FFD35A0
+
+capacity endpoints_reclaimed unread_notifications=28
+E (52021) task_wdt: Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:
+E (52021) task_wdt:  - IDLE0 (CPU 0)
+E (52021) task_wdt: Tasks currently running:
+E (52021) task_wdt: CPU 0: pthread
+E (52021) task_wdt: CPU 1: pthread
+E (52021) task_wdt: Print CPU 0 (current core) backtrace
+
+
+Backtrace: 0x400EE23A:0x3FFB10F0 0x400EE5FC:0x3FFB1110 0x40082E35:0x3FFB1140 0x4000BFED:0x3FFD5450 0x40086352:0x3FFD5460 0x40085C37:0x3FFD5480 0x400D4A34:0x3FFD54C0 0x400E1B35:0x3FFD54E0 0x400DD86A:0x3FFD5500 0x400DB5B4:0x3FFD5520 0x400E170D:0x3FFD5540 0x400E19E9:0x3FFD56C0 0x400DC7D8:0x3FFD5770 0x400DB559:0x3FFD5790 0x400D9ED8:0x3FFD57B0 0x400DA02E:0x3FFD57E0 0x400D489C:0x3FFD5800 0x40085FF5:0x3FFD5820
+
+WAMR memory owner=node-dispose slot=0 capacity=26624 used=25472 unused=1152 runtime_payload=12423 linear_payload=12288 headers=704 padding=57 allocations=44
+E (57021) task_wdt: Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:
+E (57021) task_wdt:  - IDLE0 (CPU 0)
+E (57021) task_wdt: Tasks currently running:
+E (57021) task_wdt: CPU 0: pthread
+E (57021) task_wdt: CPU 1: pthread
+E (57021) task_wdt: Print CPU 0 (current core) backtrace
+
+
+Backtrace: 0x400EE23A:0x3FFB10F0 0x400EE5FC:0x3FFB1110 0x40082E35:0x3FFB1140 0x400DF3AB:0x3FFD5540 0x400E19E9:0x3FFD56C0 0x400DC7D8:0x3FFD5770 0x400DB559:0x3FFD5790 0x400D9ED8:0x3FFD57B0 0x400DA02E:0x3FFD57E0 0x400D489C:0x3FFD5800 0x40085FF5:0x3FFD5820
+
+E (62021) task_wdt: Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:
+E (62021) task_wdt:  - IDLE0 (CPU 0)
+E (62021) task_wdt: Tasks currently running:
+E (62021) task_wdt: CPU 0: pthread
+E (62021) task_wdt: CPU 1: pthread
+E (62021) task_wdt: Print CPU 0 (current core) backtrace
+
+
+Backtrace: 0x400EE23A:0x3FFB10F0 0x400EE5FC:0x3FFB1110 0x40082E35:0x3FFB1140 0x400DA4DC:0x3FFD7490 0x400FCD13:0x3FFD74D0 0x400DBAA9:0x3FFD75D0 0x400DDD7A:0x3FFD7690 0x400E16F2:0x3FFD7760 0x400E19E9:0x3FFD78E0 0x400DC7D8:0x3FFD7990 0x400DB559:0x3FFD79B0 0x400D9ED8:0x3FFD79D0 0x400DA02E:0x3FFD7A00 0x400D489C:0x3FFD7A20 0x40085FF5:0x3FFD7A40
+
+E (67021) task_wdt: Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:
+E (67021) task_wdt:  - IDLE0 (CPU 0)
+E (67021) task_wdt: Tasks currently running:
+E (67021) task_wdt: CPU 0: pthread
+E (67021) task_wdt: CPU 1: IDLE1
+E (67021) task_wdt: Print CPU 0 (current core) backtrace
+
+
+Backtrace: 0x400EE23A:0x3FFB10F0 0x400EE5FC:0x3FFB1110 0x40082E35:0x3FFB1140 0x400D7E58:0x3FFD7410 0x400DA48D:0x3FFD7490 0x400FCD13:0x3FFD74D0 0x400DBAA9:0x3FFD75D0 0x400DDD7A:0x3FFD7690 0x400E16F2:0x3FFD7760 0x400E19E9:0x3FFD78E0 0x400DC7D8:0x3FFD7990 0x400DB559:0x3FFD79B0 0x400D9ED8:0x3FFD79D0 0x400DA02E:0x3FFD7A00 0x400D489C:0x3FFD7A20 0x40085FF5:0x3FFD7A40
+
+E (72021) task_wdt: Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:
+E (72021) task_wdt:  - IDLE0 (CPU 0)
+E (72021) task_wdt: Tasks currently running:
+E (72021) task_wdt: CPU 0: pthread
+E (72021) task_wdt: CPU 1: pthread
+E (72021) task_wdt: Print CPU 0 (current core) backtrace
+
+
+Backtrace: 0x400EE23A:0x3FFB10F0 0x400EE5FC:0x3FFB1110 0x40082E35:0x3FFB1140 0x4000BFED:0x3FFD95C0 0x40086352:0x3FFD95D0 0x40085C37:0x3FFD95F0 0x400D4A34:0x3FFD9630 0x400D7F10:0x3FFD9650 0x400DA4E9:0x3FFD96B0 0x400FCD13:0x3FFD96F0 0x400DBAA9:0x3FFD97F0 0x400DDD7A:0x3FFD98B0 0x400E16F2:0x3FFD9980 0x400E19E9:0x3FFD9B00 0x400DC7D8:0x3FFD9BB0 0x400DB559:0x3FFD9BD0 0x400D9ED8:0x3FFD9BF0 0x400DA02E:0x3FFD9C20 0x400D489C:0x3FFD9C40 0x40085FF5:0x3FFD9C60
+
+WAMR memory owner=node-dispose slot=1 capacity=26624 used=25472 unused=1152 runtime_payload=12423 linear_payload=12288 headers=704 padding=57 allocations=44
+E (77021) task_wdt: Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:
+E (77021) task_wdt:  - IDLE0 (CPU 0)
+E (77021) task_wdt: Tasks currently running:
+E (77021) task_wdt: CPU 0: pthread
+E (77021) task_wdt: CPU 1: IDLE1
+E (77021) task_wdt: Print CPU 0 (current core) backtrace
+
+
+Backtrace: 0x400EE23A:0x3FFB10F0 0x400EE5FC:0x3FFB1110 0x40082E35:0x3FFB1140 0x400D7F0A:0x3FFD7430 0x400DA4E9:0x3FFD7490 0x400FCD13:0x3FFD74D0 0x400DBAA9:0x3FFD75D0 0x400DDD7A:0x3FFD7690 0x400E16F2:0x3FFD7760 0x400E19E9:0x3FFD78E0 0x400DC7D8:0x3FFD7990 0x400DB559:0x3FFD79B0 0x400D9ED8:0x3FFD79D0 0x400DA02E:0x3FFD7A00 0x400D489C:0x3FFD7A20 0x40085FF5:0x3FFD7A40
+
+E (82021) task_wdt: Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:
+E (82021) task_wdt:  - IDLE0 (CPU 0)
+E (82021) task_wdt: Tasks currently running:
+E (82021) task_wdt: CPU 0: pthread
+E (82021) task_wdt: CPU 1: pthread
+E (82021) task_wdt: Print CPU 0 (current core) backtrace
+
+
+Backtrace: 0x400EE23A:0x3FFB10F0 0x400EE5FC:0x3FFB1110 0x40082E35:0x3FFB1140 0x400D44EB:0x3FFD7430 0x400D49EF:0x3FFD7450 0x400D9751:0x3FFD7470 0x400DA44C:0x3FFD7490 0x400FCD13:0x3FFD74D0 0x400DBAA9:0x3FFD75D0 0x400DDD7A:0x3FFD7690 0x400E16F2:0x3FFD7760 0x400E19E9:0x3FFD78E0 0x400DC7D8:0x3FFD7990 0x400DB559:0x3FFD79B0 0x400D9ED8:0x3FFD79D0 0x400DA02E:0x3FFD7A00 0x400D489C:0x3FFD7A20 0x40085FF5:0x3FFD7A40
+
+E (87021) task_wdt: Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:
+E (87021) task_wdt:  - IDLE0 (CPU 0)
+E (87021) task_wdt: Tasks currently running:
+E (87021) task_wdt: CPU 0: pthread
+E (87021) task_wdt: CPU 1: pthread
+E (87021) task_wdt: Print CPU 0 (current core) backtrace
+
+
+Backtrace: 0x400EE23A:0x3FFB10F0 0x400EE5FC:0x3FFB1110 0x40082E35:0x3FFB1140 0x4000BFED:0x3FFD74C0 0x40086352:0x3FFD74D0 0x40085C37:0x3FFD74F0 0x400D4A34:0x3FFD7530 0x400E1B35:0x3FFD7550 0x400DD86A:0x3FFD7570 0x400DB5B4:0x3FFD7590 0x400DB621:0x3FFD75B0 0x400DBB0B:0x3FFD75D0 0x400DDD7A:0x3FFD7690 0x400E16F2:0x3FFD7760 0x400E19E9:0x3FFD78E0 0x400DC7D8:0x3FFD7990 0x400DB559:0x3FFD79B0 0x400D9ED8:0x3FFD79D0 0x400DA02E:0x3FFD7A00 0x400D489C:0x3FFD7A20 0x40085FF5:0x3FFD7A40
+

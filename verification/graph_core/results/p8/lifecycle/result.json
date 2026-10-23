@@ -1,0 +1,108 @@
+{
+  "status": "passed",
+  "outcomes": [
+    {
+      "operation": 0,
+      "kind": 1,
+      "report": [
+        4,
+        8,
+        0,
+        1,
+        4,
+        1,
+        39,
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "operation": 1,
+      "kind": 2,
+      "report": [
+        4,
+        8,
+        1,
+        2,
+        8,
+        1,
+        39,
+        [
+          1,
+          3,
+          3
+        ]
+      ]
+    },
+    {
+      "operation": 2,
+      "kind": 6,
+      "report": [
+        4,
+        8,
+        2,
+        1,
+        4,
+        1,
+        8,
+        [
+          56,
+          56
+        ]
+      ]
+    },
+    {
+      "operation": 3,
+      "kind": 3,
+      "report": [
+        4,
+        8,
+        3,
+        1,
+        6,
+        1,
+        33,
+        [
+          3,
+          3
+        ]
+      ]
+    },
+    {
+      "operation": 4,
+      "kind": 5,
+      "report": [
+        4,
+        8,
+        4,
+        2,
+        6,
+        1,
+        8,
+        [
+          56,
+          56,
+          56
+        ]
+      ]
+    },
+    {
+      "operation": 5,
+      "kind": 4,
+      "report": [
+        4,
+        8,
+        5,
+        1,
+        2,
+        1,
+        8,
+        [
+          56
+        ]
+      ]
+    }
+  ],
+  "scope": "six graph operations; no ventilation or target qualification"
+}

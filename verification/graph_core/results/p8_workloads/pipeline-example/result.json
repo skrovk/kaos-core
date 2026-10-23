@@ -1,0 +1,202 @@
+{
+  "status": "passed",
+  "trace_complete": true,
+  "observations": 1796,
+  "phases": [
+    {
+      "name": "initial",
+      "received": 218,
+      "unique_sequences": 218,
+      "duplicates": 0,
+      "observed_sequence_gaps": 5,
+      "first_sequence": 8,
+      "last_sequence": 230
+    },
+    {
+      "name": "replacement",
+      "received": 203,
+      "unique_sequences": 203,
+      "duplicates": 0,
+      "observed_sequence_gaps": 8,
+      "first_sequence": 243,
+      "last_sequence": 453
+    }
+  ],
+  "scope": "synthetic value/padding and PUT-to-GET correlation; minimum eight distinct samples per phase",
+  "workload": "pipeline",
+  "local": false,
+  "outcomes": [
+    {
+      "operation": 0,
+      "kind": 1,
+      "report": [
+        4,
+        8,
+        0,
+        1,
+        4,
+        1,
+        39,
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "operation": 1,
+      "kind": 1,
+      "report": [
+        4,
+        8,
+        1,
+        3,
+        4,
+        1,
+        39,
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "operation": 2,
+      "kind": 2,
+      "report": [
+        4,
+        8,
+        2,
+        2,
+        12,
+        1,
+        39,
+        [
+          1,
+          3,
+          3,
+          3,
+          3
+        ]
+      ]
+    },
+    {
+      "operation": 3,
+      "kind": 5,
+      "report": [
+        4,
+        8,
+        3,
+        2,
+        10,
+        1,
+        8,
+        [
+          56,
+          56,
+          56,
+          56,
+          56
+        ]
+      ]
+    },
+    {
+      "operation": 4,
+      "kind": 2,
+      "report": [
+        4,
+        8,
+        4,
+        2,
+        12,
+        1,
+        39,
+        [
+          1,
+          3,
+          3,
+          3,
+          3
+        ]
+      ]
+    },
+    {
+      "operation": 5,
+      "kind": 5,
+      "report": [
+        4,
+        8,
+        5,
+        2,
+        10,
+        1,
+        8,
+        [
+          56,
+          56,
+          56,
+          56,
+          56
+        ]
+      ]
+    },
+    {
+      "operation": 6,
+      "kind": 4,
+      "report": [
+        4,
+        8,
+        6,
+        1,
+        2,
+        1,
+        8,
+        [
+          56
+        ]
+      ]
+    },
+    {
+      "operation": 7,
+      "kind": 4,
+      "report": [
+        4,
+        8,
+        7,
+        3,
+        2,
+        1,
+        8,
+        [
+          56
+        ]
+      ]
+    }
+  ],
+  "windows": [
+    {
+      "name": "initial",
+      "begin_us": 134553781248,
+      "end_us": 134554031563,
+      "instances": {
+        "10": 0,
+        "20": 2,
+        "30": 1
+      }
+    },
+    {
+      "name": "replacement",
+      "begin_us": 134554053862,
+      "end_us": 134554304543,
+      "instances": {
+        "10": 0,
+        "20": 4,
+        "30": 1
+      }
+    }
+  ],
+  "remaining_instances_at_teardown": [],
+  "limitations": [
+    "No periodic acquisition, scheduled-miss or freshness measurement",
+    "GET does not prove guest acceptance or physical execution",
+    "Trace overhead affects host timing; no target timing claim"
+  ]
+}

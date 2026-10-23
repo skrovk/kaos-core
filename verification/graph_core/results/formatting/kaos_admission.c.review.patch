@@ -1,0 +1,78 @@
+--- kaos_admission.c before
++++ kaos_admission.c after
+@@ -419,11 +419,11 @@
+ for (size_t i = 0; i < CORE_MAX_REQUEST_CHANNELS; ++i) {
+ core_channel_notification *event = &node->notifications[i];
+-if (notification_matches(event, &endpoint->binding.channel) &&
+-event->creating_op.value == endpoint->binding.creating_op.value) {
++if (!notification_matches(event, &endpoint->binding.channel) ||
++event->creating_op.value != endpoint->binding.creating_op.value)
++continue;
+ event->attached = false;
+ if (!event->pending)
+ *event = (core_channel_notification){0};
+ return;
+-}
+ }
+ }
+@@ -1093,5 +1093,6 @@
+ for (size_t i = 0; i < CORE_MAX_ENDPOINT_RESERVATIONS; ++i) {
+ const core_reserved_endpoint *endpoint = &pool->endpoints[i];
+-if (endpoint->occupied && endpoint->binding.creating_op.value == creating_id.value) {
++if (!endpoint->occupied || endpoint->binding.creating_op.value != creating_id.value)
++continue;
+ found = true;
+ if (!core_lifetime_reclaimed(&endpoint->lifetime) ||
+@@ -1100,5 +1101,4 @@
+ }
+ }
+-}
+ if (!found) {
+ return false;
+@@ -1106,10 +1106,10 @@
+ for (size_t i = 0; i < CORE_MAX_ENDPOINT_RESERVATIONS; ++i) {
+ core_reserved_endpoint *endpoint = &pool->endpoints[i];
+-if (endpoint->occupied && endpoint->binding.creating_op.value == creating_id.value) {
++if (!endpoint->occupied || endpoint->binding.creating_op.value != creating_id.value)
++continue;
+ detach_notification(pool, endpoint);
+ endpoint->occupied = false;
+ pool->reserved_bytes -= CORE_ENDPOINT_BYTES;
+ }
+-}
+ return true;
+ }
+@@ -1119,5 +1119,6 @@
+ for (size_t i = 0; i < CORE_MAX_ENDPOINT_RESERVATIONS; ++i) {
+ const core_reserved_endpoint *endpoint = &pool->endpoints[i];
+-if (endpoint->occupied && core_binding_same_identity(&endpoint->binding, binding)) {
++if (!endpoint->occupied || !core_binding_same_identity(&endpoint->binding, binding))
++continue;
+ found = true;
+ if (!core_channel_descriptor_equal(&endpoint->binding.channel, &binding->channel) ||
+@@ -1127,5 +1128,4 @@
+ }
+ }
+-}
+ if (!found) {
+ return false;
+@@ -1133,9 +1133,9 @@
+ for (size_t i = 0; i < CORE_MAX_ENDPOINT_RESERVATIONS; ++i) {
+ core_reserved_endpoint *endpoint = &pool->endpoints[i];
+-if (endpoint->occupied && core_binding_same_identity(&endpoint->binding, binding)) {
++if (!endpoint->occupied || !core_binding_same_identity(&endpoint->binding, binding))
++continue;
+ detach_notification(pool, endpoint);
+ endpoint->occupied = false;
+ pool->reserved_bytes -= CORE_ENDPOINT_BYTES;
+-}
+ }
+ return true;
+@@ -1176,5 +1176,6 @@
+ scope_contains(&record->scope, record->channel_known, &pool->endpoints[j].binding))
+ return false;
+-if (!record->endpoint_only && node_remove(record->scope.kind))
++if (record->endpoint_only || !node_remove(record->scope.kind))
++return true;
+ for (size_t n = 0; n < CORE_MAX_NODE_RESERVATIONS; ++n)
+ if (pool->nodes[n].occupied &&

@@ -1,0 +1,24 @@
+[OUTPUT] 
+Internal ctest changing into directory: /tmp/kaos-timing-host
+
+[HANDLER_OUTPUT] 
+Test project /tmp/kaos-timing-host
+
+    Start 26: graph_host
+1/7 Test #26: graph_host .......................   Passed    0.03 sec
+    Start 27: graph_host_udp
+2/7 Test #27: graph_host_udp ...................   Passed    0.02 sec
+    Start 42: graph_coap
+3/7 Test #42: graph_coap .......................   Passed    0.05 sec
+    Start 43: graph_coap_server
+4/7 Test #43: graph_coap_server ................   Passed    0.02 sec
+    Start 44: graph_artifact
+5/7 Test #44: graph_artifact ...................   Passed    0.03 sec
+    Start 45: graph_control
+6/7 Test #45: graph_control ....................   Passed    0.02 sec
+    Start 46: graph_host_control
+7/7 Test #46: graph_host_control ...............   Passed    0.02 sec
+
+100% tests passed, 0 tests failed out of 7
+
+Total Test time (real) =   0.20 sec

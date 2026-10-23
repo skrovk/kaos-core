@@ -1,0 +1,5 @@
+# Local build and language caches. Saved verification evidence remains visible.
+/build/
+/.ruff_cache/
+__pycache__/
+*.py[cod]

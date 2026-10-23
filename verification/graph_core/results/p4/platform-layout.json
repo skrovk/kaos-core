@@ -1,0 +1,20 @@
+{
+  "core_admission": 39272,
+  "core_artifact": 80,
+  "core_coap_block1": 2088,
+  "core_coap_cache": 4736,
+  "core_coap_cached_response": 1184,
+  "core_coap_exchange": 1208,
+  "core_control": 6848,
+  "core_edge_effect": 200,
+  "core_edge_service": 592,
+  "core_endpoint_service": 33232,
+  "core_node_service": 760,
+  "esp_timer_stack": 4096,
+  "event_stack": 2816,
+  "idle_stack": 1536,
+  "main_stack": 12800,
+  "semaphore": 92,
+  "tcb": 348,
+  "tcpip_stack": 3584
+}

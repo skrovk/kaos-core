@@ -1,0 +1,251 @@
+{
+  "date": "2026-10-12",
+  "stage": "P7 reporting, collector and reconciliation",
+  "status": "Implementation, host qualification and local physical ESP32 P7 fixture complete; 32 host and 11 four-node entries pass. Physical fixture passed three full-capacity lifecycles. Distributed Wi-Fi/collector target and final composed formal qualification remain P9 work.",
+  "baseline": {
+    "git_head": "026bc3b67f3ee172c46f43d9c21f6f9f39965a2d",
+    "working_tree_snapshot": "/tmp/kaos-p7-session/baseline",
+    "note": "P3-P6 and sim_env work were already uncommitted. Existing changes were preserved, not reverted or committed."
+  },
+  "changed_since_session_start": [
+    "graph_core/include/kaos_admission.h",
+    "graph_core/include/kaos_control.h",
+    "graph_core/include/kaos_edge.h",
+    "graph_core/include/kaos_report.h",
+    "graph_core/kaos_admission.c",
+    "graph_core/kaos_control.c",
+    "graph_core/kaos_edge.c",
+    "graph_core/kaos_endpoint.c",
+    "graph_core/ports/p2_host.c",
+    "graph_core/ports/p4_host.inc",
+    "verification/graph_core/CMakeLists.txt",
+    "verification/graph_core/four/CMakeLists.txt",
+    "docs/graph_operation_implementation_plan.md",
+    "docs/graph_p2_contract.md"
+  ],
+  "added_sources": [
+    "verification/graph_core/espidf_p7/CMakeLists.txt",
+    "verification/graph_core/espidf_p7/build.sh",
+    "verification/graph_core/espidf_p7/main/CMakeLists.txt",
+    "verification/graph_core/espidf_p7/main/main.c",
+    "verification/graph_core/espidf_p7/sdkconfig.defaults",
+    "verification/graph_core/p7_capacity.c",
+    "verification/graph_core/tests/p7_control_test.c",
+    "verification/graph_core/tests/p7_lifecycle_test.c",
+    "verification/graph_core/tests/p7_process_test.py",
+    "verification/graph_core/tests/p7_test.c",
+    "docs/graph_p7_contract.md"
+  ],
+  "sim_env_installed": [
+    "../sim_env/sim_env/orchestrator.py",
+    "../sim_env/sim_env/graph_transport.py",
+    "../sim_env/sim_env/graph_evidence.py",
+    "../sim_env/sim_env/graph_collector.py",
+    "../sim_env/tests/test_graph_collector.py"
+  ],
+  "source_sha256": {
+    "graph_core/include/kaos_admission.h": "60a3af76c08edadbbac766f45991c1aa3c58eca5deff87a8386897c2ba1f826e",
+    "graph_core/include/kaos_control.h": "3656d51d369b09fcbeb749125b885e212e166e692f0e936eea14f156820a2a16",
+    "graph_core/include/kaos_edge.h": "de6324009ea2f2c6532e65f0a18488ffda2686984e3f8e527901db6132f37484",
+    "graph_core/include/kaos_report.h": "f99c818857ae483e25a7e5878daa29a4b06717e68f2a1a52063610b74130a8d6",
+    "graph_core/kaos_admission.c": "860940b3324bbc184fa4177a8d368e60620746875bb65a6b0b37fc522acf227d",
+    "graph_core/kaos_control.c": "ac9834942dae031ede1148d3c15decb9152bbe45d27958f385b4369bd6ffc126",
+    "graph_core/kaos_edge.c": "7cc9e540fa6c4128c4094f872adb1d4eb7b7cf9cdaa5cf035e57c69b5ca7d06f",
+    "graph_core/kaos_endpoint.c": "662ccca7533e29fd9d12a9639b90fffd769e0dc89849072143030b728d45c17c",
+    "graph_core/ports/p2_host.c": "1a4ac7069a981a61d64925ecee90a680b27719709207c5a682273b2462455425",
+    "graph_core/ports/p4_host.inc": "f44a6083ecc319d21841360447bda4715ea872e81f63f1dd8c320b67ea917e06",
+    "verification/graph_core/CMakeLists.txt": "a8b3de57144a5adeb29ca08ba0b3aab65d4074ef09261aa9c6a993388165e601",
+    "verification/graph_core/four/CMakeLists.txt": "6f9436f1e67ee63ac059a734b4013c7badbb9b589f830a48615042d917f60170",
+    "docs/graph_operation_implementation_plan.md": "6a19f97e8938e806889680d50977da99f168e8add5e97e893cded254e3322d56",
+    "docs/graph_p2_contract.md": "6c2332d274d6b4959c80c4015df2bfeecb0b42a8fd97634274fd6cb155fb737a",
+    "verification/graph_core/espidf_p7/CMakeLists.txt": "ef2766a1c4c41a97b3d763d4ed7fdaa317ba4f3584c499ed7c484d08561d38d4",
+    "verification/graph_core/espidf_p7/build.sh": "2ec3b0564fdced9265b2b839657bb1ff1b7880427c35695cac2e30e1f63d0c05",
+    "verification/graph_core/espidf_p7/main/CMakeLists.txt": "6ef0e57b2d950c58f16ed11857b2e10053cb3aa1ff1b43076a598b464972553f",
+    "verification/graph_core/espidf_p7/main/main.c": "14ae37b3db4713eb9cb099a408e0a3e6a2de25afcf78059886150208f1121739",
+    "verification/graph_core/espidf_p7/sdkconfig.defaults": "cddeb7b8459d45b37fa4cc952cd97ada69010a6275b48616261b15e3552eae6d",
+    "verification/graph_core/p7_capacity.c": "e6c8fe424987eab629955ca73abc22cdd7cb1722d28066e0d3d3e30ff94c3811",
+    "verification/graph_core/tests/p7_control_test.c": "7b5de3d8a0a08831a38f6c9b240260050b6148702cb7a545fde4cc720b06babe",
+    "verification/graph_core/tests/p7_lifecycle_test.c": "46abe52b42c6736ec540773411add094ceb2596393aaf7211e0c1b0f658293c6",
+    "verification/graph_core/tests/p7_process_test.py": "26eacbe53dd60701d0916b3d7bcd09b18244a00ce99eed62e99de93624c80a6b",
+    "verification/graph_core/tests/p7_test.c": "0c338be95305be8395cc52ff6cf6b4c667a6dad12246afbda34aff8e314d525c",
+    "docs/graph_p7_contract.md": "f24702f665a4556c6c6da183921ed49d48fb2caed8c1a12cd6d203fdebb6b853",
+    "../sim_env/sim_env/orchestrator.py": "d4fecd890f4e02b23ef6e1d7988db8eb84872a93a1f1c4428cec793263f7cd94",
+    "../sim_env/sim_env/graph_transport.py": "6ce56ab3840b5e3db7a79b89d2dcdd245df61eebf761c5abcd727b734c886e37",
+    "../sim_env/sim_env/graph_evidence.py": "0eb34d1ef10dd4d44e47f258b4365cb5b0950aaf6ccf10d4cdfa145504f71614",
+    "../sim_env/sim_env/graph_collector.py": "e1a4d9cd017441aa4f75aae7b85bfc1f56f30c0b0ea25776d621615b16298054",
+    "../sim_env/tests/test_graph_collector.py": "bf1ed8b2abe08c429a316c8b84b626da9172ba9258075e72e030f4f1f54b9254"
+  },
+  "preexisting_tests": {
+    "kaos_verification_sources_unchanged": 49,
+    "sim_env_test_files_unchanged": 9,
+    "modified_existing_cases": 0,
+    "evidence": "verification/graph_core/results/p7/test-preservation.json"
+  },
+  "host": {
+    "configure": "cmake -S verification/graph_core -B /tmp/kaos-p3-session/host -DCORE_BUILD_P2_HOST=ON -DCORE_BUILD_P3_HOST=ON -DCORE_BUILD_P4_HOST=ON -DCORE_SANITIZE=ON",
+    "build": "cmake --build /tmp/kaos-p3-session/host -j4",
+    "test": "ctest --test-dir /tmp/kaos-p3-session/host --output-on-failure",
+    "passed_entries": 32,
+    "failed_entries": 0,
+    "seconds": 14.86,
+    "sanitizers": [
+      "ASan",
+      "UBSan fail-fast",
+      "LSan"
+    ],
+    "new_p7_real_udp_wamr_cases": 4,
+    "python_regression": {
+      "discovered": 96,
+      "passed": 76,
+      "skipped": 20,
+      "skip_reason": "Existing SIM_INTEGRATION-gated legacy native process tests; replacement graph process tests are enabled.",
+      "new_collector_cases_passed": 10
+    },
+    "log": "verification/graph_core/results/p7/final-host.log",
+    "detail_log": "verification/graph_core/results/p7/host-details.log",
+    "sandbox": "Initial sandbox attempts could not run LSan/UDP/uv cache; successful suites ran with approved escalation."
+  },
+  "four_node_host": {
+    "build": "cmake --build /tmp/kaos-p4-session/four -j4",
+    "test": "ctest --test-dir /tmp/kaos-p4-session/four --output-on-failure",
+    "passed_entries": 11,
+    "failed_entries": 0,
+    "seconds": 6.73,
+    "capacity": "Three lifecycles: four WAMR nodes, 16 bindings, 32 full queues, four overlapping eight-binding removals, all 24 operation slots. Live ACKs, newer creator evidence, pressure eviction, zero final reservations and no manual forget.",
+    "log": "verification/graph_core/results/p7/final-four.log",
+    "detail_log": "verification/graph_core/results/p7/four-details.log"
+  },
+  "esp32": {
+    "command": "bash verification/graph_core/espidf_p7/build.sh",
+    "result": "Build, verified flash and physical local P7 capacity run passed",
+    "firmware_bytes": 313040,
+    "physical_run": true,
+    "flashed": true,
+    "artifact_sha256": {
+      "/tmp/kaos-p7-session/esp32/kaos_p7_qualification.bin": "415f2d4e8198f7c80dd9f921b79db67fae3a60a030eeb5c9393ab87eb5796d85",
+      "/tmp/kaos-p7-session/esp32/kaos_p7_qualification.elf": "76ddaa2451a63fc350baf44a9546e5f9181d17caba4121e5a5b81c0db448c1bd",
+      "/tmp/kaos-p7-session/esp32/kaos_p7_qualification.map": "9ff2a7d49ee22c97e7cde40f46e7ea70ab676b95a1df13ecfac008902182c7b1",
+      "/tmp/kaos-p7-session/esp32/sdkconfig": "d9f68ca5718a1081f6a4208d9b2eaf805aa58cb8ac546957dc521129ae39ee98"
+    },
+    "log": "verification/graph_core/results/p7/esp32-build.log",
+    "initial_cross_build_artifact_sha256": {
+      "/tmp/kaos-p7-session/esp32/kaos_p7_qualification.bin": "415f2d4e8198f7c80dd9f921b79db67fae3a60a030eeb5c9393ab87eb5796d85",
+      "/tmp/kaos-p7-session/esp32/kaos_p7_qualification.elf": "76ddaa2451a63fc350baf44a9546e5f9181d17caba4121e5a5b81c0db448c1bd",
+      "/tmp/kaos-p7-session/esp32/kaos_p7_qualification.map": "9ff2a7d49ee22c97e7cde40f46e7ea70ab676b95a1df13ecfac008902182c7b1",
+      "/tmp/kaos-p7-session/esp32/sdkconfig": "d9f68ca5718a1081f6a4208d9b2eaf805aa58cb8ac546957dc521129ae39ee98"
+    },
+    "board_build_log": "verification/graph_core/results/p7/board-build.log",
+    "flash_log": "verification/graph_core/results/p7/flash.log",
+    "board_log": "verification/graph_core/results/p7/board.log",
+    "reader": "verification/graph_core/results/p7/read_p7_board.py",
+    "board": {
+      "port": "/dev/ttyUSB0",
+      "usb_id": "usb-Silicon_Labs_CP2104_USB_to_UART_Bridge_Controller_0237540F-if00-port0",
+      "chip": "ESP32 revision 3.0",
+      "flash_bytes": 4194304,
+      "cpu_mhz": 160,
+      "date": "2026-10-12"
+    },
+    "qualification": {
+      "cycles": 3,
+      "wamr_nodes": 4,
+      "bindings": 16,
+      "full_queues": 32,
+      "messages_per_queue": 4,
+      "payload_bytes": 256,
+      "final_reservations": 0,
+      "final_admission_records": 0,
+      "pass_marker": "P7 capacity PASS: live ACKs, later evidence, pressure eviction and full reclamation",
+      "networked": false
+    },
+    "memory_bytes": {
+      "internal_8bit_heap_total": 212824,
+      "full_free_each_cycle": [
+        40340,
+        40340,
+        40340
+      ],
+      "minimum_free": 40340,
+      "full_largest_block_each_cycle": [
+        18432,
+        18432,
+        18432
+      ],
+      "reclaimed_free_each_cycle": [
+        153268,
+        153268,
+        153268
+      ],
+      "reclaimed_largest_block_each_cycle": [
+        110592,
+        110592,
+        110592
+      ],
+      "sampled_control_stack_free": 6908,
+      "minimum_sampled_worker_stack_free": 5888,
+      "limits": "Bounded local fixture; no UDP control adapter, Wi-Fi or networked collector. Three-cycle recovery is not a long-duration fragmentation proof."
+    }
+  },
+  "four_node_target_structure_bytes": {
+    "baseline": {
+      "admission": 36392,
+      "admission_record": 1184,
+      "node_service": 184,
+      "edge_service": 2704,
+      "control": 6848
+    },
+    "p7": {
+      "admission": 36776,
+      "admission_record": 1200,
+      "node_service": 184,
+      "edge_service": 2896,
+      "control": 7120
+    },
+    "aggregate_growth_excluding_record_double_count": 848,
+    "measurement": "Xtensa ESP32 GCC 14.2.0 compile-time sizeof, CORE_FOUR_NODE_PROFILE=1; not total device RAM or runtime heap qualification."
+  },
+  "collector": {
+    "placement": "Explicitly driven host RAM service with separate enrolled GraphTransport socket; no device exporter task or buffer.",
+    "default_bounds": {
+      "registered_scopes": 32,
+      "report_versions": 32,
+      "diagnostic_entries": 32
+    },
+    "retention": "Every accepted (opId,Kc,revision) remains until exact O ACK; no newer-version supersession.",
+    "failure": "Full refuses copy before device ACK. DB failure may lose the only historical copy; no graph completion gate or persistence claim."
+  },
+  "review": {
+    "design": "Independent in-place/separate-store explorations selected existing admission records and host RAM collector. Two further reviews selected pressure-only Ki retirement over another cache or long-lived node pin.",
+    "standards": "No hard violations; selector naming and duplicate Python query logic simplified.",
+    "spec": "Cross-slot callback alias and final-owner response loss after Kc retirement fixed with new regressions; follow-up reviews found no remaining concrete defect.",
+    "regression_found": "Eager Ki retirement discarded a P6 delayed-command fence with free capacity. New regression failed before the fix; Ki records now retire only under successful admission pressure. Original P6 test unchanged and passing.",
+    "skill_adjustments": "Incremental tests, debugging loop and two-axis review applied. Generic workflow/polymorphism guidance did not override bounded embedded interfaces. No automatic commit over existing uncommitted work."
+  },
+  "lint": "Ruff check and format --check passed for all six produced Python files; git diff --check and source whitespace checks passed.",
+  "limits": [
+    "Q05: discarded rejection history permits obsolete construction; dedicated test observes node capacity reserved after replay of retired FailedClean ADD.",
+    "Final-owner receipt replacement depends on NSTART=1 and strictly increasing non-wrapping MIDs, stronger than generic CoAP.",
+    "Missing history is not proof of historical outcome or object absence.",
+    "Collector archive/O-ACK APIs are trusted local interfaces; UDP uses configured-address attribution, not cryptographic authentication.",
+    "Local physical P7 capacity fixture passed; distributed Wi-Fi/collector target and final composed TLA+/TLC qualification remain open.",
+    "P8 application decisions and P9 final target/formal qualification remain outside this slice."
+  ],
+  "evidence_sha256": {
+    "verification/graph_core/results/p7/baseline-layout.s": "4743ee1e26c9e5caf56fc7cdf8a1bf8d13230dc1d745c85e845a0a42dba0c016",
+    "verification/graph_core/results/p7/before-owner-retention-fix.log": "7b950ec281e97c830caa50fa5f60c20caf5daabe9393befad10efd6c2d381382",
+    "verification/graph_core/results/p7/board-build.log": "1136f92b4a01e0403aec899fb4619d7fa203a301982d2c1aa6bed65f5486ea54",
+    "verification/graph_core/results/p7/board.log": "3b16cb634c36e318754d18a13c2d3e57ded772510a4c4a858f7b084980e58780",
+    "verification/graph_core/results/p7/esp32-build.log": "63fbb7c18d010d73133c535b2fca87a02545ef7e5f617476cd6550c3fac0b7f9",
+    "verification/graph_core/results/p7/final-four.log": "54602c51d211db8cd25f171fcc75eabd9039bd672c6be5b37535e1e2ef86eeed",
+    "verification/graph_core/results/p7/final-host.log": "d1ce58ae5c72e0ffc0134766f9a241551d5473f4465464a95d2a4e4e956f0818",
+    "verification/graph_core/results/p7/flash.log": "07103d29dc30498407ea942beecf78624af342677b0c652fb24d0da33512261d",
+    "verification/graph_core/results/p7/four-build.log": "ab3efff0971867e8f35ff7477080d5adf7e7d825206cfc12834ebd46dcc38975",
+    "verification/graph_core/results/p7/four-details.log": "63cd51e0c185cf31ad0319ba0e34d9f031b8726333dc0644e18e231a03639634",
+    "verification/graph_core/results/p7/host-build.log": "1cbb5a6e1e4546514b099fc25e63f86d388c33dc87db8557245dfda468be8b7d",
+    "verification/graph_core/results/p7/host-details.log": "a34613ac0fa0e76b27205eaf9d70a348765b451ed262d7f4f57c41fe721570e6",
+    "verification/graph_core/results/p7/layout.c": "8cad6e5744655114b159ee7d7322b74cea8cd1da19e18e5aa7fb7033a8b5378e",
+    "verification/graph_core/results/p7/p7-layout.s": "0531e4c429852759a47f2a71eab18ff58bc2fa2c8383f7c27f9a0f01d1ad835b",
+    "verification/graph_core/results/p7/read_p7_board.py": "bfb1fdb2131dd27374167757f5c7ee7d9c64c5d9fa050b10f4502e98c926fc79",
+    "verification/graph_core/results/p7/test-preservation.json": "70dd1488083e3c14de25bf41856d06970e4fb46e4df41337a17cdd40de78f9d0"
+  }
+}

@@ -1,0 +1,626 @@
+--- a/sim_env/graph_relay.py
++++ b/sim_env/graph_relay.py
+@@ -1,8 +1,9 @@
+ """Bounded UDP impairment without changing graph messages or peer attribution.
+ 
+-Each participant enrolls its peers' proxy addresses. A packet received at B's
+-proxy from actual A is forwarded from A's proxy to actual B. The recipient
+-therefore sees exactly its enrolled source address, with no relay envelope.
++Each participant enrolls its peers' management and application proxy addresses.
++A packet received at B's proxy from actual A is forwarded from A's proxy of
++the same class to actual B. The recipient sees its enrolled source address,
++with no relay envelope. Both classes share one queue and directed-link policy.
+ Seeded decisions are reproducible per directed link; process
+ scheduling and the resulting packet order are not deterministic.
+ """
+@@ -32,7 +33,9 @@
+ 
+ 
+ class GraphRelay:
+-    def __init__(self, participants, emit, seed=0, queue_limit=256):
++    def __init__(
++        self, participants, emit, seed=0, queue_limit=256, *, management_only=()
++    ):
+         participants = tuple(participants)
+         if not 1 <= len(participants) <= 10 or len(set(participants)) != len(
+             participants
+@@ -40,6 +43,13 @@
+             raise ValueError("one through ten distinct participants are required")
+         for participant in participants:
+             uint(participant)
++        management_only = tuple(management_only)
++        if len(set(management_only)) != len(management_only):
++            raise ValueError("management-only participants must be distinct")
++        for participant in management_only:
++            uint(participant)
++            if participant not in participants:
++                raise ValueError("management-only participants must be enrolled")
+         uint(seed)
+         if type(queue_limit) is not int or queue_limit < 1:
+             raise ValueError("queue_limit must be a positive integer")
+@@ -58,12 +68,20 @@
+         self._packet_id = 0
+         try:
+             for participant in participants:
+-                stream = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+-                self._sockets[participant] = stream
+-                stream.bind(("127.0.0.1", 0))
+-                stream.setblocking(False)
+-                self.addresses[participant] = stream.getsockname()
+-                self._selector.register(stream, selectors.EVENT_READ, participant)
++                self.addresses[participant] = {}
++                classes = (
++                    ("management",)
++                    if participant in management_only
++                    else ("management", "application")
++                )
++                for socket_class in classes:
++                    key = participant, socket_class
++                    stream = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
++                    self._sockets[key] = stream
++                    stream.bind(("127.0.0.1", 0))
++                    stream.setblocking(False)
++                    self.addresses[participant][socket_class] = stream.getsockname()
++                    self._selector.register(stream, selectors.EVENT_READ, key)
+         except BaseException:
+             self.close()
+             raise
+@@ -74,21 +92,27 @@
+             raise RuntimeError("relay can only start once")
+         if actual_addresses.keys() != self.addresses.keys():
+             raise ValueError("actual addresses must cover every participant exactly")
+-        actual = {}
+-        for owner, address in actual_addresses.items():
+-            host, port = address
+-            ip = ipaddress.IPv4Address(host)
+-            if not ip.is_loopback or type(port) is not int or not 1 <= port <= 65535:
+-                raise ValueError("actual addresses must be loopback UDP endpoints")
+-            actual[owner] = (str(ip), port)
+-        if len(set(actual.values())) != len(actual) or set(actual.values()) & set(
+-            self.addresses.values()
+-        ):
++        actual, proxies = {}, set()
++        for owner, routes in actual_addresses.items():
++            if routes.keys() != self.addresses[owner].keys():
++                raise ValueError("actual addresses must cover every configured class")
++            for socket_class, address in routes.items():
++                host, port = address
++                ip = ipaddress.IPv4Address(host)
++                if (
++                    not ip.is_loopback
++                    or type(port) is not int
++                    or not 1 <= port <= 65535
++                ):
++                    raise ValueError("actual addresses must be loopback UDP endpoints")
++                actual[owner, socket_class] = (str(ip), port)
++                proxies.add(self.addresses[owner][socket_class])
++        if len(set(actual.values())) != len(actual) or set(actual.values()) & proxies:
+             raise ValueError(
+                 "actual sockets must be distinct from each other and proxies"
+             )
+         self._actual = actual
+-        self._owners = {address: owner for owner, address in actual.items()}
++        self._owners = {address: key for key, address in actual.items()}
+         self._thread = threading.Thread(target=self._run, daemon=True)
+         self._thread.start()
+ 
+@@ -104,8 +128,8 @@
+         """Replace one directed link's policy for every packet it carries.
+ 
+         The reverse direction is independent. Loss=1 also drops queued packets
+-        at delivery. Packet classification is diagnostic only: control and data
+-        share the same policy and packet-indexed random streams.
++        at delivery. Both valid socket classes share the same policy and
++        packet-indexed random streams.
+         """
+         uint(source)
+         uint(destination)
+@@ -170,7 +194,8 @@
+             self._failure = error
+             self._stopped.set()
+ 
+-    def _receive(self, destination, stream):
++    def _receive(self, route, stream):
++        destination, socket_class = route
+         # Bound each ready socket's work so delivery and stopping make progress.
+         for _ in range(32):
+             if self._stopped.is_set():
+@@ -180,25 +205,40 @@
+             except BlockingIOError:
+                 return
+             received = time.monotonic_ns() // 1000
+-            source = self._owners.get(address)
++            source_route = self._owners.get(address)
++            source = source_route[0] if source_route is not None else None
+             if source is None or source == destination:
+                 self._emit(
+                     "relay_error",
+                     destination=destination,
++                    socket_class=socket_class,
+                     actual_source=address,
+                     reason="unknown_source" if source is None else "self_route",
+                 )
+                 continue
+-            if len(payload) > MAX_DATAGRAM:
++            plane = "data" if payload[:1] == bytes([SCHEMA_VERSION]) else "control"
++            expected_class = "application" if plane == "data" else "management"
++            if source_route[1] != socket_class or expected_class != socket_class:
+                 self._emit(
+                     "relay_error",
+                     source=source,
+                     destination=destination,
++                    socket_class=socket_class,
++                    source_class=source_route[1],
++                    plane=plane,
++                    reason="wrong_class",
++                )
++                continue
++            if len(payload) > MAX_DATAGRAM:
++                self._emit(
++                    "relay_error",
++                    source=source,
++                    destination=destination,
++                    socket_class=socket_class,
+                     reason="oversized_datagram",
+                     size_at_least=len(payload),
+                 )
+                 continue
+-            plane = "data" if payload[:1] == bytes([SCHEMA_VERSION]) else "control"
+             key = source, destination
+             with self._lock:
+                 loss, delay, duplicate = self._policies.get(key, (0, 0, 0))
+@@ -218,6 +258,7 @@
+                     "source": source,
+                     "destination": destination,
+                     "plane": plane,
++                    "socket_class": socket_class,
+                     "payload_hex": payload.hex(),
+                     "received_us": received,
+                     "due_us": received + delay,
+@@ -255,7 +296,10 @@
+                     self._policies.get((source, destination), (0, 0, 0))[0] == 1
+                 )
+                 if not partitioned:
+-                    self._sockets[source].sendto(payload, self._actual[destination])
++                    socket_class = fields["socket_class"]
++                    self._sockets[source, socket_class].sendto(
++                        payload, self._actual[destination, socket_class]
++                    )
+             if partitioned:
+                 self._emit("packet_dropped", **fields, reason="partition_at_delivery")
+             else:
+--- a/sim_env/graph_run.py
++++ b/sim_env/graph_run.py
+@@ -99,19 +99,27 @@
+         try:
+             actual = {}
+             for device in self.devices:
+-                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+-                reservations.append(sock)
+-                sock.bind(("127.0.0.1", 0))
+-                actual[device] = sock.getsockname()
++                actual[device] = {}
++                for socket_class in ("management", "application"):
++                    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
++                    reservations.append(sock)
++                    sock.bind(("127.0.0.1", 0))
++                    actual[device][socket_class] = sock.getsockname()
+             self.network = GraphRelay(
+-                (*self.devices, self.authority), self.emit, seed=self.seed
++                (*self.devices, self.authority),
++                self.emit,
++                seed=self.seed,
++                management_only=(self.authority,),
+             )
+             self.transport = GraphTransport(
+                 ("127.0.0.1", 0),
+-                {device: self.network.addresses[device] for device in self.devices},
++                {
++                    device: self.network.addresses[device]["management"]
++                    for device in self.devices
++                },
+                 retry_jitter=lambda: 0,
+             )
+-            actual[self.authority] = self.transport.address
++            actual[self.authority] = {"management": self.transport.address}
+             self.network.start(actual)
+             source_dir = Path(__file__).resolve().parent
+             sources = sorted(source_dir.glob("graph_*.py")) + [
+@@ -146,16 +154,21 @@
+                 environment.get("ASAN_OPTIONS", "") + ":detect_stack_use_after_return=0"
+             )
+             ready = {}
+-            for device, reservation in zip(self.devices, reservations):
+-                reservation.close()
++            for index, device in enumerate(self.devices):
++                for reservation in reservations[index * 2 : index * 2 + 2]:
++                    reservation.close()
++                management_port = actual[device]["management"][1]
++                application_port = actual[device]["application"][1]
+                 arguments = [
+                     str(self.host),
+-                    str(actual[device][1]),
+-                    str(self.network.addresses[self.authority][1]),
++                    str(management_port),
++                    str(application_port),
++                    str(self.network.addresses[self.authority]["management"][1]),
+                     str(device),
+                     str(self.authority),
+                     *(
+-                        f"{peer}:{self.network.addresses[peer][1]}"
++                        f"{peer}:{self.network.addresses[peer]['management'][1]}:"
++                        f"{self.network.addresses[peer]['application'][1]}"
+                         for peer in self.devices
+                         if peer != device
+                     ),
+@@ -173,7 +186,13 @@
+                 ready[device] = threading.Event()
+                 reader = threading.Thread(
+                     target=self._read,
+-                    args=(device, process, actual[device][1], ready[device]),
++                    args=(
++                        device,
++                        process,
++                        management_port,
++                        application_port,
++                        ready[device],
++                    ),
+                     daemon=True,
+                 )
+                 self._readers.append(reader)
+@@ -192,13 +211,13 @@
+             for reservation in reservations:
+                 reservation.close()
+ 
+-    def _read(self, device, process, port, ready):
++    def _read(self, device, process, management_port, application_port, ready):
+         listening = False
+         try:
+             for line in process.stdout:
+                 line = line.rstrip("\n")
+                 self.emit("host_stdout", device=device, line=line)
+-                if line == f"LISTENING {port}":
++                if line == f"LISTENING {management_port} {application_port}":
+                     listening = True
+                     ready.set()
+             if not listening:
+--- a/sim_env/graph_transport.py
++++ b/sim_env/graph_transport.py
+@@ -154,7 +154,10 @@
+ 
+ 
+ class GraphTransport:
+-    """One authority socket, at most eight enrolled peers and sixteen artifacts.
++    """One authority management socket, eight enrolled peers and sixteen artifacts.
++
++    ``peers`` maps owner IDs to management addresses only. Application sockets
++    belong to the graph hosts and never carry authority or artifact exchanges.
+ 
+     ``retry_jitter`` returns a value in [0, 1], selecting the RFC's initial
+     timeout in [2, 3] seconds. MID values never repeat during this session;
+--- a/tests/test_graph_relay.py
++++ b/tests/test_graph_relay.py
+@@ -15,12 +15,18 @@
+         self.events = []
+         self.changed = threading.Condition()
+         self.sockets = {}
++        self.application_sockets = {}
+         self.relay = None
+         for owner in (1, 2, 99):
+             stream = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+             stream.bind(("127.0.0.1", 0))
+             stream.settimeout(1)
+             self.sockets[owner] = stream
++            if owner != 99:
++                application = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
++                application.bind(("127.0.0.1", 0))
++                application.settimeout(1)
++                self.application_sockets[owner] = application
+ 
+     def tearDown(self):
+         try:
+@@ -30,6 +36,8 @@
+         finally:
+             for stream in self.sockets.values():
+                 stream.close()
++            for stream in self.application_sockets.values():
++                stream.close()
+ 
+     def emit(self, kind, **fields):
+         with self.changed:
+@@ -37,10 +45,21 @@
+             self.changed.notify_all()
+ 
+     def start(self, limit=256):
+-        self.relay = GraphRelay(self.sockets, self.emit, queue_limit=limit)
+-        self.relay.start(
+-            {owner: stream.getsockname() for owner, stream in self.sockets.items()}
+-        )
++        self.relay = GraphRelay(
++            self.sockets, self.emit, queue_limit=limit, management_only=(99,)
++        )
++        self.relay.start(self.actual_addresses())
++
++    def actual_addresses(self):
++        return {
++            owner: {"management": stream.getsockname()}
++            | (
++                {"application": self.application_sockets[owner].getsockname()}
++                if owner in self.application_sockets
++                else {}
++            )
++            for owner, stream in self.sockets.items()
++        }
+ 
+     def wait_event(self, predicate):
+         deadline = time.monotonic() + 2
+@@ -56,17 +75,25 @@
+                 self.relay.check()
+ 
+     def send(self, source, destination, payload=b"\x40control"):
+-        self.sockets[source].sendto(payload, self.relay.addresses[destination])
++        socket_class = (
++            "application" if payload[:1] == bytes([SCHEMA_VERSION]) else "management"
++        )
++        sockets = (
++            self.application_sockets if socket_class == "application" else self.sockets
++        )
++        sockets[source].sendto(payload, self.relay.addresses[destination][socket_class])
+ 
+     def test_bidirectional_datagrams_preserve_enrolled_peer_and_payload(self):
+         self.start()
+         self.send(99, 1, b"\x40request")
+         self.assertEqual(
+-            self.sockets[1].recvfrom(100), (b"\x40request", self.relay.addresses[99])
++            self.sockets[1].recvfrom(100),
++            (b"\x40request", self.relay.addresses[99]["management"]),
+         )
+         self.send(1, 99, b"\x60response")
+         self.assertEqual(
+-            self.sockets[99].recvfrom(100), (b"\x60response", self.relay.addresses[1])
++            self.sockets[99].recvfrom(100),
++            (b"\x60response", self.relay.addresses[1]["management"]),
+         )
+ 
+     def test_control_and_data_share_policy_with_independent_reverse_link(self):
+@@ -74,6 +101,9 @@
+         self.relay.set_link(1, 2, loss=1)
+         data = bytes([SCHEMA_VERSION]) + b"payload"
+         self.send(1, 2, data)
++        self.wait_event(
++            lambda e: e["kind"] == "packet_dropped" and e["plane"] == "data"
++        )
+         self.send(1, 2)
+         self.wait_event(
+             lambda e: e["kind"] == "packet_dropped" and e["plane"] == "control"
+@@ -83,16 +113,23 @@
+         self.assertTrue(all(e["reason"] == "loss" for e in dropped))
+         for payload in (data, b"\x40control"):
+             self.send(2, 1, payload)
+-            self.assertEqual(self.sockets[1].recvfrom(100)[0], payload)
++            receiving = self.application_sockets if payload == data else self.sockets
++            self.assertEqual(receiving[1].recvfrom(100)[0], payload)
+ 
+     def test_duplicate_delivery_observes_configured_delay(self):
+         self.start()
+         self.relay.set_link(1, 2, delay_ms=40, duplicate=1)
+         for payload in (b"\x40control", bytes([SCHEMA_VERSION]) + b"data"):
+             self.send(1, 2, payload)
+-            expected = payload, self.relay.addresses[1]
+-            self.assertEqual(self.sockets[2].recvfrom(100), expected)
+-            self.assertEqual(self.sockets[2].recvfrom(100), expected)
++            socket_class = "management" if payload[:1] == b"\x40" else "application"
++            receiving = (
++                self.sockets
++                if socket_class == "management"
++                else self.application_sockets
++            )
++            expected = payload, self.relay.addresses[1][socket_class]
++            self.assertEqual(receiving[2].recvfrom(100), expected)
++            self.assertEqual(receiving[2].recvfrom(100), expected)
+         self.wait_event(
+             lambda e: (
+                 e["kind"] == "packet_delivered"
+@@ -148,10 +185,52 @@
+     def test_unknown_actual_source_is_rejected(self):
+         self.start()
+         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as unknown:
+-            unknown.sendto(b"\x40untrusted", self.relay.addresses[1])
++            unknown.sendto(b"\x40untrusted", self.relay.addresses[1]["management"])
+         self.wait_event(lambda e: e.get("reason") == "unknown_source")
+         self.send(99, 1, b"\x40enrolled")
+         self.assertEqual(self.sockets[1].recvfrom(100)[0], b"\x40enrolled")
++
++    def test_both_classes_consume_the_same_queue_capacity(self):
++        self.start(limit=1)
++        self.relay.set_link(1, 2, delay_ms=5000)
++        self.send(1, 2)
++        self.wait_event(lambda e: e["kind"] == "packet_decision")
++        self.send(1, 2, bytes([SCHEMA_VERSION]) + b"data")
++        overflow = self.wait_event(lambda e: e.get("reason") == "relay_overflow")
++        self.assertEqual(overflow["socket_class"], "application")
++        self.assertEqual(overflow["plane"], "data")
++        self.assertEqual(overflow["packet_id"], 2)
++        self.relay.close()
++        ended = [e for e in self.events if e.get("reason") == "run_ended"]
++        self.assertEqual(len(ended), 1)
++        self.assertEqual(ended[0]["socket_class"], "management")
++
++    def test_wrong_socket_and_payload_classes_are_rejected(self):
++        self.start()
++        data = bytes([SCHEMA_VERSION]) + b"data"
++        for sender, destination_class, payload in (
++            (self.sockets[1], "application", data),
++            (self.sockets[1], "management", data),
++            (self.application_sockets[1], "application", b"\x40control"),
++            (self.application_sockets[1], "management", b"\x40control"),
++        ):
++            sender.sendto(payload, self.relay.addresses[2][destination_class])
++            self.wait_event(
++                lambda e, destination_class=destination_class, sender=sender: (
++                    e.get("reason") == "wrong_class"
++                    and e["socket_class"] == destination_class
++                    and e["source_class"]
++                    == ("management" if sender is self.sockets[1] else "application")
++                )
++            )
++        self.assertEqual(sum(e.get("reason") == "wrong_class" for e in self.events), 4)
++        self.assertFalse(any(e["kind"] == "packet_decision" for e in self.events))
++        self.send(1, 2, data)
++        self.assertEqual(
++            self.application_sockets[2].recvfrom(100),
++            (data, self.relay.addresses[1]["application"]),
++        )
++        self.assertEqual(set(self.relay.addresses[99]), {"management"})
+ 
+     def test_oversize_datagram_is_logged_without_forwarding_truncated_bytes(self):
+         self.start()
+@@ -164,12 +243,18 @@
+         for owners in ((), (1, 1), (True, 2), tuple(range(11))):
+             with self.subTest(owners=owners), self.assertRaises(ValueError):
+                 GraphRelay(owners, self.emit)
+-        self.relay = GraphRelay(self.sockets, self.emit)
+-        actual = {owner: stream.getsockname() for owner, stream in self.sockets.items()}
++        self.relay = GraphRelay(self.sockets, self.emit, management_only=(99,))
++        actual = self.actual_addresses()
+         with self.assertRaises(ValueError):
+             self.relay.start({1: actual[1]})
+         with self.assertRaises(ValueError):
+             self.relay.start(actual | {2: actual[1]})
++        with self.assertRaises(ValueError):
++            self.relay.start(actual | {1: {"management": actual[1]["management"]}})
++        with self.assertRaises(ValueError):
++            self.relay.start(
++                actual | {1: actual[1] | {"application": actual[1]["management"]}}
++            )
+         for fields in (
+             {"loss": float("nan")},
+             {"delay_ms": -1},
+@@ -215,6 +300,14 @@
+             for index in range(64):
+                 prefix = SCHEMA_VERSION if mixed and index % 2 else 0x40
+                 self.send(1, 2, bytes([prefix, index]))
++                # Distinct UDP queues do not preserve their combined arrival
++                # order. Hold the link sequence fixed when comparing its RNG.
++                self.wait_event(
++                    lambda e, prefix=prefix, index=index: (
++                        e["kind"] == "packet_decision"
++                        and e["payload_hex"] == bytes([prefix, index]).hex()
++                    )
++                )
+             self.wait_event(
+                 lambda e: (
+                     e["kind"] == "packet_decision" and e["payload_hex"].endswith("3f")
+@@ -236,10 +329,8 @@
+         def fail_emit(kind, **fields):
+             raise OSError("observation output failed")
+ 
+-        self.relay = GraphRelay(self.sockets, fail_emit)
+-        self.relay.start(
+-            {owner: stream.getsockname() for owner, stream in self.sockets.items()}
+-        )
++        self.relay = GraphRelay(self.sockets, fail_emit, management_only=(99,))
++        self.relay.start(self.actual_addresses())
+         self.send(1, 2)
+         deadline = time.monotonic() + 2
+         while time.monotonic() < deadline:
+--- a/tests/test_graph_run.py
++++ b/tests/test_graph_run.py
+@@ -10,6 +10,7 @@
+ from pathlib import Path
+ 
+ import cbor2
++
+ from sim_env.graph_protocol import Channel, Endpoint, Node, Port
+ from sim_env.graph_run import GraphRun, run_lifecycle
+ from sim_env.graph_transport import CREATED
+@@ -161,6 +162,51 @@
+             self.assertEqual(failed_report[7][0] & 56, 56, failed_report)
+             self.assertFalse(failed_report[6] & (4 | 32), failed_report)
+             self.remove_plain_node(run, healthy)
++
++    def test_two_port_routes_deliver_both_classes_with_one_management_authority(self):
++        with GraphRun(self.host, self.output) as run:
++            source, destination, edge = self.add_pair(run)
++            provenance = json.loads((self.output / "provenance.json").read_text())
++            for name in ("actual_addresses", "proxy_addresses"):
++                routes = provenance[name]
++                self.assertEqual(set(routes["99"]), {"management"})
++                for device in ("1", "2"):
++                    self.assertEqual(set(routes[device]), {"management", "application"})
++                    self.assertNotEqual(
++                        routes[device]["management"], routes[device]["application"]
++                    )
++            deadline = time.monotonic() + 2
++            application = []
++            while time.monotonic() < deadline:
++                delivered = [
++                    event
++                    for event in self.events()
++                    if event["kind"] == "packet_delivered"
++                ]
++                application = [
++                    event
++                    for event in delivered
++                    if event["socket_class"] == "application"
++                ]
++                if application:
++                    break
++                time.sleep(0.01)
++            self.assertTrue(application, "real channel data uses application proxies")
++            self.assertTrue(all(event["plane"] == "data" for event in application))
++            self.assertTrue(
++                any(
++                    event["source"] == 99
++                    and event["socket_class"] == "management"
++                    and event["plane"] == "control"
++                    for event in delivered
++                )
++            )
++            self.assertFalse(
++                any(event["kind"] == "relay_error" for event in self.events())
++            )
++            self.succeed(run, run.o.remove_edge(edge.bindings[0], cleanup_us=1_000_000))
++            self.remove_plain_node(run, source)
++            self.remove_plain_node(run, destination)
+ 
+     def test_lost_admission_response_is_reconciled_without_redispatch(self):
+         with GraphRun(self.host, self.output, devices=(1,)) as run:
+--- a/tests/test_graph_runtime_process.py
++++ b/tests/test_graph_runtime_process.py
+@@ -22,9 +22,14 @@
+ )
+ class GraphRuntimeProcessTests(unittest.TestCase):
+     def setUp(self):
+-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
++        with (
++            socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe,
++            socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as application_probe,
++        ):
+             probe.bind(("127.0.0.1", 0))
++            application_probe.bind(("127.0.0.1", 0))
+             self.device = probe.getsockname()
++            self.application = application_probe.getsockname()
+         self.transport = GraphTransport(("127.0.0.1", 0), {1: self.device})
+         # WAMR validates native stack addresses; ASan fake stacks are incompatible.
+         runtime_environment = dict(os.environ)
+@@ -36,6 +41,7 @@
+             [
+                 os.environ["KAOS_P3_HOST"],
+                 str(self.device[1]),
++                str(self.application[1]),
+                 str(self.transport.address[1]),
+                 "1",
+                 "99",
+@@ -53,7 +59,10 @@
+ 
+         self.reader = threading.Thread(target=read_lines, daemon=True)
+         self.reader.start()
+-        self.assertEqual(self.lines.get(timeout=5), f"LISTENING {self.device[1]}")
++        self.assertEqual(
++            self.lines.get(timeout=5),
++            f"LISTENING {self.device[1]} {self.application[1]}",
++        )
+         self.o = Orchestrator([1])
+         self.artifact = Path(os.environ["KAOS_P3_GUEST"]).read_bytes()
+ 

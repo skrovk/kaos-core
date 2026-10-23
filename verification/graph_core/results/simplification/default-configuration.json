@@ -1,0 +1,15 @@
+{
+  "CMAKE_BUILD_TYPE:STRING": "",
+  "CMAKE_C_FLAGS:STRING": "",
+  "CORE_BUILD_HOST:BOOL": "ON",
+  "CORE_BUILD_P2_HOST:BOOL": "ON",
+  "CORE_BUILD_P3_HOST:BOOL": "OFF",
+  "CORE_BUILD_P4_HOST:BOOL": "OFF",
+  "CORE_FOUR_NODE_PROFILE:BOOL": "OFF",
+  "CORE_SANITIZE:BOOL": "ON",
+  "CORE_UV:FILEPATH": "/home/karolina/.local/bin/uv",
+  "CORE_WAMR_ROOT:PATH": "/home/karolina/Research/Code/kaos_core/graph_core/runtime/../../../sim_env/.deps/wamr",
+  "CORE_WAMR_TRACE_PREPARE:BOOL": "OFF",
+  "CORE_WASI_CLANG:FILEPATH": "/opt/wasi-sdk/bin/clang",
+  "CMAKE_HOME_DIRECTORY:INTERNAL": "/home/karolina/Research/Code/kaos_core/verification/graph_core"
+}

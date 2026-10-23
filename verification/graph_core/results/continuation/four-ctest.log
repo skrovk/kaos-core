@@ -1,0 +1,58 @@
+[OUTPUT] 
+Internal ctest changing into directory: /tmp/kaos-refactor-four
+
+[HANDLER_OUTPUT] 
+Test project /tmp/kaos-refactor-four
+
+      Start  1: graph_native_runtime
+ 1/24 Test  #1: graph_native_runtime .............   Passed    0.05 sec
+      Start  2: graph_native_removal
+ 2/24 Test  #2: graph_native_removal .............   Passed    0.03 sec
+      Start  3: graph_native_request
+ 3/24 Test  #3: graph_native_request .............   Passed    0.02 sec
+      Start  4: graph_native_protocol
+ 4/24 Test  #4: graph_native_protocol ............   Passed    0.24 sec
+      Start  5: graph_native_process
+ 5/24 Test  #5: graph_native_process .............   Passed    1.15 sec
+      Start  6: graph_workload_stalls
+ 6/24 Test  #6: graph_workload_stalls ............   Passed    0.10 sec
+      Start  7: graph_optional_expiry
+ 7/24 Test  #7: graph_optional_expiry ............   Passed    8.41 sec
+      Start  8: graph_p8_workloads
+ 8/24 Test  #8: graph_p8_workloads ...............   Passed    3.04 sec
+      Start  9: graph_p8_workload_timing
+ 9/24 Test  #9: graph_p8_workload_timing .........   Passed    1.53 sec
+      Start 10: graph_p8_alternatives
+10/24 Test #10: graph_p8_alternatives ............   Passed    7.37 sec
+      Start 11: graph_p8_mixed
+11/24 Test #11: graph_p8_mixed ...................   Passed   13.69 sec
+      Start 12: graph_p4_capacity
+12/24 Test #12: graph_p4_capacity ................   Passed    3.09 sec
+      Start 13: graph_p5_capacity
+13/24 Test #13: graph_p5_capacity ................   Passed    3.12 sec
+      Start 14: graph_p5
+14/24 Test #14: graph_p5 .........................   Passed    0.04 sec
+      Start 15: graph_admission_reuse
+15/24 Test #15: graph_admission_reuse ............   Passed    0.03 sec
+      Start 16: graph_host_control
+16/24 Test #16: graph_host_control ...............   Passed    0.02 sec
+      Start 17: graph_p6
+17/24 Test #17: graph_p6 .........................   Passed    0.03 sec
+      Start 18: graph_p6_admission
+18/24 Test #18: graph_p6_admission ...............   Passed    0.02 sec
+      Start 19: graph_p6_control
+19/24 Test #19: graph_p6_control .................   Passed    0.02 sec
+      Start 20: graph_p7
+20/24 Test #20: graph_p7 .........................   Passed    0.05 sec
+      Start 21: graph_p7_control
+21/24 Test #21: graph_p7_control .................   Passed    0.02 sec
+      Start 22: graph_p7_lifecycle
+22/24 Test #22: graph_p7_lifecycle ...............   Passed    0.02 sec
+      Start 23: graph_p6_capacity
+23/24 Test #23: graph_p6_capacity ................   Passed    0.12 sec
+      Start 24: graph_p7_capacity
+24/24 Test #24: graph_p7_capacity ................   Passed    0.11 sec
+
+100% tests passed, 0 tests failed out of 24
+
+Total Test time (real) =  42.36 sec

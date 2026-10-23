@@ -1,0 +1,36 @@
+[1/28] Building C object esp-idf/graph_core/CMakeFiles/__idf_graph_core.dir/kaos_predicate.c.obj
+[2/28] Building C object esp-idf/graph_core/CMakeFiles/__idf_graph_core.dir/kaos_graph.c.obj
+[3/28] Performing build step for 'bootloader'
+[1/1] cd /tmp/kaos-transport-esp32/bootloader/esp-idf/esptool_py && /home/karolina/.espressif/python_env/idf5.5_py3.12_env/bin/python /home/karolina/esp/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 bootloader 0x1000 /tmp/kaos-transport-esp32/bootloader/bootloader.bin
+Bootloader binary size 0x6680 bytes. 0x980 bytes (8%) free.
+[4/28] No install step for 'bootloader'
+[5/28] Completed 'bootloader'
+[6/28] Building C object esp-idf/graph_core/CMakeFiles/__idf_graph_core.dir/kaos_report.c.obj
+[7/28] Building C object esp-idf/graph_core/CMakeFiles/__idf_graph_core.dir/kaos_request.c.obj
+[8/28] Building C object esp-idf/graph_core/CMakeFiles/__idf_graph_core.dir/kaos_artifact.c.obj
+[9/28] Building C object esp-idf/graph_core/CMakeFiles/__idf_graph_core.dir/kaos_coap.c.obj
+[10/28] Building C object esp-idf/graph_core/CMakeFiles/__idf_graph_core.dir/kaos_admission.c.obj
+[11/28] Building C object esp-idf/graph_core/CMakeFiles/__idf_graph_core.dir/kaos_control.c.obj
+[12/28] Building C object esp-idf/graph_core/CMakeFiles/__idf_graph_core.dir/kaos_node.c.obj
+[13/28] Building C object esp-idf/graph_core/CMakeFiles/__idf_graph_core.dir/ports/espidf/clock.c.obj
+[14/28] Building C object esp-idf/graph_core/CMakeFiles/__idf_graph_core.dir/kaos_endpoint.c.obj
+[15/28] Building C object esp-idf/graph_core/CMakeFiles/__idf_graph_core.dir/host_udp.c.obj
+[16/28] Building C object esp-idf/graph_core/CMakeFiles/__idf_graph_core.dir/kaos_edge.c.obj
+[17/28] Building C object esp-idf/graph_core/CMakeFiles/__idf_graph_core.dir/kaos_host.c.obj
+[18/28] Building C object esp-idf/runtime/CMakeFiles/__idf_runtime.dir/profile.c.obj
+[19/28] Linking C static library esp-idf/graph_core/libgraph_core.a
+[20/28] Building C object esp-idf/runtime/CMakeFiles/__idf_runtime.dir/native_fixture.c.obj
+[21/28] Building C object esp-idf/runtime/CMakeFiles/__idf_runtime.dir/kaos_wamr.c.obj
+[22/28] Linking C static library esp-idf/runtime/libruntime.a
+[23/28] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/__/app_main.c.obj
+[24/28] Linking C static library esp-idf/main/libmain.a
+[25/28] Generating esp-idf/esp_system/ld/sections.ld
+[26/28] Linking CXX executable kaos_graph_host.elf
+[27/28] Generating binary image from built executable
+esptool.py v4.10.dev2
+Creating esp32 image...
+Merged 2 ELF sections
+Successfully created esp32 image.
+Generated /tmp/kaos-transport-esp32/kaos_graph_host.bin
+[28/28] cd /tmp/kaos-transport-esp32/esp-idf/esptool_py && /home/karolina/.espressif/python_env/idf5.5_py3.12_env/bin/python /home/karolina/esp/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 partition --type app /tmp/kaos-transport-esp32/partition_table/partition-table.bin /tmp/kaos-transport-esp32/kaos_graph_host.bin
+kaos_graph_host.bin binary size 0xe0180 bytes. Smallest app partition is 0x100000 bytes. 0x1fe80 bytes (12%) free.

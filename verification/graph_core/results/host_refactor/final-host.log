@@ -1,0 +1,76 @@
+Internal ctest changing into directory: /tmp/kaos-p3-session/host
+Test project /tmp/kaos-p3-session/host
+      Start  1: graph_p4_process
+ 1/35 Test  #1: graph_p4_process .................   Passed    0.54 sec
+      Start  2: graph_p5_process
+ 2/35 Test  #2: graph_p5_process .................   Passed    3.72 sec
+      Start  3: graph_p6_process
+ 3/35 Test  #3: graph_p6_process .................   Passed    0.86 sec
+      Start  4: graph_p7_process
+ 4/35 Test  #4: graph_p7_process .................   Passed    0.76 sec
+      Start  5: graph_python_regression
+ 5/35 Test  #5: graph_python_regression ..........   Passed    8.00 sec
+      Start  6: graph_host
+ 6/35 Test  #6: graph_host .......................   Passed    0.02 sec
+      Start  7: graph_host_udp
+ 7/35 Test  #7: graph_host_udp ...................   Passed    0.02 sec
+      Start  8: graph_wamr
+ 8/35 Test  #8: graph_wamr .......................   Passed    0.13 sec
+      Start  9: graph_wamr_entry
+ 9/35 Test  #9: graph_wamr_entry .................   Passed    0.08 sec
+      Start 10: graph_wamr_channel
+10/35 Test #10: graph_wamr_channel ...............   Passed    0.03 sec
+      Start 11: graph_wamr_budget
+11/35 Test #11: graph_wamr_budget ................   Passed    0.03 sec
+      Start 12: graph_wamr_capacity
+12/35 Test #12: graph_wamr_capacity ..............   Passed    0.20 sec
+      Start 13: graph_core_foundations
+13/35 Test #13: graph_core_foundations ...........   Passed    0.03 sec
+      Start 14: graph_admission
+14/35 Test #14: graph_admission ..................   Passed    0.02 sec
+      Start 15: graph_request
+15/35 Test #15: graph_request ....................   Passed    0.02 sec
+      Start 16: graph_dynamic_binding
+16/35 Test #16: graph_dynamic_binding ............   Passed    0.02 sec
+      Start 17: graph_report
+17/35 Test #17: graph_report .....................   Passed    0.02 sec
+      Start 18: graph_object_facts
+18/35 Test #18: graph_object_facts ...............   Passed    0.02 sec
+      Start 19: graph_coap
+19/35 Test #19: graph_coap .......................   Passed    0.05 sec
+      Start 20: graph_coap_server
+20/35 Test #20: graph_coap_server ................   Passed    0.02 sec
+      Start 21: graph_artifact
+21/35 Test #21: graph_artifact ...................   Passed    0.04 sec
+      Start 22: graph_control
+22/35 Test #22: graph_control ....................   Passed    0.02 sec
+      Start 23: graph_host_control
+23/35 Test #23: graph_host_control ...............   Passed    0.02 sec
+      Start 24: graph_p2_host
+24/35 Test #24: graph_p2_host ....................   Passed    0.02 sec
+      Start 25: graph_node
+25/35 Test #25: graph_node .......................   Passed    0.02 sec
+      Start 26: graph_endpoint
+26/35 Test #26: graph_endpoint ...................   Passed    0.02 sec
+      Start 27: graph_edge
+27/35 Test #27: graph_edge .......................   Passed    0.02 sec
+      Start 28: graph_p5
+28/35 Test #28: graph_p5 .........................   Passed    0.04 sec
+      Start 29: graph_channel_admission
+29/35 Test #29: graph_channel_admission ..........   Passed    0.02 sec
+      Start 30: graph_p6
+30/35 Test #30: graph_p6 .........................   Passed    0.04 sec
+      Start 31: graph_p6_admission
+31/35 Test #31: graph_p6_admission ...............   Passed    0.02 sec
+      Start 32: graph_p6_control
+32/35 Test #32: graph_p6_control .................   Passed    0.02 sec
+      Start 33: graph_p7
+33/35 Test #33: graph_p7 .........................   Passed    0.03 sec
+      Start 34: graph_p7_control
+34/35 Test #34: graph_p7_control .................   Passed    0.02 sec
+      Start 35: graph_p7_lifecycle
+35/35 Test #35: graph_p7_lifecycle ...............   Passed    0.02 sec
+
+100% tests passed, 0 tests failed out of 35
+
+Total Test time (real) =  14.97 sec

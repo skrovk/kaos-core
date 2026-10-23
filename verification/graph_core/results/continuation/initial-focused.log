@@ -1,0 +1,14 @@
+[OUTPUT] 
+Internal ctest changing into directory: /tmp/kaos-timing-host
+
+[HANDLER_OUTPUT] 
+Test project /tmp/kaos-timing-host
+
+    Start 1: graph_native_runtime
+1/2 Test #1: graph_native_runtime .............   Passed    0.05 sec
+    Start 2: graph_workload_stalls
+2/2 Test #2: graph_workload_stalls ............   Passed    0.10 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =   0.15 sec

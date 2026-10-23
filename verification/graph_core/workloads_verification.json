@@ -1,0 +1,306 @@
+{
+  "date": "2026-10-20",
+  "scope": "P8 deterministic value/correlation workloads on actual C/WAMR hosts, optional successful PUT/GET observations, and removal-record reuse correction. Partial P8 acceptance; no P9 or ventilation acceptance.",
+  "paths": "Source keys are relative to the kaos_core repository root. Artifact keys are original build paths. Check/log paths are relative to verification/graph_core.",
+  "repository": {
+    "head": "00de8fe2029e0e1e2025aa6389d199cc43b93ef0",
+    "working_tree": "dirty; source hashes identify the reviewed state, no commit created"
+  },
+  "implementation": {
+    "guest_abi": "Unchanged; init, put, get, event_get and event_wait only.",
+    "pipeline": "64-byte sequence/value/padding records; source value=sequence, transform value=2*sequence+1 modulo 2^32, sink validates. One pending transform output. Distributed removal/fresh-add requires successful cleanup and distinct transform instance identity.",
+    "feedback": "One outstanding sequence; idempotent requests retried until matching response, older duplicate responses cannot advance the sequence.",
+    "observation": "Optional platform callback after successful host PUT/GET under the registry lock. POSIX KAOS_TRACE_CHANNELS=1 emits one bounded nonblocking write, sequence numbers and final attempt/drop totals after workers join. No extra queue/allocation/retry; unset on ESP-IDF.",
+    "evaluator": "Validate all observed sample bytes; correlate in-window GETs with preceding matching PUTs from the expected concrete source instance. At least eight unique output samples per phase is the mechanical pass criterion. Missing/gapped/dropped observations make a result inconclusive.",
+    "admission_fix": "Pass found (the current operation record) rather than record (possibly an eviction candidate still containing old scope) to check_removal_binding_conflicts. Retained descriptor checks and rejection atomicity remain in force."
+  },
+  "profile": {
+    "fresh_run": "CORE_FOUR_NODE_PROFILE=1",
+    "nodes_per_host": 4,
+    "endpoint_reservations": 32,
+    "admission_records": 24,
+    "max_request_channels": 8,
+    "max_ports": 8,
+    "coap_response_cache": 4,
+    "python_max_channels": 4,
+    "python_max_ports": 4,
+    "workload_queue_messages": 2,
+    "sample_bytes": 64,
+    "guest_linear_memory_bytes": 65536,
+    "guest_stack_bytes": 4096,
+    "bounds_changed": false
+  },
+  "tools": {
+    "host_compiler": "GCC Ubuntu 13.3.0",
+    "cmake": "3.28.3",
+    "wasi_clang": "14.0.4 (29f1039a7285a5c3a9c353d054140bf2556d4c4d)",
+    "python": "3.12.3",
+    "ruff": "0.16.6",
+    "uv": "0.12.11",
+    "wamr_commit": "b124f70345d712bead5c0c2393acb2dc583511de"
+  },
+  "commands": {
+    "four_configure": "cmake -S verification/graph_core/four -B /tmp/kaos-refactor-four -G Ninja -DCORE_SANITIZE=ON -DCMAKE_C_FLAGS=-fstack-usage",
+    "four_build": "cmake --build /tmp/kaos-refactor-four -j4",
+    "four_test": "ctest --test-dir /tmp/kaos-refactor-four --output-on-failure --output-log /home/karolina/Research/Code/kaos_core/verification/graph_core/results/p8_workloads/four-ctest.log",
+    "example": "uv --directory /home/karolina/Research/Code/sim_env run --offline python -m sim_env.graph_workloads --host /tmp/kaos-refactor-four/core/kaos_host --guest /tmp/kaos-refactor-four/pipeline.wasm --workload pipeline --output /home/karolina/Research/Code/kaos_core/verification/graph_core/results/p8_workloads/pipeline-example --seed 42",
+    "default_test_historical": "ctest --test-dir /tmp/kaos-refactor-host --output-on-failure --output-log /home/karolina/Research/Code/kaos_core/verification/graph_core/results/p8_workloads/host-ctest.log"
+  },
+  "checks": {
+    "four_node": {
+      "date": "2026-10-20",
+      "status": "passed",
+      "ctest_passed": 14,
+      "ctest_total": 14,
+      "duration_seconds": 10.12,
+      "asan": true,
+      "ubsan": true,
+      "workload_tests_passed": 10,
+      "workload_tests_skipped": 0,
+      "workload_python_duration_seconds": 2.907,
+      "summary": "results/p8_workloads/four-ctest.log",
+      "details": "results/p8_workloads/four-test-details.log",
+      "build_log": "results/p8_workloads/four-build-2026-10-20.log",
+      "cache": "results/p8_workloads/four-CMakeCache.txt"
+    },
+    "default_profile_historical": {
+      "date": "2026-10-16",
+      "status": "passed",
+      "ctest_passed": 40,
+      "ctest_total": 40,
+      "duration_seconds": 28.68,
+      "asan": true,
+      "ubsan": true,
+      "summary": "results/p8_workloads/host-ctest.log",
+      "build_log": "results/p8_workloads/host-build.log",
+      "limits": "Retained summary from the earlier run, not rerun on 20 October. Temporary binaries, binary hashes, CMake cache and detailed CTest log were not retained before interruption. The default configuration skips the local three-node pipeline."
+    },
+    "ruff": {
+      "status": "passed",
+      "files": [
+        "../sim_env/sim_env/graph_run.py",
+        "../sim_env/sim_env/graph_workloads.py",
+        "../sim_env/tests/test_graph_workloads.py"
+      ],
+      "commands": [
+        "../sim_env/.venv/bin/ruff check --no-cache --config ../sim_env/pyproject.toml ../sim_env/sim_env/graph_run.py ../sim_env/sim_env/graph_workloads.py ../sim_env/tests/test_graph_workloads.py",
+        "../sim_env/.venv/bin/ruff format --check --config ../sim_env/pyproject.toml ../sim_env/sim_env/graph_run.py ../sim_env/sim_env/graph_workloads.py ../sim_env/tests/test_graph_workloads.py"
+      ],
+      "log": "results/p8_workloads/ruff-2026-10-20.log"
+    },
+    "verification_source_checkpoint": {
+      "date": "2026-10-16",
+      "matched_files": 81,
+      "changed_files": [],
+      "manifest": "results/p8_workloads/test_source_baseline.json",
+      "scope": "C/H/Python verification sources in this checkpoint, including the new workload fixtures and regression. This is not a pre-slice baseline. No existing test case was edited for this workload slice; new cases and CMake registration were added."
+    }
+  },
+  "new_test_coverage": [
+    "Complete zero-sample trace fails; malformed values and unmatched GETs are rejected.",
+    "Missing final totals, sequence gaps or counted drops are inconclusive; zero-length successful GET remains representable.",
+    "Distributed pipeline replaces the transform with fresh identity, preserves source/sink, observes samples in both windows and removes all nodes.",
+    "Co-located pipeline records local GETs without relay data traffic; two remaining nodes are explicit at teardown.",
+    "Local feedback completes and removes both nodes.",
+    "Remote feedback survives 25% forward-link loss and 5 ms delay with delayed authority preparation; reverse policy remains independent.",
+    "100% forward-link outage fails the minimum-sample criterion; previously queued data need not disappear.",
+    "Admission record pressure permits a valid fresh removal while changed retained descriptors and duplicate logical-channel entries reject without mutation."
+  ],
+  "retained_example": {
+    "result": "results/p8_workloads/pipeline-example/result.json",
+    "events": "results/p8_workloads/pipeline-example/events.jsonl",
+    "provenance": "results/p8_workloads/pipeline-example/provenance.json",
+    "seed": 42,
+    "hosts": [
+      1,
+      2,
+      3
+    ],
+    "authority": 99,
+    "clock": "Real common-host CLOCK_MONOTONIC; process scheduling is not deterministic.",
+    "faults": "No impairment requested; restored default directed-link policies around cleanup.",
+    "expected": "At least eight unique output samples in each phase, complete trace, eight successful operations and all instances explicitly removed.",
+    "status": "passed",
+    "trace_complete": true,
+    "observations": 1796,
+    "phases": [
+      {
+        "name": "initial",
+        "received": 218,
+        "unique_sequences": 218,
+        "duplicates": 0,
+        "observed_sequence_gaps": 5,
+        "first_sequence": 8,
+        "last_sequence": 230
+      },
+      {
+        "name": "replacement",
+        "received": 203,
+        "unique_sequences": 203,
+        "duplicates": 0,
+        "observed_sequence_gaps": 8,
+        "first_sequence": 243,
+        "last_sequence": 453
+      }
+    ],
+    "windows": [
+      {
+        "name": "initial",
+        "begin_us": 134553781248,
+        "end_us": 134554031563,
+        "instances": {
+          "10": 0,
+          "20": 2,
+          "30": 1
+        }
+      },
+      {
+        "name": "replacement",
+        "begin_us": 134554053862,
+        "end_us": 134554304543,
+        "instances": {
+          "10": 0,
+          "20": 4,
+          "30": 1
+        }
+      }
+    ],
+    "successful_graph_operations": 8,
+    "remaining_instances_at_teardown": [],
+    "outstanding_obligations": "No remaining workload instances or unsuccessful graph operations reported; this is not a complete internal-state memory audit."
+  },
+  "resource_evidence": {
+    "trace_stack": {
+      "bytes": 1248,
+      "classification": "dynamic,bounded",
+      "log": "results/p8_workloads/posix-host-stack-usage.txt",
+      "limit": "GCC host sanitizer build only; not an embedded stack qualification."
+    },
+    "capacity": "Existing four-node capacity tests passed unchanged; their reservation/queue/reclamation measurements are retained in four-test-details.log. Workloads add no internal memory-ledger instrumentation."
+  },
+  "historical_diagnosis": {
+    "observation": "Before correction, the second distributed transform removal (operation 5) became Unresolved after remote BadRequest responses; reported object flags were [56,136,56,56,136]. A focused new regression failed before the one-line record-selection correction and passed afterward.",
+    "retention": "Exploratory failing run/debug artifacts were not retained across the interrupted session; this account is history, not a retained failing trace. The corrected regression and successful full trace are retained."
+  },
+  "environment_notes": [
+    "Initial four-profile configure could not write WAMR core/version.h.tmp in the sibling repository under the sandbox. The approved external configure succeeded. four-configure-2026-10-20.log records the failed sandbox attempt only; successful configuration is captured by four-CMakeCache.txt and the subsequent build.",
+    "Host UDP, uv cache and LeakSanitizer checks ran with approved permissions. Prior interrupted four-profile invocations are not counted as results.",
+    "After the successful run, only comments in kaos_host_platform.h were clarified (diagnostic callbacks need not hold the registry lock). No executable code or test case changed after that run; documentation and this record were completed afterward."
+  ],
+  "limits_and_remaining_work": [
+    "APP01 remains partial: no periodic acquisition schedule, scheduled-miss counts or synthetic deadline/freshness evaluation. event_wait(1000) can wake early.",
+    "GET is host copy-out, not proof of subsequent application acceptance, physical actuation or QoC. No guest acquisition clock or new timing API was introduced.",
+    "Observed sequence gaps do not identify network loss. Tracing adds execution overhead; no ESP32 timing or stack claim.",
+    "Only optional PUT/GET records have explicit loss accounting. Ordinary diagnostic stdout and kernel receive loss remain unqualified.",
+    "Co-located pipeline uses its four ordinary CoAP admission cache entries for three additions and transform removal, then records source/sink as remaining until process teardown. Distributed pipeline and both feedback variants explicitly remove every node.",
+    "Named lifecycle fault barriers, broader observer coverage, crash/freeze/collector faults and alternative-channel application examples remain P8 work.",
+    "Ventilation control/QoC choices and plant parameters/measurement qualification remain gated by R07/R08. Q19 does not permit inferred acquisition freshness or automatic addition of a mandatory guest clock API.",
+    "Final composed Q14 formal qualification and physical-target resource/timing acceptance remain open; no full P8/P9 completion claim."
+  ],
+  "source_sha256": {
+    "graph_core/CMakeLists.txt": "331852e8be1c0cc4457609d86e0ad76cbaccb01cd829518379eab6242ee18083",
+    "graph_core/include/kaos_admission.h": "6b6abaf8fc562aecc483b13a9587b9751bf77a2353051ffeada9702bea1a286f",
+    "graph_core/include/kaos_artifact.h": "b7c881a2c5d4bfe4863140c5f07adca6e531cb438484bbd647d131ef9805af66",
+    "graph_core/include/kaos_coap.h": "d325494043daa939025e6c76ad259496f7cd9f1ee8ffbe8ace64013f44701881",
+    "graph_core/include/kaos_control.h": "c8117f29956a34acb7da956993f185842c65ba60dd16afbd0f7c9848595bc540",
+    "graph_core/include/kaos_edge.h": "fbed64cb1c6321f02c6df40870a855b7370e4e9f0e47588f75f5c40b17e8960f",
+    "graph_core/include/kaos_endpoint.h": "4352573e910b43c1945b98903080d78c39ab80ec554a60549d082974530a661e",
+    "graph_core/include/kaos_graph.h": "8cedf2bf6a76987f6e4935d726c7740833a7cadefa66e9004cba6523233a9d2e",
+    "graph_core/include/kaos_host.h": "cf22ce62c7bd34e483d5bd02d0e59092ee35ec3c0d068ee30ecbccce9337d181",
+    "graph_core/include/kaos_host_platform.h": "38ebd53c8fb48f4e9d6350944cfd1d8a864488b2d4c42327d416e0fa687e0335",
+    "graph_core/include/kaos_limits.h": "cf78da6da9a38b7d967232401a3fbf4e2eef1c1acea1653b8d895d495ada3bbd",
+    "graph_core/include/kaos_node.h": "b4cefbdf42bfb2da7162b9f99ad2dcf40d217d193a0add90ea8351155b8a9d6a",
+    "graph_core/include/kaos_predicate.h": "da0a6b6e1281f32d604a0347daa556f0729f32e17e7bb8ca3bfa04be98d06221",
+    "graph_core/include/kaos_report.h": "f99c818857ae483e25a7e5878daa29a4b06717e68f2a1a52063610b74130a8d6",
+    "graph_core/include/kaos_runtime.h": "06a4c64e5e2c5575ac50d5b7c67dac96278e955fe416ea929f7d7ed549ba0edd",
+    "graph_core/include/kaos_wamr.h": "6abe1e110a8e7b60fa0821de8a7c23baf215145daf6a1dfccdd6cbd4b2c1ed4d",
+    "graph_core/kaos_admission.c": "e6c3b4399c222a98828d0b1ad4e5d751a4e7818c4b90d4c467e0213edd9d6ab4",
+    "graph_core/kaos_admission_internal.h": "3bd06ffee9208051364e4f89079533ce9fec1043407f417e1df62644631c6e7d",
+    "graph_core/kaos_artifact.c": "b82adb947e9b76f6706d13450cc67a7f2e59303b180be5f8a363e9e4afbfbfa1",
+    "graph_core/kaos_cbor.h": "31ef5d10a7914ab48d03356f1133d1c40452a93c9ddc57384956d46848fee131",
+    "graph_core/kaos_coap.c": "904ec321886c49dc39a70ed8661e1269551371dae9dab35387dcf0fc000424eb",
+    "graph_core/kaos_control.c": "ffc947c80ef9bbbbd93e0aded20e683d6db9d440464ef1964d5aebeb6b220980",
+    "graph_core/kaos_edge.c": "e935e7ad4e5195f5d768bb921d57141077d63d26f88a5aea6337583dd93b0501",
+    "graph_core/kaos_endpoint.c": "e57e108bafc22fc91d317b6c61a0b68f3f08ff14f511dff5e0cb987b2881a25f",
+    "graph_core/kaos_graph.c": "fc3e63bff1d5fa615fddd9e2b931274a0f610e19caa608dceffea6f256ceecac",
+    "graph_core/kaos_host.c": "119a80854e181391b99883104100fc4f3757a9ed7c8b750a76c5de502e0c288a",
+    "graph_core/kaos_node.c": "0e86538b31c9ff244d7b4cd90532dd1f540664838bc29307a4c5d44b8215ad94",
+    "graph_core/kaos_predicate.c": "f578bfd625987922f8dca4eeec43ee329e129eec12ea98f8c4412d27f27e9d2e",
+    "graph_core/kaos_report.c": "efcc3473b5657053aaba1e4c85ddccf22031d6fd740d131ca6d680ebdbd224d8",
+    "graph_core/kaos_request.c": "e450be5228b2ab2ca6218915dd81b21638e4ade8bb86a3b42d99feb0b60ddff9",
+    "graph_core/ports/clock_espidf.c": "d78583e5eb356cb200b84fde8536bb597c85cc887e66fe2117f2532b1577488c",
+    "graph_core/ports/clock_posix.c": "d6b83af5f0088cdb02d264a7c270e8311bd5df5b9d264f5baaa6ea45d148e458",
+    "graph_core/ports/espidf/CMakeLists.txt": "488d1ba8e3bca726178ae51faa144b0d02f63020d94c32419fc4927bb91dae87",
+    "graph_core/ports/espidf/app_main.c": "75663542324e4fd34e0942df9168ad19c226c5455a59b15d8ac9a5dd2c9fba02",
+    "graph_core/ports/espidf/main/CMakeLists.txt": "5c7c28ba47a48954c6c6604a5fdf313dc20d1238386ff41172e9d2fe8268c541",
+    "graph_core/ports/host_udp.c": "140d4c2f9a2ec14f24a5507eea50c63f5d56491511fd729b040604c73f0fbc02",
+    "graph_core/ports/host_udp.h": "1cada54040a3b7eb340a48ff77a29282bbade237db37716f4578cc8ef43ae7c5",
+    "graph_core/ports/posix/main.c": "0993959ade9220f6d94a2d7dd819b47d323c1fc3298a9729e463968ff0210c23",
+    "graph_core/runtime/CMakeLists.txt": "6d58e3919db5335c0d99499c83772d364f58dddf5b3314d916d26463533d4d5d",
+    "graph_core/runtime/kaos_wamr.c": "a48ae6b55b0061745a961d0474e14c75cbff16169940fa5594adb2a6f8066433",
+    "graph_core/runtime/profile.c": "06acfe92d9d30a45cadfa2ef96b48d03e65de648bd202622639f295459e63472",
+    "graph_core/runtime/wamr.cmake": "9fdafb52d97b808e6c45f0db0f9c9b531b35600e2e773b3d8d2295d707df6740",
+    "verification/graph_core/CMakeLists.txt": "6abe92b8b2cda77ecb534e710895ea360a0af1e3d1853d6b0f38c999edf0b9e1",
+    "verification/graph_core/four/CMakeLists.txt": "5b3720cea5d0319cca1b50cf07b9c6dca3c2e398bd6d6b2aeeec59753a484ae2",
+    "verification/graph_core/workloads.cmake": "5318d820816c489a60159c92265c9100eabfdebbe657ca1edffae97e4769fa50",
+    "verification/graph_core/guests/workload.h": "28f1e4d04a116673461301c913612eb2d7ae0885e23abcccb8ee84c018d312b2",
+    "verification/graph_core/guests/pipeline.c": "7e641a69bdc9fbe640db19202114638c03afaf5ed942279ca9ee52f4cc33805f",
+    "verification/graph_core/guests/feedback.c": "d4d8363031448b8a22f5a55f34f4fa9e60ef918925d8c19ec0dceaca36ed3d4c",
+    "verification/graph_core/tests/admission_reuse_test.c": "d885ae6a8464ef63cc56d60f20507c16cf3bc6bcdc69a8f9044c60e6be133ff5",
+    "../sim_env/sim_env/graph_run.py": "ee2f8ac83346469fdf6f5061ed7e6fab52274075dde8274ce2f3b16e40bbd76f",
+    "../sim_env/sim_env/graph_workloads.py": "2db93aaf807670b1ec793b9b7cc44a9168b6de0649898a392361df6b98518faf",
+    "../sim_env/sim_env/graph_protocol.py": "ec61153d4c7c402bc2732a801260d01d058511943e9573a7d8e158da78d9e1cd",
+    "../sim_env/sim_env/graph_relay.py": "76cbcb90c1a91a18b6702567c90605a20b0f334ff448619ee77b27d3edc2ef8b",
+    "../sim_env/sim_env/graph_collector.py": "e1a4d9cd017441aa4f75aae7b85bfc1f56f30c0b0ea25776d621615b16298054",
+    "../sim_env/sim_env/graph_transport.py": "6ce56ab3840b5e3db7a79b89d2dcdd245df61eebf761c5abcd727b734c886e37",
+    "../sim_env/sim_env/orchestrator.py": "d4fecd890f4e02b23ef6e1d7988db8eb84872a93a1f1c4428cec793263f7cd94",
+    "../sim_env/sim_env/models.py": "c0d09d6d126a42ad4e4f7f3ee63b15b1a90fafe085940417eef5c5132ab2e14f",
+    "../sim_env/tests/test_graph_workloads.py": "84b39a88ff8b02c3d267973e958167a97786cfba65d2da48e17521de80640250",
+    "guide/README.md": "3e8e7286651ef6578c932c5edf3f2e573c463a695367cfc1b91b5670cf022c97",
+    "guide/architecture.md": "9304f22c79a06c1df20dfed7332dbb67dbb2e7b56ed22158560a0893f0f42dea",
+    "guide/usage.md": "e823246374105d5dd699575b3044ce40e986c9786c064f91da937601b64fd199",
+    "guide/verification.md": "1998524821200ab27a265e76d1991048c10b845025f7deb9c86b3455b2241491",
+    "guide/workload-walkthrough.md": "9cab3aeeba1c29cebf058b5c34363fde488f3159e4cd256173bf4781ad77f387",
+    "implementation_rails/graph_operation_implementation_plan.md": "1d725ed23a752aa1f202a31d5f035caaf48f96a38afd32cadc4501593794925e",
+    "verification/graph_core/evidence.csv": "f0871211a39e7253d35436870e21c035838bd94d5f78d8aa019edb39c94a05ec"
+  },
+  "built_header_sha256_before_comment_clarification": "44cba239882ae08dd2f94282ccfc430b5c3b545fc6cad93726ffc0e087b91836",
+  "artifact_sha256": {
+    "/tmp/kaos-refactor-four/core/kaos_host": "77ffab9a938d6a9f52c34330520d9369bc63de3a4cfc7ae27bcb687339b9917a",
+    "/tmp/kaos-refactor-four/pipeline.wasm": "e6c04f05de82acc5bf4d985b31b28da000a3cf6950ee40c38cd07fa38f250181",
+    "/tmp/kaos-refactor-four/feedback.wasm": "dde73c3e98dbce1a1426ececf17ad957ff6370cff8fdb64282658d2f24794f3a",
+    "/tmp/kaos-refactor-four/capacity.wasm": "aedca4fe41ca6cb174f0aac94345ab5c676fc6d91bc5a17fd9115a54872578d0",
+    "/tmp/kaos-refactor-four/graph_admission_reuse_test": "ac075183a2588c759597c12b71d285a2ed952e8b37eda923e63d8715ae965f89",
+    "/tmp/kaos-refactor-four/graph_host_control_test": "cc6c4fc6718497960d0bc074ec13c7da6615df2e24f2693e2b005262037ad07e",
+    "/tmp/kaos-refactor-four/graph_p4_capacity": "26705890894b73d68f888f9c8ce315abbef1142f98f151af8347ae845811a2c2",
+    "/tmp/kaos-refactor-four/graph_p5_capacity": "1d9d85020538cbee5f367eb257f61d90a8902f674115dd9e5d95c090bec7d014",
+    "/tmp/kaos-refactor-four/graph_p5_test": "da1351a54fa9a3e848b39d9d6cb243447fcad49aaad5599ebe6655032df76b76",
+    "/tmp/kaos-refactor-four/graph_p6_admission_test": "0fc5293fc5e03338536b8bbe4a260d508c6b9c06658f4001d9caf779df70822c",
+    "/tmp/kaos-refactor-four/graph_p6_capacity": "789ec96f42000ba3b49cd51f35de51202a445b7617689817bbbbc9e7b3246b21",
+    "/tmp/kaos-refactor-four/graph_p6_control_test": "7f1b6f6dae6cf2210eb8bd40a6e068f1dc132b20813222de82c943ff1fd1ccba",
+    "/tmp/kaos-refactor-four/graph_p6_test": "f66f00f2539a997b3004f8035e64f8ecb8d1a3b952cd92eafe1e35e35478e006",
+    "/tmp/kaos-refactor-four/graph_p7_capacity": "8c9578891da20fc1aa63c279f71ce895a5913c8ae92e1b8890c022c617a53260",
+    "/tmp/kaos-refactor-four/graph_p7_control_test": "be737db25d505735b344b7d466c33eda905c2ec816a87e428f328cb66b43012e",
+    "/tmp/kaos-refactor-four/graph_p7_lifecycle_test": "f525e58b3e49c50b4f06a2a9effcded20511bc85f477cabd05081ad8b9fbb083",
+    "/tmp/kaos-refactor-four/graph_p7_test": "c201311b3da0751dfa9750384cb9fd52afc58c14431483ffa50edcb5419fc702"
+  },
+  "retained_file_sha256": {
+    "verification/graph_core/results/p8_workloads/four-CMakeCache.txt": "f55fc2e6e626501a8ffbebc34958ece587e54e2505f36673076aebbe17578d37",
+    "verification/graph_core/results/p8_workloads/four-build-2026-10-20.log": "3ae8ba89c0af2f545390706d9a0a6644d2f0ced8e80f275014b70be8a64990db",
+    "verification/graph_core/results/p8_workloads/four-build.log": "17be36415f9e4d1a74fdbae4ef4576b078658a6fc725aa6cc5c9e15042ecd75e",
+    "verification/graph_core/results/p8_workloads/four-configure-2026-10-20.log": "9bb833dea1a254eb297f645512f85f3bed2a0942a37913b6ee29eda850051012",
+    "verification/graph_core/results/p8_workloads/four-ctest.log": "76a65e041dbed84e087e485c5542a457e3c192419b71f82ee6d68a8210e6dc8b",
+    "verification/graph_core/results/p8_workloads/four-test-details.log": "9f83c0c89a3bfb36a665a583bd709c4cd96ffb34cfa891e8b441c82e392ff3f3",
+    "verification/graph_core/results/p8_workloads/host-build.log": "2aed1ba3568e35d7401fb57e4206484c6d8a9391043a0374c5f05409cb547f66",
+    "verification/graph_core/results/p8_workloads/host-ctest.log": "244eefc06914702d58e4d3aaed5a6e6f649f9580610e86c2c706b35dcbd4aca8",
+    "verification/graph_core/results/p8_workloads/pipeline-example/events.jsonl": "cd8dc916934127827884beeab670379f45480c503e0af8e441a4554d066a2362",
+    "verification/graph_core/results/p8_workloads/pipeline-example/host-1.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/p8_workloads/pipeline-example/host-2.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/p8_workloads/pipeline-example/host-3.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/p8_workloads/pipeline-example/provenance.json": "9ce91fb1d921e1d58c45cb1854dbb9f8f583d620f9dede1439bf3f79ed79c038",
+    "verification/graph_core/results/p8_workloads/pipeline-example/result.json": "0ff5d595736e693c57c8ef129db4a13c453d7c26f7a3de8c4521cb8f0bdcc539",
+    "verification/graph_core/results/p8_workloads/posix-host-stack-usage.txt": "e7c5e2b46e1740f7d75fdf4f386878663653010e2ef77089c14fd8e47a97caf7",
+    "verification/graph_core/results/p8_workloads/ruff-2026-10-20.log": "7cc9975157c0a4964ee2d4dbb238777d284a39e93f3236eec8e4773b38252ec8",
+    "verification/graph_core/results/p8_workloads/test_source_baseline.json": "c24e656747d649d7304f1cb0b5515e540236f8373824f4e7de6306632be6544e"
+  }
+}

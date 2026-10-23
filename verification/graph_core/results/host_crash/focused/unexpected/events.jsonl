@@ -1,0 +1,4 @@
+{"kind":"host_stdout","timestamp_us":169845410095,"device":1,"line":"LISTENING 46902"}
+{"kind":"run_ready","timestamp_us":169845410442}
+{"kind":"process_exit","timestamp_us":169845414159,"device":1,"returncode":-9}
+{"kind":"teardown","timestamp_us":169845441769,"errors":["host 1 exit -9"],"proves_graph_cleanup":false,"relay_overflow_drops":0}

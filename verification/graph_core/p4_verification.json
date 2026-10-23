@@ -1,0 +1,278 @@
+{
+  "date": "2026-10-10",
+  "scope": "P4 core/host implementation and local ESP32 four-node/eight-endpoint capacity. Networked target capacity and final composed formal verification remain open.",
+  "schema_version": 4,
+  "source_sha256": {
+    "../sim_env/sim_env/graph_protocol.py": "ec61153d4c7c402bc2732a801260d01d058511943e9573a7d8e158da78d9e1cd",
+    "../sim_env/tests/test_graph_core_process.py": "09d50043a7a84c4feb5d5931281cfb5b64edf36eda4f4459ac055670e31a97db",
+    "../sim_env/tests/test_graph_orchestrator.py": "c97388bd83c8a1571d77708c29a59bfbf946ef34560b27e6b611681125830a27",
+    "../sim_env/tests/test_graph_transport.py": "cea90bae79803ebe4e34205a61b5408eaa63096d409fe8a215e5ff699a02f72d",
+    "docs/graph_operation_implementation_plan.md": "c787f36d857ead7b14b2f72acd2d117d17736a4dbfbc45f798378d9c578ee161",
+    "docs/graph_p4_contract.md": "dcce83c79f8cc86fb21178f81b363164606cd9f9ae3a9a651041ce45ee1586c6",
+    "docs/graph_p4_memory.md": "4c09ac328a0bd57c8c9f2461e7639841bdbe4dfcca61bb21f40346e112e2dcd7",
+    "graph_core/CMakeLists.txt": "f603120e17352d9a81a49b26c287b96b2685d3f88d9c38e9970aa443cb39a017",
+    "graph_core/include/kaos_admission.h": "98a618e311dbe44e4f29f58063415f03b48b35daf7f4140063f08c59d2869d2a",
+    "graph_core/include/kaos_artifact.h": "47d5bc337ad97c9c7b8c7b31f9727c86814630f20ff230361cd795fef7b6ae5e",
+    "graph_core/include/kaos_coap.h": "9c898cfbe7eb5e0337d431b5306d4788d8af37efcb2cff9b4536fdd9cdab91eb",
+    "graph_core/include/kaos_control.h": "2e2a62c03c9ca711dcc6efdfe2b69e120dd38cdfa368cf01174fea77bb88dae3",
+    "graph_core/include/kaos_edge.h": "31ec40fb689836dfc0ba83629462329219def40300329f5c66573051a00e41af",
+    "graph_core/include/kaos_endpoint.h": "4352573e910b43c1945b98903080d78c39ab80ec554a60549d082974530a661e",
+    "graph_core/include/kaos_graph.h": "8cedf2bf6a76987f6e4935d726c7740833a7cadefa66e9004cba6523233a9d2e",
+    "graph_core/include/kaos_limits.h": "82950739b687a8474071e9c653625b1bff0ca26a6ede5f602abb1207838a8469",
+    "graph_core/include/kaos_node.h": "880e9259af8c8d9efc249669643fa14ed20287a5c76169ca6b41b393f1954d48",
+    "graph_core/include/kaos_predicate.h": "da0a6b6e1281f32d604a0347daa556f0729f32e17e7bb8ca3bfa04be98d06221",
+    "graph_core/include/kaos_report.h": "05e5a9e68f30481b00498c9aefa1bcb43f9e9afa829081e243896fe64e142263",
+    "graph_core/include/kaos_runtime.h": "06a4c64e5e2c5575ac50d5b7c67dac96278e955fe416ea929f7d7ed549ba0edd",
+    "graph_core/include/kaos_wamr.h": "958a8a0034b5286aca404cd3e29a7514238ccf6f1396adb3e3e258e48573775e",
+    "graph_core/kaos_admission.c": "65b1026f0b0ae6e2c91788da461b16d2401d37e49b7696d347221d89dca249fe",
+    "graph_core/kaos_admission_internal.h": "d3347da53cd66d62d97c96d9a9f040fa9beab881d084255a88e801ee0cd5fb2b",
+    "graph_core/kaos_artifact.c": "dcd8b148a9fd85f465aa25b1d3b82ffeaeecb657794cfa4bf4fefc9f36f4fc37",
+    "graph_core/kaos_cbor.h": "31ef5d10a7914ab48d03356f1133d1c40452a93c9ddc57384956d46848fee131",
+    "graph_core/kaos_coap.c": "496fb6984da8a0647d712d87226953ec907dc6f53436223e6a553e4dc85420c6",
+    "graph_core/kaos_control.c": "bca8b06928ad59306414f49211b388efc038b40fbbcf2399efd2ccf653294596",
+    "graph_core/kaos_edge.c": "608f9d5618692de6a840dd34b4959efd1449b6b0ea785868bcbae0f3f41f2ee2",
+    "graph_core/kaos_endpoint.c": "fc9f95ba73e499eb9840e53f77f9ae6fbf84df5a6cee8b9a4a07d5b73142d4e7",
+    "graph_core/kaos_graph.c": "fc3e63bff1d5fa615fddd9e2b931274a0f610e19caa608dceffea6f256ceecac",
+    "graph_core/kaos_node.c": "cc0f738912f277049a718623b8e659ad41905053c55025438801ba37a02cbbe0",
+    "graph_core/kaos_predicate.c": "f578bfd625987922f8dca4eeec43ee329e129eec12ea98f8c4412d27f27e9d2e",
+    "graph_core/kaos_report.c": "efcc3473b5657053aaba1e4c85ddccf22031d6fd740d131ca6d680ebdbd224d8",
+    "graph_core/kaos_request.c": "82a5d0bd8bb1b2436fbb18c559719c9e0d71c5b7445aa40100bbcb0d10e6450e",
+    "graph_core/ports/clock_espidf.c": "d78583e5eb356cb200b84fde8536bb597c85cc887e66fe2117f2532b1577488c",
+    "graph_core/ports/clock_posix.c": "d6b83af5f0088cdb02d264a7c270e8311bd5df5b9d264f5baaa6ea45d148e458",
+    "graph_core/ports/p2_host.c": "fc1264347be1e2d5cdac2907d34ff82f35db418504c7667711f1d33f9d2d130e",
+    "graph_core/ports/p4_host.inc": "836e79faf6801fa7d5a26ffaf24f2200df37d31e46623f883ec1bb88f7bb1310",
+    "graph_core/runtime/CMakeLists.txt": "6d58e3919db5335c0d99499c83772d364f58dddf5b3314d916d26463533d4d5d",
+    "graph_core/runtime/kaos_wamr.c": "b29c2e1716174b6d6bdebb6385e192ddc592d1c44148c3141b792995a49db965",
+    "graph_core/runtime/profile.c": "06acfe92d9d30a45cadfa2ef96b48d03e65de648bd202622639f295459e63472",
+    "graph_core/runtime/wamr.cmake": "9fdafb52d97b808e6c45f0db0f9c9b531b35600e2e773b3d8d2295d707df6740",
+    "verification/graph_core/CMakeLists.txt": "dacce7a48f18a78818d17c3c84406bdbeb540987803f8d4ba90d7c966c2238b5",
+    "verification/graph_core/espidf_p4/CMakeLists.txt": "0fdd5652d99908dff6daff38c329e26d31ca0b604820db4e1fffc38e003e2466",
+    "verification/graph_core/espidf_p4/build.sh": "07ec89b5bb2f8a43c210f4ca7ac5d6739f1da57a0693e3303821a7974501e125",
+    "verification/graph_core/espidf_p4/main/CMakeLists.txt": "3edfc5f551f0e19c98fa29beda955f8098dfa4df6e1f10013fea3f1b6bcf9252",
+    "verification/graph_core/espidf_p4/main/main.c": "e02529b9e53eca898613a0c47514b68d6ae2ceaa3023361e10ce13286955e897",
+    "verification/graph_core/espidf_p4/sdkconfig.defaults": "cddeb7b8459d45b37fa4cc952cd97ada69010a6275b48616261b15e3552eae6d",
+    "verification/graph_core/four/CMakeLists.txt": "41492212ce6a00b3ddaa3c778b6996ad9f1625b0538467a2510ed0122ae4380d",
+    "verification/graph_core/guests/capacity.c": "c14b625930ef1ec8185596c0de08a2d798cf54e4f8406236bec4f5fc96162872",
+    "verification/graph_core/guests/channel.c": "8589c8fa41cfd9b5ddf157cda73a74a0afd572e84f0cfb1f90cf7718ab696d13",
+    "verification/graph_core/guests/node.c": "de8c848986dbe1cc78568a1b5f7ad87b0f93dd301ec8f3cea8462feaf1c01f78",
+    "verification/graph_core/guests/traffic.c": "46f141c4d6d14e0cc77d6a15a2fee8fb140744014f80ba9bcbcddf75ec2abc64",
+    "verification/graph_core/p4_capacity.c": "c436ad48dcb9cd4a306e3c8ae3b74b9d9c490d9cb78f6788d3d0a0144be779fa",
+    "verification/graph_core/read_serial.py": "3e4fb8428d23508a30e89ff65eb33f47c1c566860756b5e90f0b97baae05124b",
+    "verification/graph_core/tests/admission_fixture.h": "fbaf1626fc63be3f18e8238f71959e73c567400a30cca3a8758438da3ea3ed87",
+    "verification/graph_core/tests/admission_test.c": "680d1323c1ad87d6c8eb81d03f373f4c5d1bae9e3e4fdd24e8ed3cfb84c67ff5",
+    "verification/graph_core/tests/artifact_test.c": "221a6286321e6f1b73dea05ea6dbf2aab9632876295f7c2bb2a23b65f514c48e",
+    "verification/graph_core/tests/coap_server_test.c": "4abb9467491d301a86c9c383c92eb09530bc9df5cc3043e10636fec62329f7a7",
+    "verification/graph_core/tests/coap_test.c": "12c5b3a3da9c01f69fad2e10511ddd410b1c1ea7c4cf6cf2d1a8685642657a92",
+    "verification/graph_core/tests/control_test.c": "e162aae95b7e8982a138cb194b8afea3f1b7427d1c6cd45b4be203892f93f188",
+    "verification/graph_core/tests/core_test.c": "9fd73b5b7b853f88344205d7dc067f0bbddbd6544f20092f37805d39458e1788",
+    "verification/graph_core/tests/dynamic_binding_test.c": "2e9c61d6e77a7a3d7a04ceb4c93e9f0bf05e3072705af9eea4e90a3c51243fb5",
+    "verification/graph_core/tests/edge_test.c": "3aef1e31706f9423c5429a31085137dfd2038b1f0d6b4079f1e58671f73cc634",
+    "verification/graph_core/tests/endpoint_test.c": "421daa9e41eb86f8eaeac6ac36bd04290a259062897580a408a64265ab0a12d8",
+    "verification/graph_core/tests/node_test.c": "ebec8d4731540896a33ea91af19d05f15abdc8f362f1c0cd54af504ef91f7263",
+    "verification/graph_core/tests/object_facts_test.c": "d511e48e77cec6e4b8776db65f07cd15c12ea7a9772c66e3f74f5c16bf69aee0",
+    "verification/graph_core/tests/p2_host_test.c": "ab0a7472366cdcbe0c0698e2aa7e3d5face0d0d36c2c2abf9fbed5032805bbd5",
+    "verification/graph_core/tests/p4_process_test.py": "1e3ee30f991840bd69682576a9cca6ef552bc559c66d57e8034c46756c2868bd",
+    "verification/graph_core/tests/report_test.c": "56b76751e40234a7df9e36f096eb6c48b6a1a14b50d5f0fb6bdd52668f100e74",
+    "verification/graph_core/tests/request_test.c": "eee17fd121fc9a1523f11b30c2adb2e4739b69eb5c9fed38056e2c7d4ef709fa",
+    "verification/graph_core/tests/runtime_guest.c": "42a6be5c16eeb6cfd37f1ef52926eac3f7daf05596f888fc5945f9d29715aade",
+    "verification/graph_core/tests/wamr_budget_test.c": "e09b0a87f943eff688de7ae9480511682936dd88da24fc96f5ffb759e53ec298",
+    "verification/graph_core/tests/wamr_channel_test.c": "0792e7de9a342e180e258cd43635854c4ab1fcd97cc6088c8750f4eb320537b8",
+    "verification/graph_core/tests/wamr_test.c": "0fb5c460de9edcfd8feb3f59d74bce7ab62e038568a58bc4f59956cba9f2f84b"
+  },
+  "existing_c_test_preservation": {
+    "baseline_sha256": {
+      "verification/graph_core/tests/request_test.c": "eee17fd121fc9a1523f11b30c2adb2e4739b69eb5c9fed38056e2c7d4ef709fa",
+      "verification/graph_core/tests/wamr_test.c": "0fb5c460de9edcfd8feb3f59d74bce7ab62e038568a58bc4f59956cba9f2f84b",
+      "verification/graph_core/tests/dynamic_binding_test.c": "2e9c61d6e77a7a3d7a04ceb4c93e9f0bf05e3072705af9eea4e90a3c51243fb5",
+      "verification/graph_core/tests/wamr_budget_test.c": "e09b0a87f943eff688de7ae9480511682936dd88da24fc96f5ffb759e53ec298",
+      "verification/graph_core/tests/p2_host_test.c": "ab0a7472366cdcbe0c0698e2aa7e3d5face0d0d36c2c2abf9fbed5032805bbd5",
+      "verification/graph_core/tests/coap_test.c": "12c5b3a3da9c01f69fad2e10511ddd410b1c1ea7c4cf6cf2d1a8685642657a92",
+      "verification/graph_core/tests/core_test.c": "9fd73b5b7b853f88344205d7dc067f0bbddbd6544f20092f37805d39458e1788",
+      "verification/graph_core/tests/artifact_test.c": "221a6286321e6f1b73dea05ea6dbf2aab9632876295f7c2bb2a23b65f514c48e",
+      "verification/graph_core/tests/runtime_guest.c": "42a6be5c16eeb6cfd37f1ef52926eac3f7daf05596f888fc5945f9d29715aade",
+      "verification/graph_core/tests/control_test.c": "e162aae95b7e8982a138cb194b8afea3f1b7427d1c6cd45b4be203892f93f188",
+      "verification/graph_core/tests/admission_fixture.h": "fbaf1626fc63be3f18e8238f71959e73c567400a30cca3a8758438da3ea3ed87",
+      "verification/graph_core/tests/object_facts_test.c": "1eb26306c43e3abd19302744ad6a6eed71d75012f31d5a4ea9596c32cd7a8a11",
+      "verification/graph_core/tests/report_test.c": "56b76751e40234a7df9e36f096eb6c48b6a1a14b50d5f0fb6bdd52668f100e74",
+      "verification/graph_core/tests/coap_server_test.c": "4abb9467491d301a86c9c383c92eb09530bc9df5cc3043e10636fec62329f7a7",
+      "verification/graph_core/tests/admission_test.c": "680d1323c1ad87d6c8eb81d03f373f4c5d1bae9e3e4fdd24e8ed3cfb84c67ff5",
+      "verification/graph_core/tests/node_test.c": "ebec8d4731540896a33ea91af19d05f15abdc8f362f1c0cd54af504ef91f7263"
+    },
+    "unchanged": [
+      "verification/graph_core/tests/request_test.c",
+      "verification/graph_core/tests/wamr_test.c",
+      "verification/graph_core/tests/dynamic_binding_test.c",
+      "verification/graph_core/tests/wamr_budget_test.c",
+      "verification/graph_core/tests/p2_host_test.c",
+      "verification/graph_core/tests/coap_test.c",
+      "verification/graph_core/tests/core_test.c",
+      "verification/graph_core/tests/artifact_test.c",
+      "verification/graph_core/tests/runtime_guest.c",
+      "verification/graph_core/tests/control_test.c",
+      "verification/graph_core/tests/admission_fixture.h",
+      "verification/graph_core/tests/report_test.c",
+      "verification/graph_core/tests/coap_server_test.c",
+      "verification/graph_core/tests/admission_test.c",
+      "verification/graph_core/tests/node_test.c"
+    ],
+    "approved_version_literals_only": [
+      "verification/graph_core/tests/object_facts_test.c"
+    ],
+    "normalized_version_literal_hash_matches_baseline": true
+  },
+  "existing_python_tests": {
+    "approved_change": "Schema 3 to 4 version literals only; scenarios/assertions preserved",
+    "files": [
+      "../sim_env/tests/test_graph_core_process.py",
+      "../sim_env/tests/test_graph_orchestrator.py",
+      "../sim_env/tests/test_graph_transport.py"
+    ]
+  },
+  "host": {
+    "commands": [
+      "cmake -S verification/graph_core -B /tmp/kaos-p3-session/host -G Ninja -DCORE_BUILD_P2_HOST=ON -DCORE_BUILD_P3_HOST=ON -DCORE_BUILD_P4_HOST=ON -DCORE_SANITIZE=ON",
+      "cmake --build /tmp/kaos-p3-session/host -j 4",
+      "ctest --test-dir /tmp/kaos-p3-session/host --output-on-failure"
+    ],
+    "passed": 20,
+    "failed": 0,
+    "seconds": 8.86,
+    "includes": {
+      "new_p4_real_process_cases": 2,
+      "existing_python_discovery": {
+        "run": 86,
+        "passed": 66,
+        "pre_existing_opt_in_skipped": 20
+      }
+    },
+    "sanitizers": "ASan, fail-fast UBSan and LSan; WAMR retains documented detect_stack_use_after_return=0 because its native-stack guard is incompatible with ASan fake stacks.",
+    "log": "verification/graph_core/results/p4/final-host.log"
+  },
+  "four_node_host": {
+    "commands": [
+      "cmake -S verification/graph_core/four -B /tmp/kaos-p4-session/four -DCORE_SANITIZE=ON",
+      "cmake --build /tmp/kaos-p4-session/four -j 4",
+      "ctest --test-dir /tmp/kaos-p4-session/four --output-on-failure"
+    ],
+    "passed": 1,
+    "cycles": 3,
+    "arena_bytes_per_node": 49152,
+    "log": "verification/graph_core/results/p4/four-host.log"
+  },
+  "board": {
+    "device": "ESP32 T-Display, ESP32-D0WDQ6-V3 revision3.0, noPSRAM, enrolled /dev/ttyUSB0",
+    "idf": "5.5",
+    "cpu_mhz": 160,
+    "tick_hz": 100,
+    "wamr_revision": "b124f70345d712bead5c0c2393acb2dc583511de",
+    "commands": [
+      "bash verification/graph_core/espidf_p4/build.sh",
+      "From /tmp/kaos-p4-session/esp32: /home/karolina/.espressif/python_env/idf5.5_py3.12_env/bin/python -m esptool --chip esp32 --port /dev/ttyUSB0 -b 460800 --before default_reset --after hard_reset write_flash @flash_args",
+      "/home/karolina/.espressif/python_env/idf5.5_py3.12_env/bin/python verification/graph_core/read_serial.py"
+    ],
+    "result": "PASS",
+    "cycles": 3,
+    "nodes": 4,
+    "endpoints_per_node": 8,
+    "channels": 16,
+    "endpoint_roles": 32,
+    "payload_bytes": 256,
+    "messages_per_queue": 4,
+    "all_queues_full_each_cycle": true,
+    "deliveries_each_cycle": [
+      1000,
+      1000,
+      1000
+    ],
+    "worker_priority": 2,
+    "control_priority": 3,
+    "arena_capacity_per_node": 26624,
+    "arena_prepare_used": 25448,
+    "arena_lifecycle_peak_each_node": 25472,
+    "arena_unused_per_node": 1152,
+    "global_arena_capacity": 32768,
+    "global_arena_used_init_before_after_destroy": [
+      40,
+      40,
+      40
+    ],
+    "native_stack_bytes_per_worker": 8192,
+    "native_stack_min_free_bytes": [
+      5888,
+      6004,
+      6008,
+      6012
+    ],
+    "control_stack_actual_bytes": 12800,
+    "control_stack_free_at_full_queues": 6908,
+    "artifact_bytes_per_node": 1124,
+    "trace_counter_static_overhead_bytes": 80,
+    "static_dram_bytes": 119880,
+    "iram_bytes_including_alignment": 55096,
+    "heap_total_internal_8bit": 212072,
+    "heap_free_before_runtime": 188016,
+    "heap_free_workers_ready": 152628,
+    "heap_free_all_queues_full": 39588,
+    "heap_largest_all_queues_full": 18432,
+    "heap_free_after_each_cleanup": [
+      152516,
+      152516,
+      152516
+    ],
+    "heap_largest_after_each_cleanup": [
+      110592,
+      110592,
+      110592
+    ],
+    "firmware_bytes": 309744,
+    "artifact_sha256": {
+      "/tmp/kaos-p4-session/esp32/kaos_p4_qualification.elf": "abf231fdd78e91a225fafb4a365086d9aab101f12eaadb297f7d7f4da64b9375",
+      "/tmp/kaos-p4-session/esp32/kaos_p4_qualification.bin": "8e58c6b0bac4e600dc622f324d7fe405bcf5344b05b006deb32e73ec1e481acc",
+      "/tmp/kaos-p4-session/esp32/kaos_p4_qualification.map": "2ee61c1c53e33555a50091a21f1d94b3343fe775e7858e4007692369482cd240",
+      "/tmp/kaos-p4-session/esp32/sdkconfig": "d9f68ca5718a1081f6a4208d9b2eaf805aa58cb8ac546957dc521129ae39ee98",
+      "/tmp/kaos-p4-session/esp32/esp-idf/main/capacity.wasm": "aedca4fe41ca6cb174f0aac94345ab5c676fc6d91bc5a17fd9115a54872578d0",
+      "/tmp/kaos-p4-session/esp32/esp-idf/runtime/thread_manager.c": "ffa7a2a766069ceb53c17a6024a2899743d3ab3dc4c3db8c312dfd617b78f135",
+      "/tmp/kaos-p4-session/esp32/esp-idf/runtime/wasm_interp_classic.c": "c1f1595f7f80a612a44ae3d3b3a1d9915a3ddbf6498b0b38fe1bfc0ce386ceba",
+      "/tmp/kaos-p4-session/esp32/esp-idf/runtime/wasm_interp.h": "2bbe2266b073f2ba811d807b1d053196038f76df770efbf2e79f1d651f97673a"
+    },
+    "log": "verification/graph_core/results/p4/board-memory.log"
+  },
+  "corrections": [
+    "Selected pinned WAMR alignment-safe operand helpers for x86_64; a new P4 traffic guest exposed an unaligned i64 operand-cell load under UBSan. ESP32 already defaults to this helper mode.",
+    "P4 board control task now uses P3 priority3 above priority2 workers; unread notifications can keep workers runnable, exposing starvation with the initial default priority1.",
+    "P4 cleanup command replies carry explicit current owner evidence, including on repeated commands after an earlier CLEANUP-only response; codes alone never establish closure."
+  ],
+  "memory_decision": {
+    "cuts_applied_during_breakdown": false,
+    "recommended_next_candidates": {
+      "global_arena_32k_to_1k_potential_saving": 31744,
+      "unused_record_report_array_potential_saving": 3072
+    },
+    "report": "docs/graph_p4_memory.md"
+  },
+  "qualification_limits": [
+    "Physical fixture uses local staged artifacts and local endpoint delivery. No Wi-Fi, sockets, instantiated CoAP management, or network driver/task memory is included.",
+    "No universal minimum arena or worst-case stack requirement follows from the compact 1124-byte synthetic guest. Beacon application workloads remain to be qualified.",
+    "Observed stack/heap/latency values are finite workload measurements, not hard worst-case guarantees.",
+    "Four-node C qualification profile is optional; the default C and current authority incidence profile remain smaller. Full-node P5/P6 operations are not implemented by this slice.",
+    "Final composed queue/worker/timer TLA+ qualification has not been run for P4. Existing model evidence is historical, not a new proof.",
+    "P5-P7 operation/collector integration and the complete networked four-node acceptance gate remain open.",
+    "Board remains flashed with the P4 qualification firmware."
+  ],
+  "evidence_sha256": {
+    "verification/graph_core/results/p4/board-arena28k-failure.log": "423dd1d466dc681a415a9503cf7bd5ab675f1184b223efb431b2c78effcd37a6",
+    "verification/graph_core/results/p4/board-control-priority-failure.log": "148a0c393818ee6bd926377caefc40a381411382b0886c5ccdbbdd5e07f6c4dd",
+    "verification/graph_core/results/p4/board-memory.log": "f8b2dab8ac9764872800f8f27570f5ae44240d646331d472c3d574a01a2b6778",
+    "verification/graph_core/results/p4/board-native16k-failure.log": "6aeb77b51a8c0dc9f9dfc0e7eb489308005b8e79424e30c4a3530a6ab7d98974",
+    "verification/graph_core/results/p4/core-layout.c": "f842c3f5e3ff3275ab63d4f4d3020bf8172bfe2b09dc03a5211118914809a8ea",
+    "verification/graph_core/results/p4/core-memory.txt": "78f2967c702b173bf018e18706b14ad7129c85714fcaca048413e2b68c2277df",
+    "verification/graph_core/results/p4/final-host.log": "5eb4607e3ec9571881fbd28afd7f264d579cefbd7321e44c6f40a76421c8f230",
+    "verification/graph_core/results/p4/four-host.log": "8d5ea020a5c6ca73c539c9fe05d3806bf6fce976822e84c4effea38bd789e6e7",
+    "verification/graph_core/results/p4/platform-archives.json": "b078d587a658840f425d5b38629d74b07e1df57d36516d31bfba3314ac4a2725",
+    "verification/graph_core/results/p4/platform-layout.c": "18aa1a92f587af234eb70b2e3282a0c872a60f6d48c8ff8a518578f165f8c188",
+    "verification/graph_core/results/p4/platform-layout.json": "43b9ad4efac117650cf0d07d424fa03203a258da5317d1b0cfde876d88afced0",
+    "verification/graph_core/results/p4/platform-memory.txt": "c6300d49e9fb32267e560057ade9e61bc443ffbeb14968355ffb16e1b6d1263e",
+    "verification/graph_core/results/p4/platform-size.json": "d0eadea1ba14fedd3279d110fc460ae4bebf30ece0ca6927543e8cfb90cd5a93",
+    "verification/graph_core/results/p4/runtime-memory.txt": "baf83fa13c7bd7c909141b7e9a09665e5e8427a1fbfdd82fff0486588b010621"
+  }
+}

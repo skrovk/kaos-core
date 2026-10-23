@@ -1,0 +1,245 @@
+{
+  "status": "passed",
+  "trace_complete": true,
+  "observations": 4759,
+  "phases": [
+    {
+      "name": "single",
+      "status": "passed",
+      "branches": {
+        "A": {
+          "received": 185,
+          "unique_sequences": 185
+        },
+        "B": {
+          "received": 0,
+          "unique_sequences": 0
+        }
+      },
+      "unexpected_copies": 0
+    },
+    {
+      "name": "both",
+      "status": "passed",
+      "branches": {
+        "A": {
+          "received": 196,
+          "unique_sequences": 196
+        },
+        "B": {
+          "received": 197,
+          "unique_sequences": 197
+        }
+      },
+      "unexpected_copies": 0
+    },
+    {
+      "name": "remaining",
+      "status": "passed",
+      "branches": {
+        "A": {
+          "received": 0,
+          "unique_sequences": 0
+        },
+        "B": {
+          "received": 203,
+          "unique_sequences": 203
+        }
+      },
+      "unexpected_copies": 0
+    }
+  ],
+  "scope": "eight distinct samples per active branch; no successful copies on inactive branches",
+  "first": "A",
+  "instances": {
+    "10": 2,
+    "20": 0,
+    "30": 1
+  },
+  "windows": [
+    {
+      "name": "single",
+      "begin_us": 145054021595,
+      "end_us": 145054272103,
+      "active": [
+        "A"
+      ]
+    },
+    {
+      "name": "both",
+      "begin_us": 145056230923,
+      "end_us": 145056481095,
+      "active": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "name": "remaining",
+      "begin_us": 145056488462,
+      "end_us": 145056739053,
+      "active": [
+        "B"
+      ]
+    }
+  ],
+  "startup_report": [
+    4,
+    8,
+    2,
+    1,
+    9,
+    1,
+    39,
+    [
+      1,
+      3,
+      3,
+      1,
+      0
+    ]
+  ],
+  "joined_report": [
+    4,
+    8,
+    2,
+    1,
+    12,
+    1,
+    39,
+    [
+      1,
+      3,
+      3,
+      3,
+      3
+    ]
+  ],
+  "outcomes": [
+    {
+      "operation": 0,
+      "kind": 1,
+      "report": [
+        4,
+        8,
+        0,
+        2,
+        4,
+        1,
+        39,
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "operation": 1,
+      "kind": 1,
+      "report": [
+        4,
+        8,
+        1,
+        3,
+        4,
+        1,
+        39,
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "operation": 2,
+      "kind": 2,
+      "report": [
+        4,
+        8,
+        2,
+        1,
+        9,
+        1,
+        39,
+        [
+          1,
+          3,
+          3,
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "operation": 3,
+      "kind": 6,
+      "report": [
+        4,
+        8,
+        3,
+        1,
+        4,
+        1,
+        8,
+        [
+          56,
+          56
+        ]
+      ]
+    },
+    {
+      "operation": 4,
+      "kind": 5,
+      "report": [
+        4,
+        8,
+        4,
+        1,
+        6,
+        1,
+        8,
+        [
+          56,
+          56,
+          56
+        ]
+      ]
+    },
+    {
+      "operation": 5,
+      "kind": 4,
+      "report": [
+        4,
+        8,
+        5,
+        2,
+        2,
+        1,
+        8,
+        [
+          56
+        ]
+      ]
+    },
+    {
+      "operation": 6,
+      "kind": 4,
+      "report": [
+        4,
+        8,
+        6,
+        3,
+        2,
+        1,
+        8,
+        [
+          56
+        ]
+      ]
+    }
+  ],
+  "remaining_instances_at_teardown": [],
+  "limitations": [
+    "GET observes host copy-out, not application acceptance or actuation",
+    "Synthetic sample counts; no periodic or freshness claim",
+    "Optional join demonstrated within its original allowance; no restart after expiry"
+  ]
+}

@@ -1,0 +1,835 @@
+Start testing: Oct 22 14:25 CEST
+----------------------------------------------------------
+1/34 Testing: graph_runtime_phase_barriers
+1/34 Test: graph_runtime_phase_barriers
+Command: "/tmp/kaos-refactor-four/graph_runtime_phase_barrier_test"
+Directory: /tmp/kaos-refactor-four
+"graph_runtime_phase_barriers" start time: Oct 22 14:25 CEST
+Output:
+----------------------------------------------------------
+{"boundary":"before_prepare_completion","fault":0,"cutoff":0,"time":10,"reached_and_decision_applied":true}
+{"boundary":"before_disposal_completion","fault":0,"cutoff":0,"time":10,"reserved_bytes":256,"outcome":0}
+{"fault":0,"cutoff":0,"reclaimed":true,"reserved_bytes":0}
+{"boundary":"before_prepare_completion","fault":0,"cutoff":1,"time":10,"reached_and_decision_applied":true}
+{"boundary":"before_disposal_completion","fault":0,"cutoff":1,"time":60,"reserved_bytes":256,"outcome":3}
+{"fault":0,"cutoff":1,"reclaimed":true,"reserved_bytes":0}
+{"boundary":"before_prepare_completion","fault":1,"cutoff":0,"time":10,"reached_and_decision_applied":true}
+{"boundary":"before_disposal_completion","fault":1,"cutoff":0,"time":10,"reserved_bytes":256,"outcome":0}
+{"fault":1,"cutoff":0,"reclaimed":true,"reserved_bytes":0}
+{"boundary":"before_prepare_completion","fault":1,"cutoff":1,"time":10,"reached_and_decision_applied":true}
+{"boundary":"before_disposal_completion","fault":1,"cutoff":1,"time":60,"reserved_bytes":256,"outcome":3}
+{"fault":1,"cutoff":1,"reclaimed":true,"reserved_bytes":0}
+{"boundary":"before_prepare_completion","fault":2,"cutoff":0,"time":110,"reached_and_decision_applied":true}
+{"boundary":"before_disposal_completion","fault":2,"cutoff":0,"time":110,"reserved_bytes":256,"outcome":0}
+{"fault":2,"cutoff":0,"reclaimed":true,"reserved_bytes":0}
+{"boundary":"before_prepare_completion","fault":2,"cutoff":1,"time":110,"reached_and_decision_applied":true}
+{"boundary":"before_disposal_completion","fault":2,"cutoff":1,"time":160,"reserved_bytes":256,"outcome":3}
+{"fault":2,"cutoff":1,"reclaimed":true,"reserved_bytes":0}
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_runtime_phase_barriers" end time: Oct 22 14:25 CEST
+"graph_runtime_phase_barriers" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/34 Testing: graph_native_runtime
+2/34 Test: graph_native_runtime
+Command: "/tmp/kaos-refactor-four/graph_native_runtime_test" "/tmp/kaos-refactor-four/native_sensor.wasm" "/tmp/kaos-refactor-four/native_wrong_module.wasm" "/tmp/kaos-refactor-four/native_unknown.wasm" "/tmp/kaos-refactor-four/native_wrong_signature.wasm" "/tmp/kaos-refactor-four/native_bad_standard.wasm"
+Directory: /tmp/kaos-refactor-four
+"graph_native_runtime" start time: Oct 22 14:25 CEST
+Output:
+----------------------------------------------------------
+[07:49:17:837 - 77F0247FF6C0]: failed to check signature '(iii)i' and resolve pointer params for import function (kaos_native, fixture_temperature_read)
+
+[07:49:17:839 - 77F0247FF6C0]: failed to check signature '()i' and resolve pointer params for import function (kaos, init)
+
+native registry, instance grants, ABI, arguments and cancellation passed
+<end of output>
+Test time =   0.05 sec
+----------------------------------------------------------
+Test Passed.
+"graph_native_runtime" end time: Oct 22 14:25 CEST
+"graph_native_runtime" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/34 Testing: graph_native_removal
+3/34 Test: graph_native_removal
+Command: "/tmp/kaos-refactor-four/graph_native_removal_test" "/tmp/kaos-refactor-four/native_sensor.wasm"
+Directory: /tmp/kaos-refactor-four
+"graph_native_removal" start time: Oct 22 14:25 CEST
+Output:
+----------------------------------------------------------
+native removal: authorized cleanup cancels an active call before disposal/CLEANED
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"graph_native_removal" end time: Oct 22 14:25 CEST
+"graph_native_removal" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/34 Testing: graph_native_request
+4/34 Test: graph_native_request
+Command: "/tmp/kaos-refactor-four/graph_native_request_test"
+Directory: /tmp/kaos-refactor-four
+"graph_native_request" start time: Oct 22 14:25 CEST
+Output:
+----------------------------------------------------------
+native request and dispatch checks passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_native_request" end time: Oct 22 14:25 CEST
+"graph_native_request" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/34 Testing: graph_native_protocol
+5/34 Test: graph_native_protocol
+Command: "/home/karolina/.local/bin/uv" "--directory" "/home/karolina/Research/Code/kaos_core/verification/graph_core/../../../sim_env" "run" "--offline" "python" "-m" "unittest" "discover" "-s" "tests" "-p" "test_graph_native_protocol.py" "-v"
+Directory: /tmp/kaos-refactor-four
+"graph_native_protocol" start time: Oct 22 14:25 CEST
+Output:
+----------------------------------------------------------
+test_empty_grants_preserve_existing_channel_shape (test_graph_native_protocol.NativeDeclarations.test_empty_grants_preserve_existing_channel_shape) ... ok
+test_grants_follow_channels_and_predicate (test_graph_native_protocol.NativeDeclarations.test_grants_follow_channels_and_predicate) ... ok
+test_malformed_grants_do_not_consume_an_operation_identity (test_graph_native_protocol.NativeDeclarations.test_malformed_grants_do_not_consume_an_operation_identity) ... ok
+test_maximum_bounds_and_unknown_names_are_host_validated (test_graph_native_protocol.NativeDeclarations.test_maximum_bounds_and_unknown_names_are_host_validated) ... ok
+test_named_grants_are_owned_before_authorization (test_graph_native_protocol.NativeDeclarations.test_named_grants_are_owned_before_authorization) ... ok
+test_no_grants_preserves_original_wire_body (test_graph_native_protocol.NativeDeclarations.test_no_grants_preserves_original_wire_body) ... ok
+test_nonempty_grants_follow_original_node_fields (test_graph_native_protocol.NativeDeclarations.test_nonempty_grants_follow_original_node_fields) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.002s
+
+OK
+<end of output>
+Test time =   0.24 sec
+----------------------------------------------------------
+Test Passed.
+"graph_native_protocol" end time: Oct 22 14:25 CEST
+"graph_native_protocol" time elapsed: 00:00:00
+----------------------------------------------------------
+
+6/34 Testing: graph_native_process
+6/34 Test: graph_native_process
+Command: "/home/karolina/.local/bin/uv" "--directory" "/home/karolina/Research/Code/kaos_core/verification/graph_core/../../../sim_env" "run" "--offline" "python" "/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/native_process_test.py" "/tmp/kaos-refactor-four/core/kaos_host" "/tmp/kaos-refactor-four"
+Directory: /tmp/kaos-refactor-four
+"graph_native_process" start time: Oct 22 14:25 CEST
+Output:
+----------------------------------------------------------
+......
+----------------------------------------------------------------------
+Ran 6 tests in 0.897s
+
+OK
+<end of output>
+Test time =   1.11 sec
+----------------------------------------------------------
+Test Passed.
+"graph_native_process" end time: Oct 22 14:25 CEST
+"graph_native_process" time elapsed: 00:00:01
+----------------------------------------------------------
+
+7/34 Testing: graph_lifecycle_barriers
+7/34 Test: graph_lifecycle_barriers
+Command: "/tmp/kaos-refactor-four/graph_lifecycle_barrier_test" "/tmp/kaos-refactor-four/barrier_node.wasm"
+Directory: /tmp/kaos-refactor-four
+"graph_lifecycle_barriers" start time: Oct 22 14:25 CEST
+Output:
+----------------------------------------------------------
+{"boundary":"before_configuration","fault":"none","sequence":0,"event":"armed","value":1,"repeated_order_equal":true}
+{"boundary":"before_configuration","fault":"none","sequence":1,"event":"reached","value":1,"repeated_order_equal":true}
+{"boundary":"before_configuration","fault":"none","sequence":2,"event":"unrelated_started","value":2,"repeated_order_equal":true}
+{"boundary":"before_configuration","fault":"none","sequence":3,"event":"decision_applied","value":0,"repeated_order_equal":true}
+{"boundary":"before_configuration","fault":"none","sequence":4,"event":"released","value":1,"repeated_order_equal":true}
+{"boundary":"before_configuration","fault":"none","sequence":5,"event":"entry_checked","value":1,"repeated_order_equal":true}
+{"boundary":"before_configuration","fault":"none","sequence":6,"event":"target_finished","value":1,"repeated_order_equal":true}
+{"boundary":"before_configuration","fault":"none","sequence":7,"event":"unrelated_finished","value":2,"repeated_order_equal":true}
+{"boundary":"before_configuration","fault":"removal","sequence":0,"event":"armed","value":1,"repeated_order_equal":true}
+{"boundary":"before_configuration","fault":"removal","sequence":1,"event":"reached","value":1,"repeated_order_equal":true}
+{"boundary":"before_configuration","fault":"removal","sequence":2,"event":"unrelated_started","value":2,"repeated_order_equal":true}
+{"boundary":"before_configuration","fault":"removal","sequence":3,"event":"decision_applied","value":1,"repeated_order_equal":true}
+{"boundary":"before_configuration","fault":"removal","sequence":4,"event":"released","value":1,"repeated_order_equal":true}
+{"boundary":"before_configuration","fault":"removal","sequence":5,"event":"entry_checked","value":0,"repeated_order_equal":true}
+{"boundary":"before_configuration","fault":"removal","sequence":6,"event":"target_finished","value":2,"repeated_order_equal":true}
+{"boundary":"before_configuration","fault":"removal","sequence":7,"event":"unrelated_finished","value":2,"repeated_order_equal":true}
+{"boundary":"before_configuration","fault":"deadline","sequence":0,"event":"armed","value":1,"repeated_order_equal":true}
+{"boundary":"before_configuration","fault":"deadline","sequence":1,"event":"reached","value":1,"repeated_order_equal":true}
+{"boundary":"before_configuration","fault":"deadline","sequence":2,"event":"unrelated_started","value":2,"repeated_order_equal":true}
+{"boundary":"before_configuration","fault":"deadline","sequence":3,"event":"decision_applied","value":2,"repeated_order_equal":true}
+{"boundary":"before_configuration","fault":"deadline","sequence":4,"event":"released","value":1,"repeated_order_equal":true}
+{"boundary":"before_configuration","fault":"deadline","sequence":5,"event":"entry_checked","value":0,"repeated_order_equal":true}
+{"boundary":"before_configuration","fault":"deadline","sequence":6,"event":"target_finished","value":2,"repeated_order_equal":true}
+{"boundary":"before_configuration","fault":"deadline","sequence":7,"event":"unrelated_finished","value":2,"repeated_order_equal":true}
+{"boundary":"before_main","fault":"none","sequence":0,"event":"armed","value":2,"repeated_order_equal":true}
+{"boundary":"before_main","fault":"none","sequence":1,"event":"reached","value":2,"repeated_order_equal":true}
+{"boundary":"before_main","fault":"none","sequence":2,"event":"unrelated_started","value":2,"repeated_order_equal":true}
+{"boundary":"before_main","fault":"none","sequence":3,"event":"decision_applied","value":0,"repeated_order_equal":true}
+{"boundary":"before_main","fault":"none","sequence":4,"event":"released","value":2,"repeated_order_equal":true}
+{"boundary":"before_main","fault":"none","sequence":5,"event":"entry_checked","value":1,"repeated_order_equal":true}
+{"boundary":"before_main","fault":"none","sequence":6,"event":"target_finished","value":1,"repeated_order_equal":true}
+{"boundary":"before_main","fault":"none","sequence":7,"event":"unrelated_finished","value":2,"repeated_order_equal":true}
+{"boundary":"before_main","fault":"removal","sequence":0,"event":"armed","value":2,"repeated_order_equal":true}
+{"boundary":"before_main","fault":"removal","sequence":1,"event":"reached","value":2,"repeated_order_equal":true}
+{"boundary":"before_main","fault":"removal","sequence":2,"event":"unrelated_started","value":2,"repeated_order_equal":true}
+{"boundary":"before_main","fault":"removal","sequence":3,"event":"decision_applied","value":1,"repeated_order_equal":true}
+{"boundary":"before_main","fault":"removal","sequence":4,"event":"released","value":2,"repeated_order_equal":true}
+{"boundary":"before_main","fault":"removal","sequence":5,"event":"entry_checked","value":0,"repeated_order_equal":true}
+{"boundary":"before_main","fault":"removal","sequence":6,"event":"target_finished","value":2,"repeated_order_equal":true}
+{"boundary":"before_main","fault":"removal","sequence":7,"event":"unrelated_finished","value":2,"repeated_order_equal":true}
+{"boundary":"before_main","fault":"deadline","sequence":0,"event":"armed","value":2,"repeated_order_equal":true}
+{"boundary":"before_main","fault":"deadline","sequence":1,"event":"reached","value":2,"repeated_order_equal":true}
+{"boundary":"before_main","fault":"deadline","sequence":2,"event":"unrelated_started","value":2,"repeated_order_equal":true}
+{"boundary":"before_main","fault":"deadline","sequence":3,"event":"decision_applied","value":2,"repeated_order_equal":true}
+{"boundary":"before_main","fault":"deadline","sequence":4,"event":"released","value":2,"repeated_order_equal":true}
+{"boundary":"before_main","fault":"deadline","sequence":5,"event":"entry_checked","value":0,"repeated_order_equal":true}
+{"boundary":"before_main","fault":"deadline","sequence":6,"event":"target_finished","value":2,"repeated_order_equal":true}
+{"boundary":"before_main","fault":"deadline","sequence":7,"event":"unrelated_finished","value":2,"repeated_order_equal":true}
+<end of output>
+Test time =   0.17 sec
+----------------------------------------------------------
+Test Passed.
+"graph_lifecycle_barriers" end time: Oct 22 14:25 CEST
+"graph_lifecycle_barriers" time elapsed: 00:00:00
+----------------------------------------------------------
+
+8/34 Testing: graph_wamr_phase_barriers
+8/34 Test: graph_wamr_phase_barriers
+Command: "/tmp/kaos-refactor-four/graph_wamr_phase_barrier_test" "/tmp/kaos-refactor-four/barrier_node.wasm"
+Directory: /tmp/kaos-refactor-four
+"graph_wamr_phase_barriers" start time: Oct 22 14:25 CEST
+Output:
+----------------------------------------------------------
+{"fault":"none","cutoff":false,"sequence":0,"event":"preparation_held","repeated_order_equal":true}
+{"fault":"none","cutoff":false,"sequence":1,"event":"other_started","repeated_order_equal":true}
+{"fault":"none","cutoff":false,"sequence":2,"event":"decision_applied","repeated_order_equal":true}
+{"fault":"none","cutoff":false,"sequence":3,"event":"preparation_released","repeated_order_equal":true}
+{"fault":"none","cutoff":false,"sequence":4,"event":"target_started","repeated_order_equal":true}
+{"fault":"none","cutoff":false,"sequence":5,"event":"destruction_held","repeated_order_equal":true}
+{"fault":"none","cutoff":false,"sequence":6,"event":"cutoff_checked","repeated_order_equal":true}
+{"fault":"none","cutoff":false,"sequence":7,"event":"other_cleaned","repeated_order_equal":true}
+{"fault":"none","cutoff":false,"sequence":8,"event":"destruction_released","repeated_order_equal":true}
+{"fault":"none","cutoff":false,"sequence":9,"event":"target_cleaned","repeated_order_equal":true}
+{"fault":"none","cutoff":true,"sequence":0,"event":"preparation_held","repeated_order_equal":true}
+{"fault":"none","cutoff":true,"sequence":1,"event":"other_started","repeated_order_equal":true}
+{"fault":"none","cutoff":true,"sequence":2,"event":"decision_applied","repeated_order_equal":true}
+{"fault":"none","cutoff":true,"sequence":3,"event":"preparation_released","repeated_order_equal":true}
+{"fault":"none","cutoff":true,"sequence":4,"event":"target_started","repeated_order_equal":true}
+{"fault":"none","cutoff":true,"sequence":5,"event":"destruction_held","repeated_order_equal":true}
+{"fault":"none","cutoff":true,"sequence":6,"event":"cutoff_checked","repeated_order_equal":true}
+{"fault":"none","cutoff":true,"sequence":7,"event":"other_cleaned","repeated_order_equal":true}
+{"fault":"none","cutoff":true,"sequence":8,"event":"destruction_released","repeated_order_equal":true}
+{"fault":"none","cutoff":true,"sequence":9,"event":"target_cleaned","repeated_order_equal":true}
+{"fault":"removal","cutoff":false,"sequence":0,"event":"preparation_held","repeated_order_equal":true}
+{"fault":"removal","cutoff":false,"sequence":1,"event":"other_started","repeated_order_equal":true}
+{"fault":"removal","cutoff":false,"sequence":2,"event":"decision_applied","repeated_order_equal":true}
+{"fault":"removal","cutoff":false,"sequence":3,"event":"preparation_released","repeated_order_equal":true}
+{"fault":"removal","cutoff":false,"sequence":4,"event":"destruction_held","repeated_order_equal":true}
+{"fault":"removal","cutoff":false,"sequence":5,"event":"cutoff_checked","repeated_order_equal":true}
+{"fault":"removal","cutoff":false,"sequence":6,"event":"other_cleaned","repeated_order_equal":true}
+{"fault":"removal","cutoff":false,"sequence":7,"event":"destruction_released","repeated_order_equal":true}
+{"fault":"removal","cutoff":false,"sequence":8,"event":"target_cleaned","repeated_order_equal":true}
+{"fault":"removal","cutoff":true,"sequence":0,"event":"preparation_held","repeated_order_equal":true}
+{"fault":"removal","cutoff":true,"sequence":1,"event":"other_started","repeated_order_equal":true}
+{"fault":"removal","cutoff":true,"sequence":2,"event":"decision_applied","repeated_order_equal":true}
+{"fault":"removal","cutoff":true,"sequence":3,"event":"preparation_released","repeated_order_equal":true}
+{"fault":"removal","cutoff":true,"sequence":4,"event":"destruction_held","repeated_order_equal":true}
+{"fault":"removal","cutoff":true,"sequence":5,"event":"cutoff_checked","repeated_order_equal":true}
+{"fault":"removal","cutoff":true,"sequence":6,"event":"other_cleaned","repeated_order_equal":true}
+{"fault":"removal","cutoff":true,"sequence":7,"event":"destruction_released","repeated_order_equal":true}
+{"fault":"removal","cutoff":true,"sequence":8,"event":"target_cleaned","repeated_order_equal":true}
+{"fault":"deadline","cutoff":false,"sequence":0,"event":"preparation_held","repeated_order_equal":true}
+{"fault":"deadline","cutoff":false,"sequence":1,"event":"other_started","repeated_order_equal":true}
+{"fault":"deadline","cutoff":false,"sequence":2,"event":"decision_applied","repeated_order_equal":true}
+{"fault":"deadline","cutoff":false,"sequence":3,"event":"preparation_released","repeated_order_equal":true}
+{"fault":"deadline","cutoff":false,"sequence":4,"event":"destruction_held","repeated_order_equal":true}
+{"fault":"deadline","cutoff":false,"sequence":5,"event":"cutoff_checked","repeated_order_equal":true}
+{"fault":"deadline","cutoff":false,"sequence":6,"event":"other_cleaned","repeated_order_equal":true}
+{"fault":"deadline","cutoff":false,"sequence":7,"event":"destruction_released","repeated_order_equal":true}
+{"fault":"deadline","cutoff":false,"sequence":8,"event":"target_cleaned","repeated_order_equal":true}
+{"fault":"deadline","cutoff":true,"sequence":0,"event":"preparation_held","repeated_order_equal":true}
+{"fault":"deadline","cutoff":true,"sequence":1,"event":"other_started","repeated_order_equal":true}
+{"fault":"deadline","cutoff":true,"sequence":2,"event":"decision_applied","repeated_order_equal":true}
+{"fault":"deadline","cutoff":true,"sequence":3,"event":"preparation_released","repeated_order_equal":true}
+{"fault":"deadline","cutoff":true,"sequence":4,"event":"destruction_held","repeated_order_equal":true}
+{"fault":"deadline","cutoff":true,"sequence":5,"event":"cutoff_checked","repeated_order_equal":true}
+{"fault":"deadline","cutoff":true,"sequence":6,"event":"other_cleaned","repeated_order_equal":true}
+{"fault":"deadline","cutoff":true,"sequence":7,"event":"destruction_released","repeated_order_equal":true}
+{"fault":"deadline","cutoff":true,"sequence":8,"event":"target_cleaned","repeated_order_equal":true}
+<end of output>
+Test time =   0.11 sec
+----------------------------------------------------------
+Test Passed.
+"graph_wamr_phase_barriers" end time: Oct 22 14:25 CEST
+"graph_wamr_phase_barriers" time elapsed: 00:00:00
+----------------------------------------------------------
+
+9/34 Testing: graph_host_transport_scheduling
+9/34 Test: graph_host_transport_scheduling
+Command: "/tmp/kaos-refactor-four/graph_host_transport_scheduling_test"
+Directory: /tmp/kaos-refactor-four
+"graph_host_transport_scheduling" start time: Oct 22 14:25 CEST
+Output:
+----------------------------------------------------------
+transport scheduling: bounded rounds, class isolation, lifecycle ordering, best effort and artifact pacing passed
+<end of output>
+Test time =   0.04 sec
+----------------------------------------------------------
+Test Passed.
+"graph_host_transport_scheduling" end time: Oct 22 14:25 CEST
+"graph_host_transport_scheduling" time elapsed: 00:00:00
+----------------------------------------------------------
+
+10/34 Testing: graph_workload_stalls
+10/34 Test: graph_workload_stalls
+Command: "/tmp/kaos-refactor-four/graph_workload_stalls" "/tmp/kaos-refactor-four/stalls.wasm"
+Directory: /tmp/kaos-refactor-four
+"graph_workload_stalls" start time: Oct 22 14:25 CEST
+Output:
+----------------------------------------------------------
+APP11 mode=0 PUT=16 GET=16 EMPTY=8 FULL=0 receiver_drop=0
+APP11 mode=1 PUT=18 GET=8 EMPTY=0 FULL=0 receiver_drop=8
+APP11 mode=2 PUT=11 GET=8 EMPTY=0 FULL=8 receiver_drop=0
+APP11: producer/consumer stalls, queue bounds and cancellable workers passed
+<end of output>
+Test time =   0.10 sec
+----------------------------------------------------------
+Test Passed.
+"graph_workload_stalls" end time: Oct 22 14:25 CEST
+"graph_workload_stalls" time elapsed: 00:00:00
+----------------------------------------------------------
+
+11/34 Testing: graph_observation_loss
+11/34 Test: graph_observation_loss
+Command: "/home/karolina/.local/bin/uv" "--directory" "/home/karolina/Research/Code/kaos_core/verification/graph_core/../../../sim_env" "run" "--offline" "python" "/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/observation_loss_test.py" "/tmp/kaos-refactor-four/core/kaos_host" "/tmp/kaos-refactor-four/feedback.wasm" "/tmp/kaos-refactor-four/observation-loss"
+Directory: /tmp/kaos-refactor-four
+"graph_observation_loss" start time: Oct 22 14:25 CEST
+Output:
+----------------------------------------------------------
+{"output": "/tmp/kaos-refactor-four/observation-loss/run-m_vf11fp", "observation_faults_inconclusive": 16, "collector": {"proper_prefixes_rejected": 11, "complete_snapshot_stored": true}, "healthy_sample_status": "passed"}
+<end of output>
+Test time =   1.07 sec
+----------------------------------------------------------
+Test Passed.
+"graph_observation_loss" end time: Oct 22 14:25 CEST
+"graph_observation_loss" time elapsed: 00:00:01
+----------------------------------------------------------
+
+12/34 Testing: graph_collector_crash
+12/34 Test: graph_collector_crash
+Command: "/home/karolina/.local/bin/uv" "--directory" "/home/karolina/Research/Code/kaos_core/verification/graph_core/../../../sim_env" "run" "--offline" "python" "/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/collector_crash_test.py" "/tmp/kaos-refactor-four/core/kaos_host" "/tmp/kaos-refactor-four/barrier_node.wasm" "/tmp/kaos-refactor-four/collector-crash"
+Directory: /tmp/kaos-refactor-four
+"graph_collector_crash" start time: Oct 22 14:25 CEST
+Output:
+----------------------------------------------------------
+{"collector_crash_output": "/tmp/kaos-refactor-four/collector-crash/run-h0ai2vt_"}
+test_crash_before_storage_ack_preserves_device_copy (__main__.CollectorCrashTests.test_crash_before_storage_ack_preserves_device_copy) ... {"crash": "before_ack", "operation": 2, "target": 1, "events": [{"boundary": "stored_before_ack", "revision": 6, "payload_sha256": "8509450d7c8331000ca5da70fbee72112dfb359c5e29ed03517f2dc021ded969"}, {"boundary": "collector_killed", "exitcode": -9}], "disposition": "device_copy_retrieved_authority_observed_closure", "new_addition_and_removal_succeeded": true, "incidence_count_before_retrieval": 1, "authority_observed_closure_at_end": true, "scope": "two hosts; one channel; volatile collector loss; no recovery"}
+ok
+test_crash_after_storage_ack_preserves_authority_uncertainty (__main__.CollectorCrashTests.test_crash_after_storage_ack_preserves_authority_uncertainty) ... {"crash": "after_ack", "operation": 2, "target": 1, "events": [{"boundary": "stored_before_ack", "revision": 6, "payload_sha256": "8509450d7c8331000ca5da70fbee72112dfb359c5e29ed03517f2dc021ded969"}, {"boundary": "device_acknowledged", "revision": 6}, {"boundary": "collector_killed", "exitcode": -9}], "disposition": "history_unavailable_authority_uncertain", "new_addition_and_removal_succeeded": true, "incidence_count_before_retrieval": 1, "authority_observed_closure_at_end": false, "scope": "two hosts; one channel; volatile collector loss; no recovery"}
+ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.587s
+
+OK
+<end of output>
+Test time =   0.80 sec
+----------------------------------------------------------
+Test Passed.
+"graph_collector_crash" end time: Oct 22 14:25 CEST
+"graph_collector_crash" time elapsed: 00:00:00
+----------------------------------------------------------
+
+13/34 Testing: graph_relay_overflow
+13/34 Test: graph_relay_overflow
+Command: "/home/karolina/.local/bin/uv" "--directory" "/home/karolina/Research/Code/kaos_core/verification/graph_core/../../../sim_env" "run" "--offline" "python" "/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/relay_overflow_test.py" "/tmp/kaos-refactor-four/core/kaos_host" "/tmp/kaos-refactor-four/relay-overflow"
+Directory: /tmp/kaos-refactor-four
+"graph_relay_overflow" start time: Oct 22 14:25 CEST
+Output:
+----------------------------------------------------------
+{"relay_overflow_output": "/tmp/kaos-refactor-four/relay-overflow/run-amti8_g3"}
+test_actual_overflow_rejects_run (__main__.RelayOverflowTests.test_actual_overflow_rejects_run) ... {"case": "relay_overflow", "actual_drops": 1, "run_rejected": true, "teardown": {"kind": "teardown", "timestamp_us": 200961962307, "errors": ["relay queue overflow dropped 1 packet copies"], "proves_graph_cleanup": false, "relay_overflow_drops": 1}}
+ok
+test_requested_loss_does_not_reject_run (__main__.RelayOverflowTests.test_requested_loss_does_not_reject_run) ... {"case": "loss", "actual_drops": 1, "run_rejected": false, "teardown": {"kind": "teardown", "timestamp_us": 200962162905, "errors": [], "proves_graph_cleanup": false, "relay_overflow_drops": 0}}
+ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.405s
+
+OK
+<end of output>
+Test time =   0.63 sec
+----------------------------------------------------------
+Test Passed.
+"graph_relay_overflow" end time: Oct 22 14:25 CEST
+"graph_relay_overflow" time elapsed: 00:00:00
+----------------------------------------------------------
+
+14/34 Testing: graph_host_crash
+14/34 Test: graph_host_crash
+Command: "/home/karolina/.local/bin/uv" "--directory" "/home/karolina/Research/Code/kaos_core/verification/graph_core/../../../sim_env" "run" "--offline" "python" "/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/host_crash_test.py" "/tmp/kaos-refactor-four/core/kaos_host" "/tmp/kaos-refactor-four/alternatives.wasm" "/tmp/kaos-refactor-four/host-crash"
+Directory: /tmp/kaos-refactor-four
+"graph_host_crash" start time: Oct 22 14:25 CEST
+Output:
+----------------------------------------------------------
+{"host_crash_output": "/tmp/kaos-refactor-four/host-crash/run-n0stnvke"}
+test_shared_host_crash_preserves_remote_cleanup_obligations (__main__.HostCrashTests.test_shared_host_crash_preserves_remote_cleanup_obligations) ... ok
+test_unrequested_kill_still_fails_run (__main__.HostCrashTests.test_unrequested_kill_still_fails_run) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.742s
+
+OK
+<end of output>
+Test time =   0.98 sec
+----------------------------------------------------------
+Test Passed.
+"graph_host_crash" end time: Oct 22 14:25 CEST
+"graph_host_crash" time elapsed: 00:00:00
+----------------------------------------------------------
+
+15/34 Testing: graph_optional_expiry
+15/34 Test: graph_optional_expiry
+Command: "/home/karolina/.local/bin/uv" "--directory" "/home/karolina/Research/Code/kaos_core/verification/graph_core/../../../sim_env" "run" "--offline" "python" "/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/optional_expiry_test.py" "/tmp/kaos-refactor-four/core/kaos_host" "/tmp/kaos-refactor-four/alternatives.wasm"
+Directory: /tmp/kaos-refactor-four
+"graph_optional_expiry" start time: Oct 22 14:25 CEST
+Output:
+----------------------------------------------------------
+A passed [{'name': 'startup_supported', 'status': 'passed', 'branches': {'A': {'received': 212, 'unique_sequences': 212}, 'B': {'received': 0, 'unique_sequences': 0}}, 'unexpected_copies': 0}, {'name': 'expired_unresolved', 'status': 'passed', 'branches': {'A': {'received': 210, 'unique_sequences': 210}, 'B': {'received': 0, 'unique_sequences': 0}}, 'unexpected_copies': 0}, {'name': 'expired_cleaned', 'status': 'passed', 'branches': {'A': {'received': 207, 'unique_sequences': 207}, 'B': {'received': 0, 'unique_sequences': 0}}, 'unexpected_copies': 0}]
+B passed [{'name': 'startup_supported', 'status': 'passed', 'branches': {'A': {'received': 0, 'unique_sequences': 0}, 'B': {'received': 216, 'unique_sequences': 216}}, 'unexpected_copies': 0}, {'name': 'expired_unresolved', 'status': 'passed', 'branches': {'A': {'received': 0, 'unique_sequences': 0}, 'B': {'received': 214, 'unique_sequences': 214}}, 'unexpected_copies': 0}, {'name': 'expired_cleaned', 'status': 'passed', 'branches': {'A': {'received': 0, 'unique_sequences': 0}, 'B': {'received': 217, 'unique_sequences': 217}}, 'unexpected_copies': 0}]
+<end of output>
+Test time =   8.28 sec
+----------------------------------------------------------
+Test Passed.
+"graph_optional_expiry" end time: Oct 22 14:25 CEST
+"graph_optional_expiry" time elapsed: 00:00:08
+----------------------------------------------------------
+
+16/34 Testing: graph_p8_workloads
+16/34 Test: graph_p8_workloads
+Command: "/usr/bin/cmake" "-E" "env" "KAOS_WORKLOAD_HOST=/tmp/kaos-refactor-four/core/kaos_host" "KAOS_WORKLOAD_GUESTS=/tmp/kaos-refactor-four" "KAOS_WORKLOAD_FOUR=1" "/home/karolina/.local/bin/uv" "--directory" "/home/karolina/Research/Code/kaos_core/verification/graph_core/../../../sim_env" "run" "--offline" "python" "-m" "unittest" "discover" "-s" "tests" "-p" "test_graph_workloads.py" "-v"
+Directory: /tmp/kaos-refactor-four
+"graph_p8_workloads" start time: Oct 22 14:25 CEST
+Output:
+----------------------------------------------------------
+test_complete_trace_without_samples_is_failure (test_graph_workloads.TraceTests.test_complete_trace_without_samples_is_failure) ... ok
+test_corrupt_payload_fails_even_with_complete_trace (test_graph_workloads.TraceTests.test_corrupt_payload_fails_even_with_complete_trace) ... ok
+test_missing_summary_gap_or_drop_is_inconclusive (test_graph_workloads.TraceTests.test_missing_summary_gap_or_drop_is_inconclusive) ... ok
+test_uncorrelated_get_is_rejected (test_graph_workloads.TraceTests.test_uncorrelated_get_is_rejected) ... ok
+test_zero_length_success_is_preserved (test_graph_workloads.TraceTests.test_zero_length_success_is_preserved) ... ok
+test_colocated_feedback (test_graph_workloads.WorkloadProcessTests.test_colocated_feedback) ... ok
+test_colocated_pipeline_observes_local_gets (test_graph_workloads.WorkloadProcessTests.test_colocated_pipeline_observes_local_gets) ... ok
+test_distributed_pipeline_replaces_transform_with_fresh_identity (test_graph_workloads.WorkloadProcessTests.test_distributed_pipeline_replaces_transform_with_fresh_identity) ... ok
+test_pipeline_outage_fails_sample_requirement (test_graph_workloads.WorkloadProcessTests.test_pipeline_outage_fails_sample_requirement) ... ok
+test_remote_feedback_with_asymmetric_loss_and_delayed_preparation (test_graph_workloads.WorkloadProcessTests.test_remote_feedback_with_asymmetric_loss_and_delayed_preparation) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 2.827s
+
+OK
+<end of output>
+Test time =   3.05 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p8_workloads" end time: Oct 22 14:25 CEST
+"graph_p8_workloads" time elapsed: 00:00:03
+----------------------------------------------------------
+
+17/34 Testing: graph_p8_workload_timing
+17/34 Test: graph_p8_workload_timing
+Command: "/usr/bin/cmake" "-E" "env" "KAOS_WORKLOAD_HOST=/tmp/kaos-refactor-four/core/kaos_host" "KAOS_WORKLOAD_GUESTS=/tmp/kaos-refactor-four" "KAOS_WORKLOAD_FOUR=1" "/home/karolina/.local/bin/uv" "--directory" "/home/karolina/Research/Code/kaos_core/verification/graph_core/../../../sim_env" "run" "--offline" "python" "-m" "unittest" "discover" "-s" "tests" "-p" "test_graph_workload_timing.py" "-v"
+Directory: /tmp/kaos-refactor-four
+"graph_p8_workload_timing" start time: Oct 22 14:25 CEST
+Output:
+----------------------------------------------------------
+test_delayed_pipeline_misses_budget_after_graph_success (test_graph_workload_timing.TimingProcessTests.test_delayed_pipeline_misses_budget_after_graph_success) ... ok
+test_local_feedback_has_correlated_timing_without_network (test_graph_workload_timing.TimingProcessTests.test_local_feedback_has_correlated_timing_without_network) ... ok
+test_budget_and_monotonic_observation_validation (test_graph_workload_timing.TimingTests.test_budget_and_monotonic_observation_validation) ... ok
+test_budget_boundary_and_missing_output_are_separate_from_graph_reports (test_graph_workload_timing.TimingTests.test_budget_boundary_and_missing_output_are_separate_from_graph_reports) ... ok
+test_empty_trace_cannot_pass (test_graph_workload_timing.TimingTests.test_empty_trace_cannot_pass) ... ok
+test_impossible_or_missing_transform_copy_order_is_rejected (test_graph_workload_timing.TimingTests.test_impossible_or_missing_transform_copy_order_is_rejected) ... ok
+test_missing_trace_is_inconclusive_not_a_budget_miss (test_graph_workload_timing.TimingTests.test_missing_trace_is_inconclusive_not_a_budget_miss) ... ok
+test_output_requires_original_source_publication (test_graph_workload_timing.TimingTests.test_output_requires_original_source_publication) ... ok
+test_reader_order_does_not_override_embedded_timestamps (test_graph_workload_timing.TimingTests.test_reader_order_does_not_override_embedded_timestamps) ... ok
+test_replacement_cannot_borrow_previous_transform_evidence (test_graph_workload_timing.TimingTests.test_replacement_cannot_borrow_previous_transform_evidence) ... ok
+test_replay_cli_preserves_original_result (test_graph_workload_timing.TimingTests.test_replay_cli_preserves_original_result) ... ok
+test_retries_and_duplicate_gets_do_not_reset_origin_or_add_completions (test_graph_workload_timing.TimingTests.test_retries_and_duplicate_gets_do_not_reset_origin_or_add_completions) ... ok
+test_tail_and_pre_window_origins_are_excluded (test_graph_workload_timing.TimingTests.test_tail_and_pre_window_origins_are_excluded) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 1.256s
+
+OK
+<end of output>
+Test time =   1.50 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p8_workload_timing" end time: Oct 22 14:25 CEST
+"graph_p8_workload_timing" time elapsed: 00:00:01
+----------------------------------------------------------
+
+18/34 Testing: graph_p8_alternatives
+18/34 Test: graph_p8_alternatives
+Command: "/usr/bin/cmake" "-E" "env" "KAOS_WORKLOAD_HOST=/tmp/kaos-refactor-four/core/kaos_host" "KAOS_WORKLOAD_GUESTS=/tmp/kaos-refactor-four" "KAOS_WORKLOAD_FOUR=1" "/home/karolina/.local/bin/uv" "--directory" "/home/karolina/Research/Code/kaos_core/verification/graph_core/../../../sim_env" "run" "--offline" "python" "-m" "unittest" "discover" "-s" "tests" "-p" "test_graph_alternatives.py" "-v"
+Directory: /tmp/kaos-refactor-four
+"graph_p8_alternatives" start time: Oct 22 14:25 CEST
+Output:
+----------------------------------------------------------
+test_both_branches_validate_independent_samples (test_graph_alternatives.AlternativeOracleTests.test_both_branches_validate_independent_samples) ... ok
+test_complete_trace_with_unmatched_get_is_rejected (test_graph_alternatives.AlternativeOracleTests.test_complete_trace_with_unmatched_get_is_rejected) ... ok
+test_corrupt_sample_is_rejected (test_graph_alternatives.AlternativeOracleTests.test_corrupt_sample_is_rejected) ... ok
+test_either_single_branch_passes_without_the_other (test_graph_alternatives.AlternativeOracleTests.test_either_single_branch_passes_without_the_other) ... ok
+test_inactive_branch_copies_and_missing_active_branch_fail (test_graph_alternatives.AlternativeOracleTests.test_inactive_branch_copies_and_missing_active_branch_fail) ... ok
+test_observation_loss_is_inconclusive (test_graph_alternatives.AlternativeOracleTests.test_observation_loss_is_inconclusive) ... ok
+test_repeated_get_does_not_satisfy_distinct_sample_requirement (test_graph_alternatives.AlternativeOracleTests.test_repeated_get_does_not_satisfy_distinct_sample_requirement) ... ok
+test_wrong_instance_and_channel_are_rejected (test_graph_alternatives.AlternativeOracleTests.test_wrong_instance_and_channel_are_rejected) ... ok
+test_a_starts_b_joins_then_a_is_removed (test_graph_alternatives.AlternativeProcessTests.test_a_starts_b_joins_then_a_is_removed) ... ok
+test_b_starts_a_joins_then_b_is_removed (test_graph_alternatives.AlternativeProcessTests.test_b_starts_a_joins_then_b_is_removed) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 7.247s
+
+OK
+<end of output>
+Test time =   7.48 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p8_alternatives" end time: Oct 22 14:25 CEST
+"graph_p8_alternatives" time elapsed: 00:00:07
+----------------------------------------------------------
+
+19/34 Testing: graph_p8_mixed
+19/34 Test: graph_p8_mixed
+Command: "/usr/bin/cmake" "-E" "env" "KAOS_WORKLOAD_HOST=/tmp/kaos-refactor-four/core/kaos_host" "KAOS_WORKLOAD_GUESTS=/tmp/kaos-refactor-four" "KAOS_WORKLOAD_FOUR=1" "/home/karolina/.local/bin/uv" "--directory" "/home/karolina/Research/Code/kaos_core/verification/graph_core/../../../sim_env" "run" "--offline" "python" "-m" "unittest" "discover" "-s" "tests" "-p" "test_graph_mixed.py" "-v"
+Directory: /tmp/kaos-refactor-four
+"graph_p8_mixed" start time: Oct 22 14:25 CEST
+Output:
+----------------------------------------------------------
+test_copies_on_removed_output_or_wrong_input_fail (test_graph_mixed.MixedOracleTests.test_copies_on_removed_output_or_wrong_input_fail) ... ok
+test_duplicates_do_not_meet_eight_sample_requirement (test_graph_mixed.MixedOracleTests.test_duplicates_do_not_meet_eight_sample_requirement) ... ok
+test_either_source_has_ordered_transformed_output (test_graph_mixed.MixedOracleTests.test_either_source_has_ordered_transformed_output) ... ok
+test_every_copy_requires_its_preceding_hop (test_graph_mixed.MixedOracleTests.test_every_copy_requires_its_preceding_hop) ... ok
+test_input_source_identity_is_not_interchangeable (test_graph_mixed.MixedOracleTests.test_input_source_identity_is_not_interchangeable) ... ok
+test_missing_output_does_not_pass_serving_phase (test_graph_mixed.MixedOracleTests.test_missing_output_does_not_pass_serving_phase) ... ok
+test_missing_trace_is_inconclusive_even_when_service_is_expected_to_stop (test_graph_mixed.MixedOracleTests.test_missing_trace_is_inconclusive_even_when_service_is_expected_to_stop) ... ok
+test_removed_output_is_expected_service_failure_with_live_input (test_graph_mixed.MixedOracleTests.test_removed_output_is_expected_service_failure_with_live_input) ... ok
+test_wrong_value_padding_instance_owner_and_channel_are_rejected (test_graph_mixed.MixedOracleTests.test_wrong_value_padding_instance_owner_and_channel_are_rejected) ... ok
+test_a_waits_for_output (test_graph_mixed.MixedProcessTests.test_a_waits_for_output) ... ok
+test_b_waits_for_output (test_graph_mixed.MixedProcessTests.test_b_waits_for_output) ... ok
+test_output_waits_for_a (test_graph_mixed.MixedProcessTests.test_output_waits_for_a) ... ok
+test_output_waits_for_b (test_graph_mixed.MixedProcessTests.test_output_waits_for_b) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 12.783s
+
+OK
+<end of output>
+Test time =  13.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p8_mixed" end time: Oct 22 14:26 CEST
+"graph_p8_mixed" time elapsed: 00:00:13
+----------------------------------------------------------
+
+20/34 Testing: graph_p4_capacity
+20/34 Test: graph_p4_capacity
+Command: "/tmp/kaos-refactor-four/graph_p4_capacity" "/tmp/kaos-refactor-four/capacity.wasm"
+Directory: /tmp/kaos-refactor-four
+"graph_p4_capacity" start time: Oct 22 14:26 CEST
+Output:
+----------------------------------------------------------
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=40632 endpoints=33248 edges=2904 nodes=240 arena=49152 artifact=1124 native_stack=262144
+capacity node=0 puts=1688 gets=1656 full=43 guest_validated=1656
+capacity node=1 puts=1804 gets=1660 full=47 guest_validated=1660
+capacity node=2 puts=1816 gets=1769 full=51 guest_validated=1769
+capacity node=3 puts=1794 gets=1762 full=48 guest_validated=1762
+capacity deliveries=6880
+capacity endpoints_reclaimed unread_notifications=31
+capacity cycle=0 reservations=0
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=40632 endpoints=33248 edges=2904 nodes=240 arena=49152 artifact=1124 native_stack=262144
+capacity node=0 puts=1940 gets=1888 full=47 guest_validated=1888
+capacity node=1 puts=1948 gets=1894 full=48 guest_validated=1894
+capacity node=2 puts=1910 gets=1870 full=46 guest_validated=1870
+capacity node=3 puts=1947 gets=1871 full=46 guest_validated=1871
+capacity deliveries=7567
+capacity endpoints_reclaimed unread_notifications=32
+capacity cycle=1 reservations=0
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=40632 endpoints=33248 edges=2904 nodes=240 arena=49152 artifact=1124 native_stack=262144
+capacity node=0 puts=1936 gets=1888 full=44 guest_validated=1888
+capacity node=1 puts=1900 gets=1868 full=47 guest_validated=1868
+capacity node=2 puts=1853 gets=1821 full=47 guest_validated=1821
+capacity node=3 puts=1916 gets=1836 full=43 guest_validated=1836
+capacity deliveries=7441
+capacity endpoints_reclaimed unread_notifications=32
+capacity cycle=2 reservations=0
+P4 capacity PASS: four WAMR nodes, eight endpoints each, 32 full queues, copied traffic and full reclamation
+<end of output>
+Test time =   3.11 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p4_capacity" end time: Oct 22 14:26 CEST
+"graph_p4_capacity" time elapsed: 00:00:03
+----------------------------------------------------------
+
+21/34 Testing: graph_p5_capacity
+21/34 Test: graph_p5_capacity
+Command: "/tmp/kaos-refactor-four/graph_p5_capacity" "/tmp/kaos-refactor-four/capacity.wasm"
+Directory: /tmp/kaos-refactor-four
+"graph_p5_capacity" start time: Oct 22 14:26 CEST
+Output:
+----------------------------------------------------------
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=40632 endpoints=33248 edges=2904 nodes=240 arena=49152 artifact=1124 native_stack=262144
+capacity node=0 puts=1424 gets=1392 full=43 guest_validated=1392
+capacity node=1 puts=1612 gets=1403 full=44 guest_validated=1403
+capacity node=2 puts=1608 gets=1563 full=46 guest_validated=1563
+capacity node=3 puts=1620 gets=1564 full=48 guest_validated=1564
+capacity deliveries=5956
+P5 capacity cycle=0 reservations=0
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=40632 endpoints=33248 edges=2904 nodes=240 arena=49152 artifact=1124 native_stack=262144
+capacity node=0 puts=1612 gets=1575 full=44 guest_validated=1575
+capacity node=1 puts=1627 gets=1550 full=43 guest_validated=1550
+capacity node=2 puts=1611 gets=1573 full=45 guest_validated=1573
+capacity node=3 puts=1648 gets=1579 full=48 guest_validated=1579
+capacity deliveries=6311
+P5 capacity cycle=1 reservations=0
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=40632 endpoints=33248 edges=2904 nodes=240 arena=49152 artifact=1124 native_stack=262144
+capacity node=0 puts=1416 gets=1339 full=41 guest_validated=1339
+capacity node=1 puts=1455 gets=1335 full=46 guest_validated=1335
+capacity node=2 puts=1467 gets=1412 full=46 guest_validated=1412
+capacity node=3 puts=1480 gets=1396 full=44 guest_validated=1396
+capacity deliveries=5518
+P5 capacity cycle=2 reservations=0
+P5 capacity PASS: four WAMR nodes, eight initial channels, full queues and reclamation
+<end of output>
+Test time =   3.11 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p5_capacity" end time: Oct 22 14:26 CEST
+"graph_p5_capacity" time elapsed: 00:00:03
+----------------------------------------------------------
+
+22/34 Testing: graph_p5
+22/34 Test: graph_p5
+Command: "/tmp/kaos-refactor-four/graph_p5_test"
+Directory: /tmp/kaos-refactor-four
+"graph_p5" start time: Oct 22 14:26 CEST
+Output:
+----------------------------------------------------------
+P5: Boolean gates, independent channels, startup races, optional deadlines and cleanup passed
+<end of output>
+Test time =   0.04 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p5" end time: Oct 22 14:26 CEST
+"graph_p5" time elapsed: 00:00:00
+----------------------------------------------------------
+
+23/34 Testing: graph_admission_reuse
+23/34 Test: graph_admission_reuse
+Command: "/tmp/kaos-refactor-four/graph_admission_reuse_test"
+Directory: /tmp/kaos-refactor-four
+"graph_admission_reuse" start time: Oct 22 14:26 CEST
+Output:
+----------------------------------------------------------
+Retired observer reuse preserves binding validation
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"graph_admission_reuse" end time: Oct 22 14:26 CEST
+"graph_admission_reuse" time elapsed: 00:00:00
+----------------------------------------------------------
+
+24/34 Testing: graph_host_control
+24/34 Test: graph_host_control
+Command: "/tmp/kaos-refactor-four/graph_host_control_test"
+Directory: /tmp/kaos-refactor-four
+"graph_host_control" start time: Oct 22 14:26 CEST
+Output:
+----------------------------------------------------------
+management exchange: late closure, stale effects and exhaustion passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_host_control" end time: Oct 22 14:26 CEST
+"graph_host_control" time elapsed: 00:00:00
+----------------------------------------------------------
+
+25/34 Testing: graph_p6
+25/34 Test: graph_p6
+Command: "/tmp/kaos-refactor-four/graph_p6_test"
+Directory: /tmp/kaos-refactor-four
+"graph_p6" start time: Oct 22 14:26 CEST
+Output:
+----------------------------------------------------------
+P6 full removal and overlapping observers passed
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p6" end time: Oct 22 14:26 CEST
+"graph_p6" time elapsed: 00:00:00
+----------------------------------------------------------
+
+26/34 Testing: graph_p6_admission
+26/34 Test: graph_p6_admission
+Command: "/tmp/kaos-refactor-four/graph_p6_admission_test"
+Directory: /tmp/kaos-refactor-four
+"graph_p6_admission" start time: Oct 22 14:26 CEST
+Output:
+----------------------------------------------------------
+P6 removal admission passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p6_admission" end time: Oct 22 14:26 CEST
+"graph_p6_admission" time elapsed: 00:00:00
+----------------------------------------------------------
+
+27/34 Testing: graph_p6_control
+27/34 Test: graph_p6_control
+Command: "/tmp/kaos-refactor-four/graph_p6_control_test"
+Directory: /tmp/kaos-refactor-four
+"graph_p6_control" start time: Oct 22 14:26 CEST
+Output:
+----------------------------------------------------------
+P6 control checks passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p6_control" end time: Oct 22 14:26 CEST
+"graph_p6_control" time elapsed: 00:00:00
+----------------------------------------------------------
+
+28/34 Testing: graph_p7
+28/34 Test: graph_p7
+Command: "/tmp/kaos-refactor-four/graph_p7_test"
+Directory: /tmp/kaos-refactor-four
+"graph_p7" start time: Oct 22 14:26 CEST
+Output:
+----------------------------------------------------------
+Q05 characterization: forgotten failed ADD admitted again and charged node capacity
+P7 retention: exact ACK, late closure, oldest eligible eviction, pressure and churn passed
+<end of output>
+Test time =   0.06 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p7" end time: Oct 22 14:26 CEST
+"graph_p7" time elapsed: 00:00:00
+----------------------------------------------------------
+
+29/34 Testing: graph_p7_control
+29/34 Test: graph_p7_control
+Command: "/tmp/kaos-refactor-four/graph_p7_control_test"
+Directory: /tmp/kaos-refactor-four
+"graph_p7_control" start time: Oct 22 14:26 CEST
+Output:
+----------------------------------------------------------
+P7 control: designated recipients, exact ACK and missing/history distinction passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p7_control" end time: Oct 22 14:26 CEST
+"graph_p7_control" time elapsed: 00:00:00
+----------------------------------------------------------
+
+30/34 Testing: graph_p7_lifecycle
+30/34 Test: graph_p7_lifecycle
+Command: "/tmp/kaos-refactor-four/graph_p7_lifecycle_test"
+Directory: /tmp/kaos-refactor-four
+"graph_p7_lifecycle" start time: Oct 22 14:26 CEST
+Output:
+----------------------------------------------------------
+Q05 characterization: retired removal command recreated its owner record; old callback rejected
+P7 lifecycle: optional ownership, closure preservation and owner delivery passed
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p7_lifecycle" end time: Oct 22 14:26 CEST
+"graph_p7_lifecycle" time elapsed: 00:00:00
+----------------------------------------------------------
+
+31/34 Testing: graph_p6_capacity
+31/34 Test: graph_p6_capacity
+Command: "/tmp/kaos-refactor-four/graph_p6_capacity" "/tmp/kaos-refactor-four/capacity.wasm"
+Directory: /tmp/kaos-refactor-four
+"graph_p6_capacity" start time: Oct 22 14:26 CEST
+Output:
+----------------------------------------------------------
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=40632 endpoints=33248 edges=2904 nodes=240 arena=49152 artifact=1124 native_stack=262144
+P6 capacity cycle=0 reservations=0
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=40632 endpoints=33248 edges=2904 nodes=240 arena=49152 artifact=1124 native_stack=262144
+P6 capacity cycle=1 reservations=0
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=40632 endpoints=33248 edges=2904 nodes=240 arena=49152 artifact=1124 native_stack=262144
+P6 capacity cycle=2 reservations=0
+P6 capacity PASS: four WAMR nodes, overlapping full removals and occupied queues
+<end of output>
+Test time =   0.14 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p6_capacity" end time: Oct 22 14:26 CEST
+"graph_p6_capacity" time elapsed: 00:00:00
+----------------------------------------------------------
+
+32/34 Testing: graph_p7_capacity
+32/34 Test: graph_p7_capacity
+Command: "/tmp/kaos-refactor-four/graph_p7_capacity" "/tmp/kaos-refactor-four/capacity.wasm"
+Directory: /tmp/kaos-refactor-four
+"graph_p7_capacity" start time: Oct 22 14:26 CEST
+Output:
+----------------------------------------------------------
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=40632 endpoints=33248 edges=2904 nodes=240 arena=49152 artifact=1124 native_stack=262144
+P7 capacity cycle=0 reservations=0
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=40632 endpoints=33248 edges=2904 nodes=240 arena=49152 artifact=1124 native_stack=262144
+P7 capacity cycle=1 reservations=0
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=40632 endpoints=33248 edges=2904 nodes=240 arena=49152 artifact=1124 native_stack=262144
+P7 capacity cycle=2 reservations=0
+P7 capacity PASS: live ACKs, later evidence, pressure eviction and full reclamation
+<end of output>
+Test time =   0.13 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p7_capacity" end time: Oct 22 14:26 CEST
+"graph_p7_capacity" time elapsed: 00:00:00
+----------------------------------------------------------
+
+33/34 Testing: graph_control_decoded
+33/34 Test: graph_control_decoded
+Command: "/tmp/kaos-refactor-four/graph_control_decoded_test"
+Directory: /tmp/kaos-refactor-four
+"graph_control_decoded" start time: Oct 22 14:26 CEST
+Output:
+----------------------------------------------------------
+decoded control equivalence: 117 comparisons
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"graph_control_decoded" end time: Oct 22 14:26 CEST
+"graph_control_decoded" time elapsed: 00:00:00
+----------------------------------------------------------
+
+34/34 Testing: graph_wamr_startup_unwind
+34/34 Test: graph_wamr_startup_unwind
+Command: "/tmp/kaos-refactor-four/graph_wamr_startup_unwind_test"
+Directory: /tmp/kaos-refactor-four
+"graph_wamr_startup_unwind" start time: Oct 22 14:26 CEST
+Output:
+----------------------------------------------------------
+WAMR startup unwind: 4 failure positions plus successful reuse
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"graph_wamr_startup_unwind" end time: Oct 22 14:26 CEST
+"graph_wamr_startup_unwind" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 22 14:26 CEST

@@ -1,0 +1,1 @@
+sim_env: The legacy container/monitor build was retired from kaos_core. Build ../kaos_core/verification/graph_core with CORE_BUILD_HOST=ON; run sim_env.graph_run or sim_env.graph_workloads. Historical experiments require a pre-retirement --kaos-source checkout.

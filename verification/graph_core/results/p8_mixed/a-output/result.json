@@ -1,0 +1,245 @@
+{
+  "status": "passed",
+  "trace_complete": true,
+  "observations": 1277,
+  "phases": [
+    {
+      "name": "serving",
+      "status": "passed",
+      "service_status": "passed",
+      "input_unique": 201,
+      "output_unique": 199,
+      "unexpected_copies": 0
+    },
+    {
+      "name": "output_removed",
+      "status": "passed",
+      "service_status": "failed",
+      "input_unique": 209,
+      "output_unique": 0,
+      "unexpected_copies": 0
+    }
+  ],
+  "scope": "eight distinct selected-input GETs; eight output GETs when serving, zero output copies after removal",
+  "first": "A",
+  "missing": "output",
+  "instances": {
+    "10": 0,
+    "11": 1,
+    "20": 3,
+    "30": 2
+  },
+  "windows": [
+    {
+      "name": "serving",
+      "begin_us": 146215047100,
+      "end_us": 146215297472,
+      "output": true
+    },
+    {
+      "name": "output_removed",
+      "begin_us": 146215303992,
+      "end_us": 146215554164,
+      "output": false
+    }
+  ],
+  "blocked_report": [
+    4,
+    8,
+    3,
+    1,
+    5,
+    0,
+    0,
+    [
+      1,
+      1,
+      1,
+      0,
+      1,
+      1,
+      0
+    ]
+  ],
+  "startup_report": [
+    4,
+    8,
+    3,
+    1,
+    13,
+    1,
+    39,
+    [
+      1,
+      3,
+      3,
+      0,
+      1,
+      3,
+      3
+    ]
+  ],
+  "outcomes": [
+    {
+      "operation": 0,
+      "kind": 1,
+      "report": [
+        4,
+        8,
+        0,
+        2,
+        4,
+        1,
+        39,
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "operation": 1,
+      "kind": 1,
+      "report": [
+        4,
+        8,
+        1,
+        3,
+        4,
+        1,
+        39,
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "operation": 2,
+      "kind": 1,
+      "report": [
+        4,
+        8,
+        2,
+        4,
+        4,
+        1,
+        39,
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "operation": 3,
+      "kind": 2,
+      "report": [
+        4,
+        8,
+        3,
+        1,
+        13,
+        1,
+        39,
+        [
+          1,
+          3,
+          3,
+          0,
+          1,
+          3,
+          3
+        ]
+      ]
+    },
+    {
+      "operation": 4,
+      "kind": 6,
+      "report": [
+        4,
+        8,
+        4,
+        1,
+        4,
+        1,
+        8,
+        [
+          56,
+          56
+        ]
+      ]
+    },
+    {
+      "operation": 5,
+      "kind": 5,
+      "report": [
+        4,
+        8,
+        5,
+        1,
+        10,
+        1,
+        8,
+        [
+          56,
+          56,
+          56,
+          56,
+          56
+        ]
+      ]
+    },
+    {
+      "operation": 6,
+      "kind": 4,
+      "report": [
+        4,
+        8,
+        6,
+        2,
+        2,
+        1,
+        8,
+        [
+          56
+        ]
+      ]
+    },
+    {
+      "operation": 7,
+      "kind": 4,
+      "report": [
+        4,
+        8,
+        7,
+        3,
+        2,
+        1,
+        8,
+        [
+          56
+        ]
+      ]
+    },
+    {
+      "operation": 8,
+      "kind": 4,
+      "report": [
+        4,
+        8,
+        8,
+        4,
+        2,
+        1,
+        8,
+        [
+          56
+        ]
+      ]
+    }
+  ],
+  "remaining_instances_at_teardown": [],
+  "limitations": [
+    "GET observes host copy-out, not application acceptance or actuation",
+    "Eight-sample synthetic service criterion; no periodic or freshness claim",
+    "Startup success is historical; removing required output ends output service"
+  ]
+}

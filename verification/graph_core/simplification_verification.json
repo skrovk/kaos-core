@@ -1,0 +1,146 @@
+{
+  "date": "2026-10-22",
+  "scope": "Graph core simplification plan steps 0-6: behavior-preserving transport placement/reuse, admission guards, host ownership phases and WAMR teardown. Application-CoAP slice P remains pending.",
+  "baseline": "Captured current dirty tree before this refactor, not Git HEAD. Existing unrelated changes retained.",
+  "evidence_directory": "results/simplification/",
+  "baseline_sha256_file": "results/simplification/baseline.json",
+  "changed_source_sha256_file": "results/simplification/changed-source-hashes.json",
+  "production_patch": "results/simplification/production.patch",
+  "removed_source_sha256": {
+    "graph_core/ports/host_udp.c": "b5a01eb683a84bedd203fa46254fe8e8708fac9ebfb2397a05240aa8cd6df1db",
+    "graph_core/ports/host_udp.h": "28a47d0b2a0c906abad0c649a9caecc7838ce9591957b633f997045c6f3cac23"
+  },
+  "preserved_test_sources": {
+    "count": 87,
+    "result": "All hashes unchanged",
+    "hashes": "results/simplification/preserved-test-hashes.json",
+    "scope": "All pre-existing C/H/Python files under verification/ captured by the baseline. No sibling simulator sources edited."
+  },
+  "new_tests": {
+    "graph_control_decoded": "117 raw/decoded comparisons of return value, reply bytes, registry and control state at the same stable address; capacity, replay/full/expiry, paths/options/auth, ping/NON, final Block1 retry.",
+    "graph_wamr_startup_unwind": "Fail every pthread_create position (2/default, 4/four), check joins and untouched output, shutdown after failure, then successful initialization and shutdown."
+  },
+  "results": {
+    "baseline_focused": {
+      "passed": 11,
+      "log": "baseline-tests-unsandboxed.log"
+    },
+    "default": {
+      "passed": 60,
+      "failed": 0,
+      "seconds": 62.59,
+      "log": "default-ctest.log",
+      "details": "default-ctest-details.log",
+      "sanitizers": [
+        "address",
+        "undefined",
+        "leak"
+      ],
+      "command": "ctest --test-dir /tmp/kaos-timing-host --output-on-failure"
+    },
+    "four": {
+      "passed": 34,
+      "failed": 0,
+      "seconds": 45.58,
+      "log": "four-ctest.log",
+      "details": "four-ctest-details.log",
+      "sanitizers": [
+        "address",
+        "undefined",
+        "leak"
+      ],
+      "command": "ctest --test-dir /tmp/kaos-refactor-four --output-on-failure"
+    },
+    "runtime_process": {
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 1.069,
+      "log": "runtime-process.log",
+      "command": "env KAOS_P3_HOST=/tmp/kaos-timing-host/core/kaos_host KAOS_P3_GUEST=/tmp/kaos-timing-host/node.wasm ASAN_OPTIONS=detect_stack_use_after_return=0 /home/karolina/.local/bin/uv --directory /home/karolina/Research/Code/sim_env run --offline python -m unittest discover -s tests -p test_graph_runtime_process.py -v"
+    },
+    "default_inner_skips": "General Python discovery: 171 entries, 41 opt-in skips. Workload suite: one three-node local pipeline skipped in default profile.",
+    "protocol_only": {
+      "build": "passed",
+      "decoded_control_test": "1/1 passed",
+      "configure": "cmake -S verification/graph_core -B /tmp/kaos-simplification-20261022/protocol -DCORE_SANITIZE=OFF",
+      "log": "protocol-tests.log",
+      "limit": "Only the new decoded-control case was run separately here; full core checks also run in host profiles."
+    },
+    "esp32": {
+      "build": "passed",
+      "idf": "v5.5",
+      "profile": "four-node",
+      "optimization": "-Og",
+      "main_stack_bytes": 12288,
+      "binary_bytes": 917856,
+      "command": "source /home/karolina/esp/esp-idf/export.sh; cmake --build /tmp/kaos-transport-esp32 -j4",
+      "log": "esp-build.log",
+      "board_execution": false
+    },
+    "generated_differential": {
+      "profiles": [
+        "default",
+        "four"
+      ],
+      "request_admission_comparisons_per_profile": 179139,
+      "udp_parser_comparisons_per_profile": 1456,
+      "result": "All equal",
+      "harness": "equivalence.c",
+      "driver": "equivalence.py",
+      "comparison": "Request result, output pointer and full stable-address admission state; UDP parser Boolean, errno and partially mutated output. Generated truncations/byte mutations and fixed registry capacity/ticket setups; not exhaustive state-space verification."
+    }
+  },
+  "resources": {
+    "fixed_records": "8 records unchanged for native/ESP32 and default/four profiles; sizes.json and size_probe.py retain exact values/commands.",
+    "stack": "Xtensa -Og, same ESP compile commands with profile define selected and -fstack-usage. stack.json and stack/*/*.su retain before/after frames for ten translation units.",
+    "selected_stack_bytes": {
+      "host_step_before_after": [
+        1232,
+        1232
+      ],
+      "receive_batch_before_after": [
+        1232,
+        1232
+      ],
+      "host_control_handler_before_after": [
+        352,
+        128
+      ],
+      "raw_control_wrapper_plus_handler_before_after": [
+        352,
+        416
+      ],
+      "new_udp_parse_port": 48,
+      "endpoint_receive_before_after": [
+        128,
+        64
+      ],
+      "new_frame_matches_endpoint": 128,
+      "new_handoff_staged_artifact_locked": 48
+    },
+    "limits": "Per-function static frames, not a complete maximum call-chain or physical high-water measurement. Some helper extractions add stack use. Record sizes, capacity and stack configuration are unchanged; no claim of universal stack reduction or target margin qualification."
+  },
+  "binaries": {
+    "/tmp/kaos-timing-host/core/kaos_host": {
+      "bytes": 6796032,
+      "sha256": "42a5b5d712845991e329700a8c373a216c6f2b6af4256540d981bb229bb0e401"
+    },
+    "/tmp/kaos-refactor-four/core/kaos_host": {
+      "bytes": 6796192,
+      "sha256": "b8d09e3c5a932f701d732efb717287ce4c2fc91910d3cb777c80abfa2c5446ea"
+    },
+    "/tmp/kaos-transport-esp32/kaos_graph_host.bin": {
+      "bytes": 917856,
+      "sha256": "64b110790d4d2975b4953e92f7dbaadaf55f386bf0199ac25dac74dcd5c1fc86"
+    }
+  },
+  "review": "Compared two admission designs, selected two preflight helpers using existing locals over four helpers and a temporary plan. Independent snapshot reviews of admission/request/endpoint/node and transport/host/runtime found no behavior regression. Reviewed short-circuit order, output mutation, locks/clocks, cleanup and ownership.",
+  "environment": "Initial sandboxed baseline failures were UDP/socket and LeakSanitizer restrictions; unchanged tests passed after authorized unsandboxed rerun. WAMR reconfiguration also needed permission to generate its sibling dependency version header. No semantic test failure required changing existing fixtures.",
+  "pending": "P application-CoAP wire policy, coordinated simulator/peer updates and approval for specific existing-test changes. User clarified maximum remote rate is a qualification measurement and required rate likely belongs in a manifest still under design. No new rate cap, manifest field, MID wrap or permanent exhaustion policy was implemented.",
+  "limitations": [
+    "No physical ESP32 execution, throughput qualification or full Q14/P9 closure.",
+    "Generated comparisons and regression suites cover selected inputs and schedules, not all executions.",
+    "Application datagrams retain the existing raw DataFrame wire format."
+  ]
+}

@@ -1,0 +1,2441 @@
+--- formatted/host_udp.c
++++ after/host_udp.c
+@@ -20,14 +20,17 @@
+     (void)context;
+     return core_clock_now(now);
+ }
++
+ static void registry_lock(void *context)
+ {
+     pthread_mutex_lock(&((core_host_udp *)context)->mutex);
+ }
++
+ static void registry_unlock(void *context)
+ {
+     pthread_mutex_unlock(&((core_host_udp *)context)->mutex);
+ }
++
+ static void notify(void *context)
+ {
+     core_host_udp *udp = context;
+@@ -40,11 +43,13 @@
+     /* A saturated counter already retains a wake. Mailboxes retain evidence. */
+     errno = saved_errno;
+ }
++
+ static const struct sockaddr_in *peer_address(const core_host_udp_peer *peer,
+                                               core_host_class traffic_class)
+ {
+     return traffic_class == CORE_HOST_MANAGEMENT ? &peer->address : &peer->application;
+ }
++
+ static bool send_packet(void *context, core_host_class traffic_class, uint64_t peer,
+                         const uint8_t *bytes, size_t size)
+ {
+@@ -62,6 +67,7 @@
+     }
+     return false;
+ }
++
+ static uint64_t retry_delay(void *context)
+ {
+     core_host_udp *udp = context;
+@@ -72,6 +78,7 @@
+     udp->random_state = x;
+     return CORE_COAP_ACK_TIMEOUT_US + x % 1000001u;
+ }
++
+ static core_host_event wait_input(void *context, uint64_t deadline)
+ {
+     core_host_udp *udp = context;
+@@ -111,6 +118,7 @@
+     }
+     return CORE_HOST_WAKE;
+ }
++
+ static core_host_event receive_packet(void *context, core_host_class traffic_class,
+                                       core_host_packet *packet)
+ {
+@@ -119,6 +127,7 @@
+         return CORE_HOST_STOP;
+     if ((unsigned)traffic_class >= CORE_HOST_CLASSES)
+         return CORE_HOST_ERROR;
++
+     /* One extra byte detects oversized/truncated packets on both BSD stacks. */
+     uint8_t bytes[CORE_COAP_MAX_DATAGRAM + 1];
+     struct sockaddr_in sender;
+@@ -131,11 +140,13 @@
+     if ((size_t)size > sizeof(packet->bytes) || address_size != sizeof(sender) ||
+         sender.sin_family != AF_INET)
+         return CORE_HOST_DROPPED;
++
+     for (size_t i = 0; i < udp->peer_count; ++i) {
+         const struct sockaddr_in *address = peer_address(&udp->peers[i], traffic_class);
+         if (sender.sin_addr.s_addr != address->sin_addr.s_addr ||
+             sender.sin_port != address->sin_port)
+             continue;
++
+         packet->sender = udp->peers[i].id;
+         packet->traffic_class = traffic_class;
+         packet->size = (size_t)size;
+@@ -160,6 +171,7 @@
+         application->sin_family != AF_INET ||
+         (management->sin_port != 0 && management->sin_port == application->sin_port))
+         return false;
++
+     for (size_t i = 0; i < peer_count; ++i) {
+         if (peers[i].address.sin_family != AF_INET || peers[i].address.sin_port == 0 ||
+             (peers[i].application.sin_port != 0 &&
+@@ -171,11 +183,13 @@
+                 same_address(&peers[i].application, &peers[j].application))
+                 return false;
+     }
++
+     if (pthread_mutex_init(&udp->mutex, NULL) != 0)
+         return false;
+     udp->mutex_initialized = true;
+     memcpy(udp->peers, peers, peer_count * sizeof(*peers));
+     udp->peer_count = peer_count;
++
+     uint64_t time;
+     if (!core_clock_now(&time))
+         goto fail;
+@@ -191,6 +205,7 @@
+ #endif
+     if (udp->wake_fd < 0 || udp->wake_fd >= FD_SETSIZE)
+         goto fail;
++
+     const struct sockaddr_in *local[CORE_HOST_CLASSES] = {management, application};
+     for (size_t i = 0; i < CORE_HOST_CLASSES; ++i) {
+         udp->sockets[i] = socket(AF_INET, SOCK_DGRAM, 0);
+@@ -201,6 +216,7 @@
+             bind(udp->sockets[i], (const struct sockaddr *)local[i], sizeof(*local[i])) != 0)
+             goto fail;
+     }
++
+     *out = (core_host_platform){.context = udp,
+                                 .now = clock_now,
+                                 .lock = registry_lock,
+@@ -221,6 +237,7 @@
+     udp->stopped = 1;
+     notify(udp);
+ }
++
+ void core_host_udp_close(core_host_udp *udp)
+ {
+     for (size_t i = 0; i < CORE_HOST_CLASSES; ++i) {
+--- formatted/kaos_admission.c
++++ after/kaos_admission.c
+@@ -87,11 +87,13 @@
+     if (node_bytes == 0) {
+         return false;
+     }
++
+     *pool = (core_admission){.node_bytes = node_bytes, .byte_limit = byte_limit};
+     for (size_t i = 0; i < CORE_MAX_NODE_RESERVATIONS; ++i) {
+         pool->nodes[i].lifetime = (core_lifetime)CORE_LIFETIME_INIT(node_bytes);
+         core_lifetime_close(&pool->nodes[i].lifetime);
+     }
++
+     for (size_t i = 0; i < CORE_MAX_ENDPOINT_RESERVATIONS; ++i) {
+         pool->endpoints[i].lifetime = (core_lifetime)CORE_LIFETIME_INIT(CORE_ENDPOINT_BYTES);
+         core_lifetime_close(&pool->endpoints[i].lifetime);
+@@ -105,6 +107,7 @@
+     if (pool->configured || peers == NULL || peer_count == 0 || peer_count > CORE_MAX_PEERS) {
+         return false;
+     }
++
+     bool local_present = false;
+     for (size_t i = 0; i < peer_count; ++i) {
+         local_present |= peers[i] == local_device;
+@@ -114,6 +117,7 @@
+             }
+         }
+     }
++
+     for (size_t i = 0; i < CORE_MAX_ADMISSION_RECORDS; ++i) {
+         if (pool->records[i].occupied) {
+             return false;
+@@ -122,6 +126,7 @@
+     if (!local_present) {
+         return false;
+     }
++
+     pool->local_device = local_device;
+     pool->authority = authority;
+     pool->peer_count = (uint8_t)peer_count;
+@@ -151,6 +156,7 @@
+             return r;
+         if (!reclaimable(pool, r))
+             continue;
++
+         const bool acknowledged = r->endpoint_only || !core_admission_report_retained(r);
+         const bool previous_ack = candidate != NULL && (candidate->endpoint_only ||
+                                                         !core_admission_report_retained(candidate));
+@@ -159,6 +165,7 @@
+              (candidate->report_age == 0 || r->report_age < candidate->report_age)))
+             candidate = r;
+     }
++
+     /* Merely select. Rejected admission must not evict or mutate anything. */
+     return candidate;
+ }
+@@ -167,6 +174,7 @@
+ {
+     if (record->occupied)
+         (void)core_admission_forget(pool, record->id);
++
+     const uint64_t incarnation = record->incarnation + 1;
+     memset(record, 0, sizeof(*record));
+     record->incarnation = incarnation;
+@@ -198,16 +206,19 @@
+     if (core_admission_find(pool, id) != NULL) {
+         return CORE_ADMIT_DUPLICATE;
+     }
++
+     uint64_t deadline;
+     if (!core_deadline(now_us, allowance_us, &deadline)) {
+         return CORE_ADMIT_INVALID;
+     }
++
+     core_admission_record *record = select_record(pool);
+     core_reserved_node *node = free_node(pool);
+     if (pool->node_bytes > pool->byte_limit - pool->reserved_bytes || record == NULL ||
+         node == NULL) {
+         return CORE_ADMIT_FULL;
+     }
++
+     publish_record(pool, record);
+     (void)core_lifetime_reopen(&node->lifetime);
+     node->instance = (core_instance_id){.value = id.value};
+@@ -216,10 +227,12 @@
+     memset(node->notifications, 0, sizeof(node->notifications));
+     node->established = false;
+     node->occupied = true;
++
+     record->id = id;
+     record->deadline_us = deadline;
+     record->node = node;
+     record->occupied = true;
++
+     reserve_bytes(pool, pool->node_bytes);
+     *out = record;
+     return CORE_ADMIT_ACCEPTED;
+@@ -354,6 +367,7 @@
+             !include_binding(bindings, count, &endpoint->binding))
+             return false;
+     }
++
+     for (size_t r = 0; r < CORE_MAX_ADMISSION_RECORDS; ++r) {
+         const core_admission_record *record = &pool->records[r];
+         if (!record->occupied)
+@@ -376,6 +390,7 @@
+     size_t count;
+     if (!current_incidence(pool, logical, instance, bindings, &count))
+         return false;
++
+     for (size_t i = 0; i < scope->channel_count; ++i) {
+         if (incident(&scope->bindings[i].channel, logical, instance) &&
+             !include_binding(bindings, &count, &scope->bindings[i]))
+@@ -397,10 +412,12 @@
+     size_t needed = 0;
+     for (size_t i = 0; i < CORE_MAX_REQUEST_CHANNELS; ++i)
+         needed += node->notifications[i].occupied;
++
+     for (size_t i = 0; i < scope->channel_count; ++i) {
+         const core_channel *channel = &scope->bindings[i].channel;
+         if (!incident(channel, node->logical_node_id, node->instance))
+             continue;
++
+         bool existing = false;
+         for (size_t j = 0; j < CORE_MAX_REQUEST_CHANNELS; ++j)
+             existing |= notification_matches(&node->notifications[j], channel);
+@@ -415,6 +432,7 @@
+     const core_channel *channel = &binding->channel;
+     if (!incident(channel, node->logical_node_id, node->instance))
+         return;
++
+     core_channel_notification *chosen = NULL;
+     for (size_t j = 0; j < CORE_MAX_REQUEST_CHANNELS; ++j) {
+         core_channel_notification *event = &node->notifications[j];
+@@ -425,6 +443,7 @@
+         if (!event->occupied && chosen == NULL)
+             chosen = event;
+     }
++
+     /* Capacity was checked before admission's publication boundary. */
+     chosen->channel =
+         (core_channel_id){channel->source_logical, channel->destination_logical, channel->service};
+@@ -448,15 +467,17 @@
+     core_reserved_node *node = find_node(pool, instance);
+     if (node == NULL)
+         return;
++
+     for (size_t i = 0; i < CORE_MAX_REQUEST_CHANNELS; ++i) {
+         core_channel_notification *event = &node->notifications[i];
+-        if (notification_matches(event, &endpoint->binding.channel) &&
+-            event->creating_op.value == endpoint->binding.creating_op.value) {
+-            event->attached = false;
+-            if (!event->pending)
+-                *event = (core_channel_notification){0};
+-            return;
+-        }
++        if (!notification_matches(event, &endpoint->binding.channel) ||
++            event->creating_op.value != endpoint->binding.creating_op.value)
++            continue;
++
++        event->attached = false;
++        if (!event->pending)
++            *event = (core_channel_notification){0};
++        return;
+     }
+ }
+ 
+@@ -473,21 +494,25 @@
+         if (node_fenced(pool, scope->logical_node_id, scope->instance)) {
+             return CORE_ADMIT_CONFLICT;
+         }
++
+         for (size_t i = 0; i < CORE_MAX_NODE_RESERVATIONS; ++i) {
+             if (pool->nodes[i].occupied && pool->nodes[i].instance.value == id.value) {
+                 return CORE_ADMIT_CONFLICT;
+             }
+         }
++
+         new_node = free_node(pool);
+         if (new_node == NULL) {
+             return CORE_ADMIT_FULL;
+         }
+     }
++
+     if (node_remove(scope->kind)) {
+         const core_reserved_node *target = find_node(pool, scope->instance);
+         if (target != NULL && target->logical_node_id != scope->logical_node_id) {
+             return CORE_ADMIT_CONFLICT;
+         }
++
+         const core_binding *bindings[CORE_MAX_REQUEST_CHANNELS];
+         size_t count;
+         if (!current_incidence(pool, scope->logical_node_id, scope->instance, bindings, &count))
+@@ -497,6 +522,7 @@
+                                 bindings[i]))
+                 return CORE_ADMIT_CONFLICT;
+     }
++
+     *out = new_node;
+     return CORE_ADMIT_ACCEPTED;
+ }
+@@ -514,6 +540,7 @@
+          channel->destination_owner != pool->local_device)) {
+         return CORE_ADMIT_UNAUTHORIZED;
+     }
++
+     const core_reserved_node *known_source = find_node(pool, channel->source_instance);
+     const core_reserved_node *known_destination = find_node(pool, channel->destination_instance);
+     if ((known_source != NULL && (known_source->logical_node_id != channel->source_logical ||
+@@ -523,6 +550,7 @@
+           channel->destination_owner != pool->local_device))) {
+         return CORE_ADMIT_CONFLICT;
+     }
++
+     if (node_add(scope->kind) || node_remove(scope->kind)) {
+         if (!incident(channel, scope->logical_node_id, scope->instance) ||
+             (channel->source_instance.value == scope->instance.value &&
+@@ -532,11 +560,13 @@
+             return CORE_ADMIT_INVALID;
+         }
+     }
++
+     for (size_t j = 0; j < i; ++j) {
+         if (core_channel_same_identity(channel, &scope->bindings[j].channel)) {
+             return CORE_ADMIT_INVALID;
+         }
+     }
++
+     /* Reclaimed endpoints may still have a retained creating/removal
+      * scope. A fresh request cannot redefine that concrete binding. */
+     for (size_t r = 0; r < CORE_MAX_ADMISSION_RECORDS; ++r) {
+@@ -552,6 +582,7 @@
+                 return CORE_ADMIT_CONFLICT;
+         }
+     }
++
+     if (!removal(scope->kind) && !cancel) {
+         if (!core_deadline(now_us, channel->addition_allowance_us, &unused) ||
+             !core_deadline(unused, scope->cleanup_allowance_us, &unused) ||
+@@ -565,9 +596,11 @@
+             !local_port_matches(pool, scope, channel, false)) {
+             return CORE_ADMIT_CONFLICT;
+         }
++
+         *endpoint_count += channel->source_owner == pool->local_device;
+         *endpoint_count += channel->destination_owner == pool->local_device;
+     }
++
+     for (size_t j = 0; j < CORE_MAX_ENDPOINT_RESERVATIONS; ++j) {
+         const core_reserved_endpoint *endpoint = &pool->endpoints[j];
+         if (!endpoint->occupied) {
+@@ -597,14 +630,17 @@
+         (!removal(scope->kind) && !core_deadline(deadline, scope->cleanup_allowance_us, &unused))) {
+         return CORE_ADMIT_INVALID;
+     }
++
+     core_admission_record *record = select_record(pool);
+     if (record == NULL) {
+         return CORE_ADMIT_FULL;
+     }
++
+     core_reserved_node *new_node;
+     core_admit_result result = check_scope_node(pool, id, request, scope, endpoint_only, &new_node);
+     if (result != CORE_ADMIT_ACCEPTED)
+         return result;
++
+     size_t bytes = new_node == NULL ? 0 : pool->node_bytes;
+     size_t endpoint_count = 0;
+     for (size_t i = 0; i < scope->channel_count; ++i) {
+@@ -613,6 +649,7 @@
+         if (result != CORE_ADMIT_ACCEPTED)
+             return result;
+     }
++
+     if (!removal(scope->kind) && !cancel) {
+         for (size_t i = 0; i < CORE_MAX_NODE_RESERVATIONS; ++i) {
+             const core_reserved_node *node = &pool->nodes[i];
+@@ -627,6 +664,7 @@
+             return CORE_ADMIT_FULL;
+         }
+     }
++
+     core_reserved_endpoint *available[CORE_MAX_ENDPOINT_RESERVATIONS];
+     size_t available_count = 0;
+     for (size_t i = 0; i < CORE_MAX_ENDPOINT_RESERVATIONS; ++i) {
+@@ -637,11 +675,13 @@
+             available[available_count++] = endpoint;
+         }
+     }
++
+     if (endpoint_count > available_count || bytes > pool->byte_limit - pool->reserved_bytes ||
+         endpoint_count > (pool->byte_limit - pool->reserved_bytes - bytes) / CORE_ENDPOINT_BYTES) {
+         return CORE_ADMIT_FULL;
+     }
+     bytes += endpoint_count * CORE_ENDPOINT_BYTES;
++
+     if (endpoint_only) {
+         bool local_scope = false;
+         for (size_t i = 0; i < scope->channel_count; ++i) {
+@@ -652,6 +692,7 @@
+             return CORE_ADMIT_UNAUTHORIZED;
+         }
+     }
++
+     core_report evidence;
+     if (!core_report_init(&evidence, scope->kind, id, scope->coordinator, scope->object_count)) {
+         return CORE_ADMIT_INVALID;
+@@ -670,6 +711,7 @@
+         new_node->established = false;
+         new_node->occupied = true;
+     }
++
+     size_t next = 0;
+     if (!removal(scope->kind) && !cancel) {
+         for (size_t i = 0; i < CORE_MAX_NODE_RESERVATIONS; ++i)
+@@ -691,6 +733,7 @@
+             }
+         }
+     }
++
+     /* All checks have passed; initialize the free record in place rather than
+      * constructing another full request/report record on the target stack. */
+     record->id = id;
+@@ -705,6 +748,7 @@
+     record->cleanup_selected = cancel || removal(scope->kind);
+     record->endpoint_only = endpoint_only;
+     record->occupied = true;
++
+     reserve_bytes(pool, bytes);
+     *out = record;
+     return CORE_ADMIT_ACCEPTED;
+@@ -1148,24 +1192,28 @@
+     bool found = false;
+     for (size_t i = 0; i < CORE_MAX_ENDPOINT_RESERVATIONS; ++i) {
+         const core_reserved_endpoint *endpoint = &pool->endpoints[i];
+-        if (endpoint->occupied && endpoint->binding.creating_op.value == creating_id.value) {
+-            found = true;
+-            if (!core_lifetime_reclaimed(&endpoint->lifetime) ||
+-                endpoint->prepare.phase != CORE_ACTION_EMPTY) {
+-                return false;
+-            }
+-        }
+-    }
++        if (!endpoint->occupied || endpoint->binding.creating_op.value != creating_id.value)
++            continue;
++
++        found = true;
++        if (!core_lifetime_reclaimed(&endpoint->lifetime) ||
++            endpoint->prepare.phase != CORE_ACTION_EMPTY) {
++            return false;
++        }
++    }
++
+     if (!found) {
+         return false;
+     }
++
+     for (size_t i = 0; i < CORE_MAX_ENDPOINT_RESERVATIONS; ++i) {
+         core_reserved_endpoint *endpoint = &pool->endpoints[i];
+-        if (endpoint->occupied && endpoint->binding.creating_op.value == creating_id.value) {
+-            detach_notification(pool, endpoint);
+-            endpoint->occupied = false;
+-            pool->reserved_bytes -= CORE_ENDPOINT_BYTES;
+-        }
++        if (!endpoint->occupied || endpoint->binding.creating_op.value != creating_id.value)
++            continue;
++
++        detach_notification(pool, endpoint);
++        endpoint->occupied = false;
++        pool->reserved_bytes -= CORE_ENDPOINT_BYTES;
+     }
+     return true;
+ }
+@@ -1175,25 +1223,29 @@
+     bool found = false;
+     for (size_t i = 0; i < CORE_MAX_ENDPOINT_RESERVATIONS; ++i) {
+         const core_reserved_endpoint *endpoint = &pool->endpoints[i];
+-        if (endpoint->occupied && core_binding_same_identity(&endpoint->binding, binding)) {
+-            found = true;
+-            if (!core_channel_descriptor_equal(&endpoint->binding.channel, &binding->channel) ||
+-                !core_lifetime_reclaimed(&endpoint->lifetime) ||
+-                endpoint->prepare.phase != CORE_ACTION_EMPTY) {
+-                return false;
+-            }
+-        }
+-    }
++        if (!endpoint->occupied || !core_binding_same_identity(&endpoint->binding, binding))
++            continue;
++
++        found = true;
++        if (!core_channel_descriptor_equal(&endpoint->binding.channel, &binding->channel) ||
++            !core_lifetime_reclaimed(&endpoint->lifetime) ||
++            endpoint->prepare.phase != CORE_ACTION_EMPTY) {
++            return false;
++        }
++    }
++
+     if (!found) {
+         return false;
+     }
++
+     for (size_t i = 0; i < CORE_MAX_ENDPOINT_RESERVATIONS; ++i) {
+         core_reserved_endpoint *endpoint = &pool->endpoints[i];
+-        if (endpoint->occupied && core_binding_same_identity(&endpoint->binding, binding)) {
+-            detach_notification(pool, endpoint);
+-            endpoint->occupied = false;
+-            pool->reserved_bytes -= CORE_ENDPOINT_BYTES;
+-        }
++        if (!endpoint->occupied || !core_binding_same_identity(&endpoint->binding, binding))
++            continue;
++
++        detach_notification(pool, endpoint);
++        endpoint->occupied = false;
++        pool->reserved_bytes -= CORE_ENDPOINT_BYTES;
+     }
+     return true;
+ }
+@@ -1205,11 +1257,13 @@
+         if (!record->occupied || record->id.value != id.value) {
+             continue;
+         }
++
+         core_reserved_node *node = record->node;
+         if (node == NULL || !core_lifetime_reclaimed(&node->lifetime) ||
+             node->prepare.phase != CORE_ACTION_EMPTY) {
+             return false;
+         }
++
+         for (size_t j = 0; j < CORE_MAX_ENDPOINT_RESERVATIONS; ++j) {
+             const core_reserved_endpoint *endpoint = &pool->endpoints[j];
+             if (endpoint->occupied &&
+@@ -1217,6 +1271,7 @@
+                 return false;
+             }
+         }
++
+         node->occupied = false;
+         memset(node->notifications, 0, sizeof(node->notifications));
+         record->node = NULL;
+@@ -1230,15 +1285,19 @@
+ {
+     if (record->node != NULL)
+         return false;
++
+     for (size_t j = 0; j < CORE_MAX_ENDPOINT_RESERVATIONS; ++j)
+         if (pool->endpoints[j].occupied &&
+             scope_contains(&record->scope, record->channel_known, &pool->endpoints[j].binding))
+             return false;
+-    if (!record->endpoint_only && node_remove(record->scope.kind))
+-        for (size_t n = 0; n < CORE_MAX_NODE_RESERVATIONS; ++n)
+-            if (pool->nodes[n].occupied &&
+-                pool->nodes[n].instance.value == record->scope.instance.value)
+-                return false;
++
++    if (record->endpoint_only || !node_remove(record->scope.kind))
++        return true;
++
++    for (size_t n = 0; n < CORE_MAX_NODE_RESERVATIONS; ++n)
++        if (pool->nodes[n].occupied &&
++            pool->nodes[n].instance.value == record->scope.instance.value)
++            return false;
+     return true;
+ }
+ 
+@@ -1246,6 +1305,7 @@
+ {
+     if (!r->occupied || r->scope.kind == 0 || !resources_released(pool, r))
+         return false;
++
+     if (!r->endpoint_only) {
+         const core_outcome outcome = core_report_outcome(&r->evidence);
+         if ((outcome != CORE_OUTCOME_SUCCEEDED && outcome != CORE_OUTCOME_FAILED_CLEAN) ||
+@@ -1255,6 +1315,7 @@
+             !(r->evidence.objects[0] & CORE_OBJECT_CLEANED))
+             return false;
+     }
++
+     for (size_t c = 0; c < r->scope.channel_count; ++c) {
+         if (!(r->channel_known & (1u << c)))
+             continue;
+@@ -1289,6 +1350,7 @@
+     if (found == NULL || found->endpoint_only || found->scope.kind == 0 ||
+         found->evidence.coordinator != coordinator || found->evidence.revision != revision)
+         return;
++
+     core_admission_record *r = &pool->records[found - pool->records];
+     r->report_acknowledged = true;
+     r->acknowledged_revision = revision;
+@@ -1302,6 +1364,7 @@
+         core_admission_record *r = &pool->records[i];
+         if (!r->occupied || (r->report_age != 0 && r->report_revision == r->evidence.revision))
+             continue;
++
+         uint8_t newest = 0;
+         for (size_t j = 0; j < CORE_MAX_ADMISSION_RECORDS; ++j) {
+             core_admission_record *other = &pool->records[j];
+@@ -1312,6 +1375,7 @@
+             if (other->report_age > newest)
+                 newest = other->report_age;
+         }
++
+         r->report_age = (uint8_t)(newest + 1);
+         r->report_revision = r->evidence.revision;
+     }
+@@ -1363,10 +1427,12 @@
+         }
+         if (!resources_released(pool, record))
+             return false;
++
+         preserve_closure(pool, record);
+         for (size_t j = 0; j < CORE_MAX_ADMISSION_RECORDS; ++j)
+             if (record->report_age != 0 && pool->records[j].report_age > record->report_age)
+                 --pool->records[j].report_age;
++
+         *record = (core_admission_record){.incarnation = record->incarnation};
+         return true;
+     }
+--- formatted/kaos_artifact.c
++++ after/kaos_artifact.c
+@@ -38,10 +38,12 @@
+         (artifact->token_used && token <= artifact->last_token)) {
+         return false;
+     }
++
+     core_access access;
+     if (!core_access_acquire(owner, &access)) {
+         return false;
+     }
++
+     *artifact = (core_artifact){.access = access,
+                                 .storage = storage,
+                                 .expected_size = expected_size,
+@@ -85,6 +87,7 @@
+     if (!core_before_deadline(now_us, artifact->deadline_us)) {
+         return invalid(artifact);
+     }
++
+     const uint8_t szx = block & 7;
+     const bool more = (block & 8) != 0;
+     if (block > UINT32_C(0xffffff) || szx > artifact->szx || etag == NULL || etag_size == 0 ||
+@@ -92,12 +95,14 @@
+         (artifact->received_size != 0 && szx != artifact->szx)) {
+         return invalid(artifact);
+     }
++
+     const size_t block_size = (size_t)1 << (szx + 4);
+     const size_t offset = (size_t)(block >> 4) * block_size;
+     if (payload_size == 0 || payload_size > block_size || (more && payload_size != block_size) ||
+         offset > artifact->expected_size || payload_size > artifact->expected_size - offset) {
+         return invalid(artifact);
+     }
++
+     const size_t end = offset + payload_size;
+     if ((more && end >= artifact->expected_size) || (!more && end != artifact->expected_size)) {
+         return invalid(artifact);
+@@ -106,6 +111,7 @@
+         (artifact->etag_size != etag_size || memcmp(artifact->etag, etag, etag_size) != 0)) {
+         return invalid(artifact);
+     }
++
+     if (offset < artifact->received_size) {
+         if (end <= artifact->received_size &&
+             memcmp(artifact->storage + offset, payload, payload_size) == 0) {
+@@ -116,16 +122,19 @@
+     if (offset != artifact->received_size) {
+         return invalid(artifact);
+     }
++
+     if (artifact->etag_size == 0) {
+         artifact->etag_size = (uint8_t)etag_size;
+         memcpy(artifact->etag, etag, etag_size);
+         artifact->szx = szx;
+     }
++
+     memcpy(artifact->storage + offset, payload, payload_size);
+     artifact->received_size = end;
+     if (more) {
+         return CORE_ARTIFACT_MORE;
+     }
++
+     if (core_artifact_crc32(artifact->storage, artifact->expected_size) !=
+         artifact->expected_crc32) {
+         return invalid(artifact);
+@@ -141,15 +150,18 @@
+         !core_before_deadline(now_us, artifact->deadline_us)) {
+         return false;
+     }
++
+     core_lifetime *owner = artifact->access.owner;
+     if (!core_access_release(owner, artifact->access)) {
+         return false;
+     }
++
+     artifact->access = (core_access){0};
+     if (!core_access_acquire(owner, &artifact->access)) {
+         artifact->state = CORE_ARTIFACT_FAILED;
+         return false;
+     }
++
+     artifact->token = token;
+     artifact->last_token = token;
+     artifact->received_size = 0;
+@@ -166,6 +178,7 @@
+         !core_access_release(artifact->access.owner, artifact->access)) {
+         return false;
+     }
++
+     *storage = artifact->storage;
+     *size = artifact->expected_size;
+     artifact->access = (core_access){0};
+--- formatted/kaos_coap.c
++++ after/kaos_coap.c
+@@ -24,10 +24,12 @@
+         *out = nibble;
+         return true;
+     }
++
+     const size_t count = nibble == 13 ? 1 : 2;
+     if (nibble == 15 || count > size - *offset) {
+         return false;
+     }
++
+     uint32_t value = data[(*offset)++];
+     if (count == 2) {
+         value = (value << 8) | data[(*offset)++];
+@@ -41,6 +43,7 @@
+     if (data == NULL || size < 4 || size > CORE_COAP_MAX_DATAGRAM || (data[0] >> 6) != 1) {
+         return false;
+     }
++
+     core_coap_message message = {.type = (data[0] >> 4) & 3,
+                                  .code = data[1],
+                                  .token_size = data[0] & 15,
+@@ -49,6 +52,7 @@
+         !code_valid(message.type, message.code) || (message.code == 0 && size != 4)) {
+         return false;
+     }
++
+     memcpy(message.token, data + 4, message.token_size);
+     size_t offset = 4 + message.token_size;
+     uint32_t option_number = 0;
+@@ -68,6 +72,7 @@
+             .number = (uint16_t)option_number, .value = data + offset, .size = length};
+         offset += length;
+     }
++
+     if (offset < size) {
+         ++offset;
+         if (offset == size) {
+@@ -76,6 +81,7 @@
+         message.payload = data + offset;
+         message.payload_size = size - offset;
+     }
++
+     *out = message;
+     return true;
+ }
+@@ -115,6 +121,7 @@
+          (message->token_size != 0 || message->option_count != 0 || message->payload_size != 0))) {
+         return false;
+     }
++
+     size_t required = 4 + message->token_size;
+     uint16_t previous = 0;
+     for (size_t i = 0; i < message->option_count; ++i) {
+@@ -131,11 +138,13 @@
+     if (required > capacity || required > CORE_COAP_MAX_DATAGRAM) {
+         return false;
+     }
++
+     out[0] = (uint8_t)(0x40 | (message->type << 4) | message->token_size);
+     out[1] = message->code;
+     out[2] = (uint8_t)(message->message_id >> 8);
+     out[3] = (uint8_t)message->message_id;
+     memcpy(out + 4, message->token, message->token_size);
++
+     size_t offset = 4 + message->token_size;
+     previous = 0;
+     for (size_t i = 0; i < message->option_count; ++i) {
+@@ -150,11 +159,13 @@
+         }
+         previous = option->number;
+     }
++
+     if (message->payload_size != 0) {
+         out[offset++] = 0xff;
+         memcpy(out + offset, message->payload, message->payload_size);
+         offset += message->payload_size;
+     }
++
+     *out_size = offset;
+     return true;
+ }
+@@ -163,12 +174,13 @@
+ {
+     const core_coap_option *found = NULL;
+     for (size_t i = 0; i < message->option_count; ++i) {
+-        if (message->options[i].number == number) {
+-            if (found != NULL) {
+-                return NULL;
+-            }
+-            found = &message->options[i];
+-        }
++        if (message->options[i].number != number)
++            continue;
++
++        if (found != NULL) {
++            return NULL;
++        }
++        found = &message->options[i];
+     }
+     return found;
+ }
+@@ -178,10 +190,12 @@
+     if (option == NULL || option->size > 4 || (option->size != 0 && option->value == NULL)) {
+         return false;
+     }
++
+     uint32_t value = 0;
+     for (size_t i = 0; i < option->size; ++i) {
+         value = (value << 8) | option->value[i];
+     }
++
+     *out = value;
+     return true;
+ }
+@@ -454,6 +468,7 @@
+         declared_size > CORE_COAP_MAX_BODY || payload == NULL) {
+         return CORE_COAP_BLOCK_INVALID;
+     }
++
+     const size_t block_size = (size_t)1 << (szx + 4);
+     const size_t offset = (size_t)(block >> 4) * block_size;
+     if (payload_size > block_size || payload_size == 0 || (more && payload_size != block_size) ||
+@@ -461,6 +476,7 @@
+         (more && offset + payload_size == CORE_COAP_MAX_BODY)) {
+         return CORE_COAP_BLOCK_INVALID;
+     }
++
+     if (!assembly->active) {
+         if (offset != 0 || (declared_size != 0 && (offset + payload_size > declared_size ||
+                                                    (!more && payload_size != declared_size) ||
+@@ -480,6 +496,7 @@
+                (declared_size != 0 && declared_size != assembly->declared_size)) {
+         return CORE_COAP_BLOCK_INVALID;
+     }
++
+     const size_t end = offset + payload_size;
+     if (offset < assembly->size) {
+         if (end > assembly->size || memcmp(assembly->body + offset, payload, payload_size) != 0 ||
+@@ -495,6 +512,7 @@
+           (more && end == assembly->declared_size)))) {
+         return CORE_COAP_BLOCK_INVALID;
+     }
++
+     memcpy(assembly->body + offset, payload, payload_size);
+     assembly->size = end;
+     assembly->complete = !more;
+--- formatted/kaos_control.c
++++ after/kaos_control.c
+@@ -175,6 +175,7 @@
+     core_op_id id;
+     if (!query_id(body, size, &id))
+         return reply(request, CORE_COAP_BAD_REQUEST, NULL, 0, NULL, out, capacity, written);
++
+     const core_admission_record *record = core_admission_find(pool, id);
+     uint8_t encoded[CORE_REPORT_BYTES];
+     size_t encoded_size;
+@@ -196,6 +197,7 @@
+         }
+         return reply(request, CORE_COAP_NOT_FOUND, encoded, w.offset, NULL, out, capacity, written);
+     }
++
+     if (!core_report_encode(&record->evidence, encoded, sizeof(encoded), &encoded_size))
+         return reply(request, CORE_COAP_BAD_REQUEST, NULL, 0, NULL, out, capacity, written);
+     return reply(request, CORE_COAP_CONTENT, encoded, encoded_size, NULL, out, capacity, written);
+@@ -212,6 +214,7 @@
+         !core_cbor_uint(&rd, &coordinator) || !core_cbor_uint(&rd, &revision) ||
+         revision > UINT8_MAX || rd.offset != size)
+         return false;
++
+     core_admission_acknowledge(pool, id, coordinator, (uint8_t)revision);
+     return true;
+ }
+@@ -223,20 +226,24 @@
+     if (!core_owner_report_decode(request->payload, request->payload_size, &report) ||
+         report.owner != sender)
+         return false;
++
+     core_owner_receipt *receipt = NULL;
+     for (size_t i = 0; i < control->admission->peer_count; ++i)
+         if (control->admission->peers[i] == sender)
+             receipt = &control->owner_receipts[i];
+     if (receipt == NULL)
+         return false;
++
+     const bool retained = receipt->occupied && core_before_deadline(now, receipt->deadline_us);
+     if (retained && receipt->message_id == request->message_id)
+         return receipt->token_size == request->token_size &&
+                memcmp(receipt->token, request->token, request->token_size) == 0 &&
+                receipt->operation.value == report.operation.value &&
+                receipt->object == report.object && receipt->facts == report.facts;
++
+     if (!core_edge_owner(control->edges, sender, request->payload, request->payload_size, now))
+         return false;
++
+     /* Enrolled ports issue strictly increasing MIDs and refuse wrap. NSTART=1
+      * lets the newest final exchange replace its predecessor, but a delayed
+      * duplicate of that predecessor must never overwrite the newer receipt. */
+@@ -341,6 +348,7 @@
+                                           .facts = record->local_facts[object]};
+         (void)core_owner_report_encode(&report, snapshot, sizeof(snapshot), &length);
+     }
++
+     const bool replied = reply(
+         request,
+         accepted ? CORE_COAP_CHANGED
+@@ -367,6 +375,7 @@
+      * replies must reflect later closure, even if an earlier response held
+      * only CLEANUP. Multipart admission retains ordinary Block1 replay. */
+     const bool fresh_cleanup_reply = edge_cleanup && block == NULL;
++
+     /* Reserve reply capacity before admission. Idempotent cleanup must still
+      * run when the ordinary reply cache is saturated. */
+     core_coap_cached_response *cached = NULL;
+@@ -379,6 +388,7 @@
+             return core_coap_cache_replay(&control->cache, sender, request->message_id, now, out,
+                                           capacity, written);
+     }
++
+     const uint8_t code = submit_operation(control->admission, sender, resource, body, size, now);
+     uint8_t snapshot[CORE_REPORT_BYTES];
+     const size_t snapshot_size =
+@@ -388,6 +398,7 @@
+     if (!reply(request, code, snapshot_size ? snapshot : NULL, snapshot_size, block, out, capacity,
+                written))
+         return false;
++
+     const bool stored = cached == NULL || core_coap_cache_store(cached, out, *written);
+     if (block != NULL)
+         core_coap_block1_reset(&control->assembly);
+@@ -399,9 +410,11 @@
+ {
+     if (capacity < CORE_COAP_MAX_DATAGRAM)
+         return false;
++
+     core_coap_message request;
+     if (!core_coap_decode(data, size, &request))
+         return false;
++
+     return core_control_receive_message(control, sender, &request, now, out, capacity, written);
+ }
+ 
+@@ -423,6 +436,7 @@
+         return true;
+     if (request->code != CORE_COAP_POST)
+         return reply(request, CORE_COAP_METHOD_NOT_ALLOWED, NULL, 0, NULL, out, capacity, written);
++
+     const control_resource resource = route(request);
+     const uint8_t error = request_error(request, resource);
+     if (error)
+@@ -480,9 +494,11 @@
+ {
+     if (control->edges == NULL || capacity < CORE_COAP_MAX_DATAGRAM)
+         return false;
++
+     core_coap_exchange *x = &peer->exchange;
+     if (x->active && !core_edge_effect_current(control->edges, &peer->effect, now))
+         core_coap_exchange_cancel(x);
++
+     bool send = x->active && core_coap_exchange_poll(x, now) == CORE_COAP_SEND;
+     if (!x->active && core_edge_next(control->edges, peer->id, now, &peer->effect)) {
+         const core_edge_effect *effect = &peer->effect;
+@@ -507,6 +523,7 @@
+         }
+         send = true;
+     }
++
+     if (!send)
+         return false;
+     *written = x->request_size;
+@@ -523,8 +540,10 @@
+         memcmp(message->token, x->token, x->token_size) == 0)
+         (void)core_edge_reply(control->edges, &peer->effect, peer->id, message->payload,
+                               message->payload_size, now);
++
+     const core_coap_receive_result result =
+         core_coap_exchange_receive(x, peer->id, message, now, acknowledge);
++
+     if (control->edges == NULL)
+         return;
+     if (result == CORE_COAP_RESET || (result == CORE_COAP_RESPONSE && message->code >= 128))
+--- formatted/kaos_edge.c
++++ after/kaos_edge.c
+@@ -174,9 +174,11 @@
+         object >= r->scope.object_count || !known(r, (object - first_object(r)) / 2) ||
+         owner(r, object) != sender)
+         return CORE_REPORT_INVALID;
++
+     const core_edge_execution *e = &s->executions[r - s->admission->records];
+     if (!e->occupied || e->id.value != r->id.value || e->incarnation != r->incarnation)
+         return CORE_REPORT_INVALID;
++
+     const uint32_t bit = UINT32_C(1) << object;
+     if (!(e->prepare_issued & bit) && !(e->cleanup_issued & bit))
+         return CORE_REPORT_INVALID;
+@@ -184,6 +186,7 @@
+         return CORE_REPORT_INVALID;
+     if ((facts & CORE_OBJECT_ACTIVE) && !(e->activate_issued & bit))
+         return CORE_REPORT_INVALID;
++
+     /* Validate the owner's cumulative stream without coordinator-added bits. */
+     core_report next;
+     (void)core_report_init(&next, r->scope.kind, r->id, r->scope.coordinator,
+@@ -202,12 +205,14 @@
+         return false;
+     if (result != CORE_REPORT_CHANGED)
+         return true;
++
+     core_edge_execution *e = execution(s, r);
+     cutoff(r, e, now);
+     const size_t c = (object - first_object(r)) / 2;
+     const bool established = complete(r, c, CORE_OBJECT_ACTIVE);
+     e->emitted[object] = facts;
+     (void)core_report_observe(&r->evidence, object, r->evidence.objects[object] | facts);
++
+     if ((facts & (CORE_OBJECT_FAILED | CORE_OBJECT_CLEANUP)) && !(succeeded(r) && established)) {
+         if (r->scope.kind == CORE_REQUEST_ADD_NODE)
+             channel_cleanup(s, r, c, now);
+@@ -241,6 +246,7 @@
+         core_admission_record *r = &s->admission->records[i];
+         if (!core_edge_supported(r))
+             continue;
++
+         core_edge_execution *e = execution(s, r);
+         if (r->cleanup_selected && !removal(r))
+             cleanup(s, r, now);
+@@ -248,12 +254,14 @@
+         for (size_t c = 0; c < r->scope.channel_count; ++c) {
+             if (!known(r, c))
+                 continue;
++
+             if (r->channel_cleanup & (1u << c)) {
+                 if (!(succeeded(r) && complete(r, c, CORE_OBJECT_ACTIVE) &&
+                       !(e->channel_cleanup_started & (1u << c))))
+                     channel_cleanup(s, r, c, now);
+                 continue;
+             }
++
+             if (!r->endpoint_only && !complete(r, c, CORE_OBJECT_ACTIVE) &&
+                 !core_before_deadline(now, setup_deadline(r, c))) {
+                 const uint8_t object = (uint8_t)(first_object(r) + 2 * c);
+@@ -265,12 +273,14 @@
+                     cleanup(s, r, now);
+                 continue;
+             }
++
+             for (uint8_t role = 0; role < 2; ++role) {
+                 const uint8_t object = (uint8_t)(first_object(r) + 2 * c + role);
+                 if (owner(r, object) == s->admission->local_device)
+                     e->prepare_issued |= UINT32_C(1) << object;
+             }
+         }
++
+         cutoff(r, e, now);
+     }
+ }
+@@ -281,6 +291,7 @@
+     for (size_t c = 0; c < r->scope.channel_count; ++c) {
+         if (!(core_edge_channels(r, CORE_OBJECT_READY) & (1u << c)))
+             continue;
++
+         /* Receiver first, in either direction, including local channels. */
+         for (int role = 1; role >= 0; --role) {
+             const uint8_t object = (uint8_t)(first_object(r) + 2 * c + role);
+@@ -288,6 +299,7 @@
+             if (owner(r, object) != s->admission->local_device || (e->activate_issued & bit) ||
+                 (role == 0 && !(r->evidence.objects[object + 1] & CORE_OBJECT_ACTIVE)))
+                 continue;
++
+             e->activate_issued |= bit;
+             if (!core_endpoint_activate(s->endpoints, &r->scope.bindings[c], role == 0)) {
+                 if (r->scope.kind == CORE_REQUEST_ADD_NODE)
+@@ -296,6 +308,7 @@
+                     cleanup(s, r, now);
+                 break;
+             }
++
+             local_observations(s, r, now);
+         }
+     }
+@@ -307,14 +320,17 @@
+         core_admission_record *r = &s->admission->records[i];
+         if (!core_edge_supported(r) || r->endpoint_only)
+             continue;
++
+         core_edge_execution *e = execution(s, r);
+         local_observations(s, r, now);
+         if (r->cleanup_selected)
+             continue;
++
+         if (r->scope.kind == CORE_REQUEST_ADD_EDGE && core_edge_channels(r, CORE_OBJECT_READY) != 0)
+             (void)core_report_record(&r->evidence, CORE_HISTORY_COMMIT);
+         if (!(r->evidence.history & CORE_HISTORY_COMMIT))
+             continue;
++
+         activate_local_channel_endpoints(s, r, e, now);
+         if (r->scope.kind == CORE_REQUEST_ADD_EDGE && core_edge_channels(r, CORE_OBJECT_ACTIVE))
+             (void)core_report_record(&r->evidence, CORE_HISTORY_SUCCESS);
+@@ -444,10 +460,12 @@
+                                  .incarnation = r->incarnation,
+                                  .record_slot = (uint8_t)(r - s->admission->records),
+                                  .peer = peer};
++
+     for (uint8_t i = first_object(r); i < r->scope.object_count; ++i) {
+         const size_t c = (i - first_object(r)) / 2;
+         if (!known(r, c))
+             continue;
++
+         effect->object = i;
+         if (r->endpoint_only) {
+             if (r->scope.coordinator != peer || owner(r, i) != s->admission->local_device ||
+@@ -460,9 +478,11 @@
+             e->emitted[i] = r->local_facts[i];
+             return true;
+         }
++
+         const uint32_t bit = UINT32_C(1) << i;
+         if (owner(r, i) != peer)
+             continue;
++
+         if (r->channel_cleanup & (1u << c)) {
+             if (!(e->channel_cleanup_started & (1u << c)) || (e->cleanup_issued & bit) ||
+                 !core_before_deadline(now, e->channel_cleanup_deadline_us[c]))
+@@ -474,6 +494,7 @@
+             e->cleanup_issued |= bit;
+             return true;
+         }
++
+         if (complete(r, c, CORE_OBJECT_ACTIVE) || !core_before_deadline(now, setup_deadline(r, c)))
+             continue;
+         effect->deadline_us = setup_deadline(r, c);
+@@ -484,6 +505,7 @@
+             e->prepare_issued |= bit;
+             return true;
+         }
++
+         if ((r->evidence.history & CORE_HISTORY_COMMIT) && !(e->activate_issued & bit) &&
+             (core_edge_channels(r, CORE_OBJECT_READY) & (1u << c)) &&
+             ((i - first_object(r)) % 2 == 1 || (r->evidence.objects[i + 1] & CORE_OBJECT_ACTIVE))) {
+@@ -501,7 +523,9 @@
+ {
+     if (peer == s->admission->local_device)
+         return false;
++
+     core_edge_step(s, now);
++
+     for (size_t n = 0; n < CORE_MAX_ADMISSION_RECORDS; ++n) {
+         const size_t i = (s->next_record + n) % CORE_MAX_ADMISSION_RECORDS;
+         core_admission_record *r = &s->admission->records[i];
+--- formatted/kaos_endpoint.c
++++ after/kaos_endpoint.c
+@@ -16,10 +16,12 @@
+         core_admission_record *record = &service->admission->records[r];
+         if (!record->occupied)
+             continue;
++
+         for (size_t c = 0; c < record->scope.channel_count; ++c) {
+             if (!(record->channel_known & (1u << c)) ||
+                 !core_binding_equal(binding, &record->scope.bindings[c]))
+                 continue;
++
+             const size_t object = (node_kind(record->scope.kind) ? 1u : 0u) + 2 * c + !sender;
+             const uint8_t observed =
+                 record->scope.kind >= CORE_REQUEST_REMOVE_NODE_NO_EDGES
+@@ -40,10 +42,12 @@
+         const core_admission_record *record = &service->admission->records[r];
+         if (!record->occupied)
+             continue;
++
+         for (size_t c = 0; c < record->scope.channel_count; ++c) {
+             if (!(record->channel_known & (1u << c)) ||
+                 !core_binding_equal(binding, &record->scope.bindings[c]))
+                 continue;
++
+             const size_t object = (node_kind(record->scope.kind) ? 1u : 0u) + 2 * c + !sender;
+             result |= record->local_facts[object];
+         }
+@@ -74,12 +78,14 @@
+     core_reserved_node *node = endpoint_node(service, endpoint);
+     if (node == NULL)
+         return;
++
+     for (size_t e = 0; e < CORE_MAX_REQUEST_CHANNELS; ++e) {
+         core_channel_notification *event = &node->notifications[e];
+         if (!event->occupied || event->creating_op.value != endpoint->binding.creating_op.value ||
+             !core_channel_id_equal(event->channel,
+                                    core_channel_identity(&endpoint->binding.channel)))
+             continue;
++
+         event->permissions = permissions;
+         event->pending = true;
+         if (service->notify)
+@@ -100,6 +106,7 @@
+     core_endpoint_queue *queue = &service->queues[index];
+     if (queue->closed)
+         return;
++
+     queue->closed = true;
+     queue->active = false;
+     notification(service, &service->admission->endpoints[index], 0);
+@@ -109,10 +116,11 @@
+ {
+     for (size_t e = 0; e < CORE_MAX_ENDPOINT_RESERVATIONS; ++e) {
+         core_reserved_endpoint *endpoint = &service->admission->endpoints[e];
+-        if (endpoint->occupied && core_binding_equal(binding, &endpoint->binding)) {
+-            core_lifetime_close(&endpoint->lifetime);
+-            close_endpoint_queue(service, e);
+-        }
++        if (!endpoint->occupied || !core_binding_equal(binding, &endpoint->binding))
++            continue;
++
++        core_lifetime_close(&endpoint->lifetime);
++        close_endpoint_queue(service, e);
+     }
+ }
+ 
+@@ -125,14 +133,16 @@
+         core_reserved_endpoint *endpoint = &pool->endpoints[e];
+         if (!endpoint->occupied || endpoint->lifetime.closing)
+             continue;
++
+         const core_reserved_node *node = endpoint_node(service, endpoint);
+-        if (node == NULL || node->lifetime.closing) {
+-            facts(service, &endpoint->binding, endpoint->sender, CORE_OBJECT_FAILED);
+-            /* A co-located binding has no usable transfer path after either
+-             * node exits. Reclaim both local endpoint roles, preserving the
+-             * peer node/runtime. This issues no distributed removal. */
+-            core_endpoint_close(service, &endpoint->binding);
+-        }
++        if (node != NULL && !node->lifetime.closing)
++            continue;
++
++        facts(service, &endpoint->binding, endpoint->sender, CORE_OBJECT_FAILED);
++        /* A co-located binding has no usable transfer path after either
++         * node exits. Reclaim both local endpoint roles, preserving the
++         * peer node/runtime. This issues no distributed removal. */
++        core_endpoint_close(service, &endpoint->binding);
+     }
+ }
+ 
+@@ -144,27 +154,33 @@
+         core_endpoint_queue *queue = &service->queues[e];
+         if (!endpoint->occupied)
+             continue;
++
+         if (endpoint->lifetime.closing) {
+             close_endpoint_queue(service, e);
+             facts(service, &endpoint->binding, endpoint->sender, CORE_OBJECT_CLEANUP);
+             if (!core_lifetime_unclaimed(&endpoint->lifetime) ||
+                 endpoint->prepare.phase != CORE_ACTION_EMPTY)
+                 continue;
++
+             facts(service, &endpoint->binding, endpoint->sender, CORE_OBJECT_STOPPED);
+             queue->count = queue->head = 0;
+             if (queue->prepared && core_lifetime_uncharge(&endpoint->lifetime, CORE_ENDPOINT_BYTES))
+                 queue->prepared = false;
+-        } else if (!queue->prepared) {
+-            if (!core_lifetime_charge(&endpoint->lifetime, CORE_ENDPOINT_BYTES)) {
+-                facts(service, &endpoint->binding, endpoint->sender, CORE_OBJECT_FAILED);
+-                core_lifetime_close(&endpoint->lifetime);
+-                continue;
+-            }
+-            queue->head = queue->count = 0;
+-            queue->active = queue->closed = false;
+-            queue->prepared = true;
+-            facts(service, &endpoint->binding, endpoint->sender, CORE_OBJECT_READY);
+-        }
++            continue;
++        }
++
++        if (queue->prepared)
++            continue;
++        if (!core_lifetime_charge(&endpoint->lifetime, CORE_ENDPOINT_BYTES)) {
++            facts(service, &endpoint->binding, endpoint->sender, CORE_OBJECT_FAILED);
++            core_lifetime_close(&endpoint->lifetime);
++            continue;
++        }
++
++        queue->head = queue->count = 0;
++        queue->active = queue->closed = false;
++        queue->prepared = true;
++        facts(service, &endpoint->binding, endpoint->sender, CORE_OBJECT_READY);
+     }
+ }
+ 
+@@ -177,9 +193,11 @@
+         const core_reserved_endpoint *endpoint = &pool->endpoints[e];
+         if (!endpoint->occupied || !core_lifetime_reclaimed(&endpoint->lifetime))
+             continue;
++
+         const core_binding binding = endpoint->binding;
+         if (!core_admission_release_binding(pool, &binding))
+             continue;
++
+         for (size_t q = 0; q < CORE_MAX_ENDPOINT_RESERVATIONS; ++q) {
+             if (!core_binding_equal(&binding, &pool->endpoints[q].binding))
+                 continue;
+@@ -187,6 +205,7 @@
+                 false;
+             service->queues[q].head = service->queues[q].count = 0;
+         }
++
+         if (binding.channel.source_owner == pool->local_device)
+             facts(service, &binding, true,
+                   CORE_OBJECT_CLEANUP | CORE_OBJECT_STOPPED | CORE_OBJECT_CLEANED);
+@@ -204,9 +223,11 @@
+         core_admission_record *record = &pool->records[r];
+         if (!record->occupied)
+             continue;
++
+         for (size_t c = 0; c < record->scope.channel_count; ++c) {
+             if (!(record->channel_known & (1u << c)) || !(record->channel_cleanup & (1u << c)))
+                 continue;
++
+             const core_binding *binding = &record->scope.bindings[c];
+             for (unsigned role = 0; role < 2; ++role) {
+                 const bool sender = role == 0;
+@@ -214,6 +235,7 @@
+                     sender ? binding->channel.source_owner : binding->channel.destination_owner;
+                 if (owner != pool->local_device)
+                     continue;
++
+                 bool present = false;
+                 for (size_t e = 0; e < CORE_MAX_ENDPOINT_RESERVATIONS; ++e)
+                     present |= pool->endpoints[e].occupied && pool->endpoints[e].sender == sender &&
+@@ -243,14 +265,17 @@
+         if (!endpoint->occupied || endpoint->sender != sender ||
+             !core_binding_equal(binding, &endpoint->binding))
+             continue;
++
+         const core_reserved_node *node = endpoint_node(service, endpoint);
+         if (!queue->prepared || endpoint->lifetime.closing || node == NULL ||
+             node->lifetime.closing)
+             return false;
++
+         if (!queue->active) {
+             queue->active = true;
+             notification(service, endpoint, sender ? CORE_CHANNEL_PUT : CORE_CHANNEL_GET);
+         }
++
+         facts(service, binding, sender, CORE_OBJECT_READY | CORE_OBJECT_ACTIVE);
+         return true;
+     }
+@@ -264,6 +289,7 @@
+     const core_reserved_node *node = find_node(service, caller);
+     if (node == NULL || node->lifetime.closing)
+         return NULL;
++
+     for (size_t e = 0; e < CORE_MAX_ENDPOINT_RESERVATIONS; ++e) {
+         core_reserved_endpoint *endpoint = &service->admission->endpoints[e];
+         const core_instance_id instance = sender ? endpoint->binding.channel.source_instance
+--- formatted/kaos_graph.c
++++ after/kaos_graph.c
+@@ -5,6 +5,7 @@
+     if (milliseconds == 0 || milliseconds > UINT64_MAX / 1000) {
+         return false;
+     }
++
+     *out = milliseconds * 1000;
+     return true;
+ }
+@@ -14,6 +15,7 @@
+     if (allowance_us == 0 || allowance_us > UINT64_MAX - now_us) {
+         return false;
+     }
++
+     *out = now_us + allowance_us;
+     return true;
+ }
+@@ -39,6 +41,7 @@
+         owner->allocations == SIZE_MAX) {
+         return false;
+     }
++
+     owner->bytes += bytes;
+     ++owner->allocations;
+     if (owner->bytes > owner->peak_bytes) {
+@@ -54,6 +57,7 @@
+         (owner->allocations > 1 && owner->bytes - bytes < owner->allocations - 1)) {
+         return false;
+     }
++
+     owner->bytes -= bytes;
+     --owner->allocations;
+     return true;
+@@ -64,6 +68,7 @@
+     if (owner->closing || owner->last_ticket == UINT64_MAX) {
+         return false;
+     }
++
+     for (size_t i = 0; i < CORE_MAX_ACCESSES; ++i) {
+         if (owner->accesses[i] == 0) {
+             const uint64_t ticket = ++owner->last_ticket;
+@@ -80,6 +85,7 @@
+     if (access.owner != owner || access.ticket == 0) {
+         return false;
+     }
++
+     for (size_t i = 0; i < CORE_MAX_ACCESSES; ++i) {
+         if (owner->accesses[i] == access.ticket) {
+             owner->accesses[i] = 0;
+@@ -105,6 +111,7 @@
+     if (!core_lifetime_reclaimed(owner) || owner->last_ticket == UINT64_MAX) {
+         return false;
+     }
++
+     owner->closing = false;
+     return true;
+ }
+--- formatted/kaos_host.c
++++ after/kaos_host.c
+@@ -8,24 +8,29 @@
+ {
+     h->platform.lock(h->platform.context);
+ }
++
+ static void unlock(core_host *h)
+ {
+     h->platform.unlock(h->platform.context);
+ }
++
+ static bool now(core_host *h, uint64_t *time)
+ {
+     return h->platform.now(h->platform.context, time);
+ }
++
+ static void count(uint64_t *value)
+ {
+     if (*value != UINT64_MAX)
+         ++*value;
+ }
++
+ static void maximum(uint64_t *value, uint64_t sample)
+ {
+     if (sample > *value)
+         *value = sample;
+ }
++
+ static bool send_packet(core_host *h, core_host_class traffic_class, uint64_t peer,
+                         const uint8_t *bytes, size_t size)
+ {
+@@ -33,20 +38,24 @@
+     count(sent ? &h->stats.sent[traffic_class] : &h->stats.send_failures[traffic_class]);
+     return sent;
+ }
++
+ static void wake(void *context)
+ {
+     core_host *h = context;
+     h->platform.wake(h->platform.context);
+ }
++
+ static void diagnostic(core_host *h, const char *name, core_op_id id, size_t value)
+ {
+     if (h->platform.diagnostic != NULL)
+         h->platform.diagnostic(h->platform.context, name, id, value);
+ }
++
+ static core_channel_id channel_id(const uint64_t id[3])
+ {
+     return (core_channel_id){id[0], id[1], id[2]};
+ }
++
+ static int32_t channel_put(void *context, size_t slot, const uint64_t channel[3],
+                            const uint8_t *data, size_t size)
+ {
+@@ -63,6 +72,7 @@
+         wake(h);
+     return result;
+ }
++
+ static int32_t channel_get(void *context, size_t slot, const uint64_t channel[3], uint8_t *data,
+                            size_t capacity)
+ {
+@@ -78,6 +88,7 @@
+     unlock(h);
+     return result == CORE_DATA_OK ? (int32_t)size : result;
+ }
++
+ static int32_t channel_event(void *context, size_t slot, uint64_t channel[3], uint32_t *permissions)
+ {
+     core_host *h = context;
+@@ -94,6 +105,7 @@
+     }
+     return result;
+ }
++
+ static bool channel_ready(void *context, size_t slot)
+ {
+     core_host *h = context;
+@@ -102,11 +114,13 @@
+     unlock(h);
+     return ready;
+ }
++
+ static void channel_notify(void *context, size_t slot)
+ {
+     (void)context;
+     core_wamr_channel_changed(slot);
+ }
++
+ static bool entry_lock(void *context, size_t slot)
+ {
+     core_host *h = context;
+@@ -116,6 +130,7 @@
+      * retain this lock until WAMR publishes entry, including on denial. */
+     return now(h, &time) && core_node_start_allowed(&h->nodes, slot, time);
+ }
++
+ static void entry_unlock(void *context)
+ {
+     unlock(context);
+@@ -214,19 +229,23 @@
+         core_host_staging *s = &h->staging[i];
+         if (!s->used || !s->owner->closing)
+             continue;
++
+         if (h->active_staging == (int)i) {
+             core_coap_exchange_cancel(&h->artifact.exchange);
+             h->artifact.transfer = NULL;
+             h->active_staging = -1;
+         }
++
+         core_artifact_cancel(&s->transfer);
+         if (!core_lifetime_unclaimed(s->owner))
+             continue;
++
+         uint8_t *bytes = s->bytes;
+         s->bytes = NULL;
+         unlock(h);
+         free(bytes);
+         lock(h);
++
+         if (s->charged && !core_lifetime_uncharge(s->owner, s->size))
+             continue;
+         s->charged = s->used = false;
+@@ -262,13 +281,16 @@
+ {
+     if (h->active_staging >= 0)
+         return true;
++
+     for (size_t r = 0; r < CORE_MAX_ADMISSION_RECORDS; ++r) {
+         core_admission_record *record = &h->admission.records[r];
+         if (!needs_artifact(h, record, time))
+             continue;
++
+         core_host_staging *s = unused_staging(h, record->id);
+         if (s == NULL)
+             continue;
++
+         s->used = true;
+         s->id = record->id;
+         s->owner = &record->node->lifetime;
+@@ -279,11 +301,13 @@
+             wake(h);
+             return true;
+         }
++
+         unlock(h);
+         s->bytes = malloc(s->size);
+         lock(h);
+         if (!now(h, &time))
+             return false;
++
+         uint64_t token;
+         if (s->bytes == NULL || !core_coap_allocate_token(&h->ids, &token) ||
+             !core_artifact_begin(&s->transfer, s->owner, s->bytes, s->size, s->size,
+@@ -293,6 +317,7 @@
+             wake(h);
+             return true;
+         }
++
+         h->active_staging = (int)(s - h->staging);
+         h->artifact.transfer = &s->transfer;
+         h->artifact.restarted = false;
+@@ -327,45 +352,52 @@
+ {
+     uint64_t time;
+     lock(h);
+-    if (h->active_staging >= 0) {
+-        core_host_staging *s = &h->staging[h->active_staging];
+-        const core_admission_record *r = core_admission_find(&h->admission, s->id);
++    if (h->active_staging < 0) {
++        unlock(h);
++        return true;
++    }
++
++    core_host_staging *s = &h->staging[h->active_staging];
++    const core_admission_record *r = core_admission_find(&h->admission, s->id);
++    if (!now(h, &time)) {
++        unlock(h);
++        return false;
++    }
++
++    const core_coap_exchange *exchange = &h->artifact.exchange;
++    /* Timeout decisions are never paced, including the terminal retry.
++     * Pacing changes send opportunities, not existing deadlines. */
++    const bool timeout_due = artifact_timeout_due(&s->transfer, exchange, time);
++    if (time < h->next_artifact_send_us && !timeout_due) {
++        unlock(h);
++        return true;
++    }
++
++    const core_coap_poll_result result = core_artifact_client_next(
++        &h->artifact, h->admission.authority, r->request.artifact_ref, r->request.artifact_ref_size,
++        &h->ids, time, h->platform.retry_us(h->platform.context));
++    if (result == CORE_COAP_SEND) {
++        h->next_artifact_send_us = h->artifact_interval_us > UINT64_MAX - time
++                                       ? UINT64_MAX
++                                       : time + h->artifact_interval_us;
++        count(&h->stats.artifact_requests);
++
++        /* Only the control task changes exchanges; these bytes remain
++         * owned by the exchange throughout the unlocked send. */
++        unlock(h);
++        const bool sent =
++            send_packet(h, CORE_HOST_MANAGEMENT, h->admission.authority,
++                        h->artifact.exchange.request, h->artifact.exchange.request_size);
++        lock(h);
+         if (!now(h, &time)) {
+             unlock(h);
+             return false;
+         }
+-        const core_coap_exchange *exchange = &h->artifact.exchange;
+-        /* Timeout decisions are never paced, including the terminal retry.
+-         * Pacing changes send opportunities, not existing deadlines. */
+-        const bool timeout_due = artifact_timeout_due(&s->transfer, exchange, time);
+-        if (time < h->next_artifact_send_us && !timeout_due) {
+-            unlock(h);
+-            return true;
+-        }
+-        const core_coap_poll_result result = core_artifact_client_next(
+-            &h->artifact, h->admission.authority, r->request.artifact_ref,
+-            r->request.artifact_ref_size, &h->ids, time, h->platform.retry_us(h->platform.context));
+-        if (result == CORE_COAP_SEND) {
+-            h->next_artifact_send_us = h->artifact_interval_us > UINT64_MAX - time
+-                                           ? UINT64_MAX
+-                                           : time + h->artifact_interval_us;
+-            count(&h->stats.artifact_requests);
+-            /* Only the control task changes exchanges; these bytes remain
+-             * owned by the exchange throughout the unlocked send. */
+-            unlock(h);
+-            const bool sent =
+-                send_packet(h, CORE_HOST_MANAGEMENT, h->admission.authority,
+-                            h->artifact.exchange.request, h->artifact.exchange.request_size);
+-            lock(h);
+-            if (!now(h, &time)) {
+-                unlock(h);
+-                return false;
+-            }
+-            if (!sent)
+-                artifact_failure(h, time);
+-        } else if (result == CORE_COAP_TIMED_OUT)
++        if (!sent)
+             artifact_failure(h, time);
+-    }
++    } else if (result == CORE_COAP_TIMED_OUT)
++        artifact_failure(h, time);
++
+     unlock(h);
+     return true;
+ }
+@@ -376,15 +408,18 @@
+     for (size_t i = 0; i < h->peer_count; ++i) {
+         uint8_t bytes[CORE_COAP_MAX_DATAGRAM];
+         size_t size;
++
+         lock(h);
+         if (!now(h, &time)) {
+             unlock(h);
+             return false;
+         }
++
+         const bool send = core_control_peer_next(&h->control, &h->peers[i], &h->ids, time,
+                                                  h->platform.retry_us(h->platform.context), bytes,
+                                                  sizeof(bytes), &size);
+         unlock(h);
++
+         if (send)
+             (void)send_packet(h, CORE_HOST_MANAGEMENT, h->peers[i].id, bytes, size);
+     }
+@@ -396,11 +431,13 @@
+     for (size_t i = 0; i < CORE_HOST_APPLICATION_TX_BUDGET; ++i) {
+         core_data_frame frame;
+         uint64_t destination, time;
++
+         lock(h);
+         if (!now(h, &time)) {
+             unlock(h);
+             return false;
+         }
++
+         advance_due_lifecycles_locked(h, time);
+         const bool available = core_endpoint_next(&h->endpoints, &destination, &frame);
+         if (available && destination == h->admission.local_device)
+@@ -408,8 +445,10 @@
+                 CORE_DATA_OK)
+                 count(&h->stats.endpoint_drops);
+         unlock(h);
++
+         if (!available)
+             break;
++
+         if (destination != h->admission.local_device) {
+             uint8_t bytes[CORE_DATA_FRAME_BYTES];
+             size_t size;
+@@ -428,6 +467,7 @@
+     for (size_t i = 0; i < CORE_MAX_NODE_RESERVATIONS; ++i) {
+         if (!h->nodes.executions[i].occupied)
+             continue;
++
+         core_runtime_state *state = h->nodes.runtime.lock(h->nodes.runtime.context, i);
+         const size_t count = state->errors_pending;
+         state->errors_pending = 0;
+@@ -445,6 +485,7 @@
+     h->active_staging = -1;
+     h->artifact.transfer = NULL;
+     diagnostic(h, "ARTIFACT", s->id, size);
++
+     if (core_node_artifact(&h->nodes, s->id, bytes, size, time)) {
+         s->bytes = NULL;
+         s->charged = s->used = false;
+@@ -458,6 +499,7 @@
+ {
+     const core_artifact_result result =
+         core_artifact_client_receive(&h->artifact, sender, message, time, acknowledge);
++
+     uint64_t finished;
+     if (!now(h, &finished))
+         return false;
+@@ -466,6 +508,7 @@
+         if (result == CORE_ARTIFACT_COMPLETE)
+             maximum(&h->stats.artifact_complete_max_us, finished - time);
+     }
++
+     if (result == CORE_ARTIFACT_INVALID)
+         artifact_failure(h, time);
+     if (result != CORE_ARTIFACT_COMPLETE || h->active_staging < 0)
+@@ -480,6 +523,7 @@
+         artifact_failure(h, time);
+         return true;
+     }
++
+     handoff_staged_artifact_locked(h, s, bytes, size, time);
+     return true;
+ }
+@@ -500,6 +544,7 @@
+         count(&h->stats.invalid_packets[packet->traffic_class]);
+         return true;
+     }
++
+     response->sender = packet->sender;
+     if (packet->traffic_class == CORE_HOST_APPLICATION) {
+         core_data_frame frame;
+@@ -510,6 +555,7 @@
+             count(&h->stats.invalid_packets[CORE_HOST_APPLICATION]);
+         return true;
+     }
++
+     core_coap_message message;
+     if (packet->bytes[0] == CORE_SCHEMA_VERSION ||
+         !core_coap_decode(packet->bytes, packet->size, &message)) {
+@@ -522,6 +568,7 @@
+                                            &response->size);
+         return true;
+     }
++
+     bool acknowledge = false;
+     if (packet->sender == h->admission.authority) {
+         if (!receive_artifact_locked(h, packet->sender, &message, time, &acknowledge))
+@@ -533,6 +580,7 @@
+             core_control_peer_receive(&h->control, &h->peers[i], &message, time, &acknowledge);
+             break;
+         }
++
+     if (acknowledge) {
+         const core_coap_message ack = {.type = CORE_COAP_ACK, .message_id = message.message_id};
+         (void)core_coap_encode(&ack, response->bytes, sizeof(response->bytes), &response->size);
+@@ -642,6 +690,7 @@
+ {
+     if (!h->initialized || deadline == NULL)
+         return false;
++
+     core_host_packet responses[CORE_HOST_MANAGEMENT_RX_BUDGET];
+     size_t response_count = 0;
+     bool exhausted = false;
+@@ -674,6 +723,7 @@
+             goto failed;
+         advance_graph_lifecycles_locked(h, time); /* accept released staging before sleeping */
+     }
++
+     if (!start_next_artifact_download(h, time))
+         goto failed;
+     unlock(h);
+@@ -685,6 +735,7 @@
+     for (size_t i = 0; i < response_count; ++i)
+         (void)send_packet(h, CORE_HOST_MANAGEMENT, responses[i].sender, responses[i].bytes,
+                           responses[i].size);
++
+     /* The full finite peer pass gives each peer one opportunity per round;
+      * there is no deferred partial scan needing a second fairness cursor. */
+     if (!send_management_peers(h) || !send_artifact(h))
+@@ -717,6 +768,7 @@
+             break;
+         if (deadline == 0)
+             continue;
++
+         const core_host_event event = h->platform.wait(h->platform.context, deadline);
+         if (event == CORE_HOST_STOP)
+             break;
+@@ -736,6 +788,7 @@
+ {
+     if (!h->initialized)
+         return;
++
+     core_wamr_shutdown(); /* joins every callback before releasing host storage */
+     core_coap_exchange_cancel(&h->artifact.exchange);
+     for (size_t i = 0; i < CORE_MAX_NODE_RESERVATIONS; ++i) {
+--- formatted/kaos_node.c
++++ after/kaos_node.c
+@@ -64,6 +64,7 @@
+         if (!e->occupied || !node->occupied || node->instance.value != r->scope.instance.value ||
+             node->logical_node_id != r->scope.logical_node_id)
+             continue;
++
+         core_runtime_state *state = s->runtime.lock(s->runtime.context, i);
+         select_cleanup(s, r, now);
+         state->cancel_requested = true;
+@@ -106,6 +107,7 @@
+     core_admission_record *r = find(s, id);
+     if (!artifact_handoff_allowed(s, r, artifact, size, now))
+         return false;
++
+     core_reserved_node *node = r->node;
+     const size_t index = (size_t)(node - s->admission->nodes);
+     core_node_execution *e = &s->executions[index];
+@@ -139,6 +141,7 @@
+             (void)core_lifetime_uncharge(owner, arena);
+         return false; /* caller still owns the charged artifact */
+     }
++
+     *e = (core_node_execution){.id = id,
+                                .worker = token,
+                                .artifact_bytes = size,
+@@ -155,6 +158,7 @@
+     if (!core_node_supported(r) || succeeded(r) ||
+         (r->scope.kind != CORE_REQUEST_ADD_NODE_NO_EDGES && r->scope.kind != CORE_REQUEST_ADD_NODE))
+         return;
++
+     observe(r, CORE_OBJECT_FAILED);
+     cleanup(s, r, now);
+ }
+@@ -230,45 +234,51 @@
+ static void observe_node_runtime_failure(core_node_service *s, core_admission_record *r,
+                                          const core_runtime_state *state, uint64_t now)
+ {
+-    if (state->exited || state->prepare_failed) {
+-        if (state->exited)
+-            observe(r, CORE_OBJECT_EXITED);
+-        if (state->fault || state->prepare_failed)
+-            observe(r, CORE_OBJECT_FAILED);
+-        select_cleanup(s, r, now);
+-    }
++    if (!state->exited && !state->prepare_failed)
++        return;
++
++    if (state->exited)
++        observe(r, CORE_OBJECT_EXITED);
++    if (state->fault || state->prepare_failed)
++        observe(r, CORE_OBJECT_FAILED);
++
++    select_cleanup(s, r, now);
+ }
+ 
+ static void advance_node_startup(const core_node_service *s, core_admission_record *r,
+                                  core_runtime_state *state)
+ {
+-    if (!r->cleanup_selected && !r->node->lifetime.closing && state->prepared) {
+-        observe(r, CORE_OBJECT_READY);
+-        if (!(r->evidence.history & CORE_HISTORY_COMMIT) &&
+-            core_predicate_eval(&r->scope.predicate, node_channels(s, r, CORE_OBJECT_READY)))
+-            (void)core_report_record(&r->evidence, CORE_HISTORY_COMMIT);
+-        if ((r->evidence.history & CORE_HISTORY_COMMIT) &&
+-            !(r->evidence.history & CORE_HISTORY_DISPATCH) &&
+-            core_predicate_eval(&r->scope.predicate, node_channels(s, r, CORE_OBJECT_ACTIVE))) {
+-            (void)core_report_record(&r->evidence, CORE_HISTORY_DISPATCH);
+-            state->start_deadline_us = r->deadline_us;
+-            state->start_requested = true;
+-        }
++    if (r->cleanup_selected || r->node->lifetime.closing || !state->prepared)
++        return;
++
++    observe(r, CORE_OBJECT_READY);
++    if (!(r->evidence.history & CORE_HISTORY_COMMIT) &&
++        core_predicate_eval(&r->scope.predicate, node_channels(s, r, CORE_OBJECT_READY)))
++        (void)core_report_record(&r->evidence, CORE_HISTORY_COMMIT);
++
++    if ((r->evidence.history & CORE_HISTORY_COMMIT) &&
++        !(r->evidence.history & CORE_HISTORY_DISPATCH) &&
++        core_predicate_eval(&r->scope.predicate, node_channels(s, r, CORE_OBJECT_ACTIVE))) {
++        (void)core_report_record(&r->evidence, CORE_HISTORY_DISPATCH);
++        state->start_deadline_us = r->deadline_us;
++        state->start_requested = true;
+     }
+ }
+ 
+ static void accept_node_init(core_node_service *s, core_admission_record *r,
+                              core_runtime_state *state, uint64_t now)
+ {
+-    if (state->init_pending) {
+-        state->init_pending = false;
+-        if (init_acceptable(s, r, state, now)) {
+-            if (core_admission_establish_node(s->admission, r->node->instance)) {
+-                (void)core_report_record(&r->evidence, CORE_HISTORY_STARTED | CORE_HISTORY_SUCCESS);
+-            } else {
+-                select_cleanup(s, r, now);
+-            }
+-        }
++    if (!state->init_pending)
++        return;
++
++    state->init_pending = false;
++    if (!init_acceptable(s, r, state, now))
++        return;
++
++    if (core_admission_establish_node(s->admission, r->node->instance)) {
++        (void)core_report_record(&r->evidence, CORE_HISTORY_STARTED | CORE_HISTORY_SUCCESS);
++    } else {
++        select_cleanup(s, r, now);
+     }
+ }
+ 
+@@ -277,12 +287,13 @@
+                                          uint64_t now)
+ {
+     const core_reserved_node *node = r->node;
+-    if (r->cleanup_selected || node->lifetime.closing) {
+-        select_cleanup(s, r, now);
+-        state->cancel_requested = true;
+-        if (worker_only(&node->lifetime, worker))
+-            state->dispose_requested = true;
+-    }
++    if (!r->cleanup_selected && !node->lifetime.closing)
++        return;
++
++    select_cleanup(s, r, now);
++    state->cancel_requested = true;
++    if (worker_only(&node->lifetime, worker))
++        state->dispose_requested = true;
+ }
+ 
+ /* Called only after disposal was observed under the runtime lock. Charges and
+@@ -298,19 +309,23 @@
+             return;
+         e->worker_accepted = true;
+     }
++
+     if (!core_lifetime_unclaimed(&node->lifetime))
+         return;
++
+     observe(r, CORE_OBJECT_STOPPED);
+     if (e->artifact_charged) {
+         if (!core_lifetime_uncharge(&node->lifetime, e->artifact_bytes))
+             return;
+         e->artifact_charged = false;
+     }
++
+     if (e->arena_charged) {
+         if (!core_lifetime_uncharge(&node->lifetime, e->arena_bytes))
+             return;
+         e->arena_charged = false;
+     }
++
+     if (core_admission_release_node(s->admission, e->id)) {
+         observe(r, CORE_OBJECT_CLEANED);
+         *e = (core_node_execution){0};
+@@ -322,9 +337,11 @@
+     core_node_execution *e = &s->executions[index];
+     if (!e->occupied)
+         return;
++
+     core_admission_record *r = find(s, e->id);
+     if (r == NULL || r->node != &s->admission->nodes[index])
+         return;
++
+     core_reserved_node *node = r->node;
+     core_runtime_state *state = s->runtime.lock(s->runtime.context, index);
+ 
+@@ -333,11 +350,14 @@
+     observe_node_runtime_failure(s, r, state, now);
+     advance_node_startup(s, r, state);
+     accept_node_init(s, r, state, now);
++
+     /* Generic ERROR is a reporting-only placeholder, not runtime failure or
+      * cleanup evidence. Its bounded FIFO is owned by the runtime adapter. */
+     request_node_runtime_cleanup(s, r, e->worker, state, now);
++
+     const bool disposed = state->disposed && !state->main_active && !state->configuration_active;
+     s->runtime.unlock(s->runtime.context, index);
++
+     if (!disposed || !r->cleanup_selected || !node->lifetime.closing)
+         return;
+ 
+@@ -381,6 +401,7 @@
+             observe(r, CORE_OBJECT_EXPIRED);
+             cleanup(s, r, now);
+         }
++
+         if (r->cleanup_deadline_us != 0 && !succeeded(r) &&
+             !core_before_deadline(now, r->cleanup_deadline_us) &&
+             core_report_obligations(&r->evidence) != 0) {
+@@ -394,6 +415,7 @@
+     core_node_apply_cleanup(s, now);
+     for (size_t i = 0; i < CORE_MAX_NODE_RESERVATIONS; ++i)
+         advance_node_execution(s, i, now);
++
+     for (size_t i = 0; i < CORE_MAX_ADMISSION_RECORDS; ++i) {
+         core_admission_record *r = &s->admission->records[i];
+         if (!core_node_supported(r) || !r->cleanup_selected)
+@@ -417,6 +439,7 @@
+         const core_admission_record *r = &s->admission->records[i];
+         if (!core_node_supported(r) || succeeded(r))
+             continue;
++
+         uint64_t candidate;
+         if (r->cleanup_selected) {
+             if (core_report_obligations(&r->evidence) == 0 ||
+@@ -428,6 +451,7 @@
+         } else {
+             candidate = r->deadline_us;
+         }
++
+         if (candidate < next)
+             next = candidate;
+     }
+--- formatted/kaos_report.c
++++ after/kaos_report.c
+@@ -5,6 +5,7 @@
+ {
+     return kind == 1 || kind == 2;
+ }
++
+ static bool removal(uint8_t kind)
+ {
+     return kind >= 4 && kind <= 6;
+@@ -118,6 +119,7 @@
+ {
+     if (!valid(r) || index >= r->object_count || !object_valid(facts))
+         return CORE_REPORT_INVALID;
++
+     const uint8_t old = r->objects[index];
+     if (facts == old)
+         return CORE_REPORT_REPEAT;
+--- formatted/kaos_request.c
++++ after/kaos_request.c
+@@ -287,6 +287,7 @@
+     if (data == NULL || size == 0 || size > CORE_MAX_REQUEST_BYTES) {
+         return CORE_ADMIT_INVALID;
+     }
++
+     core_cbor_reader envelope = {.data = data, .size = size};
+     uint64_t count, version, kind;
+     core_op_id id;
+@@ -301,18 +302,21 @@
+         envelope.offset != size) {
+         return CORE_ADMIT_INVALID;
+     }
++
+     if (!trusted_node && !endpoint_only && (!pool->configured || sender != pool->authority)) {
+         return CORE_ADMIT_UNAUTHORIZED;
+     }
+     if (!endpoint_only && core_admission_find(pool, id) != NULL) {
+         return CORE_ADMIT_DUPLICATE;
+     }
++
+     core_cbor_reader reader = {.data = body, .size = body_size};
+     core_node_request request = {0};
+     core_request_scope scope = {.kind = (uint8_t)kind};
+     if (!read_request(&reader, id, &request, &scope)) {
+         return CORE_ADMIT_INVALID;
+     }
++
+     scope.coordinator = pool->local_device;
+     if (scope.kind == CORE_REQUEST_ADD_EDGE || scope.kind == CORE_REQUEST_REMOVE_EDGE) {
+         scope.coordinator = scope.bindings[0].channel.source_owner;
+--- formatted/ports/espidf/app_main.c
++++ after/ports/espidf/app_main.c
+@@ -64,6 +64,7 @@
+     const struct sockaddr_in application = {.sin_family = AF_INET,
+                                             .sin_port = htons(CONFIG_KAOS_APPLICATION_UDP_PORT),
+                                             .sin_addr = {.s_addr = htonl(INADDR_ANY)}};
++
+     core_host_platform platform;
+     if (!core_host_udp_open(&udp, &management, &application, routes, route_count, &platform)) {
+         puts("KaOS socket initialization failed");
+--- formatted/ports/espidf/clock.c
++++ after/ports/espidf/clock.c
+@@ -8,6 +8,7 @@
+     if (now < 0) {
+         return false;
+     }
++
+     *out_us = (uint64_t)now;
+     return true;
+ }
+--- formatted/ports/posix/clock.c
++++ after/ports/posix/clock.c
+@@ -9,10 +9,12 @@
+     if (clock_gettime(CLOCK_MONOTONIC, &now) != 0 || now.tv_sec < 0) {
+         return false;
+     }
++
+     const uint64_t fraction = (uint64_t)now.tv_nsec / 1000;
+     if ((uint64_t)now.tv_sec > (UINT64_MAX - fraction) / 1000000) {
+         return false;
+     }
++
+     *out_us = (uint64_t)now.tv_sec * 1000000 + fraction;
+     return true;
+ }
+--- formatted/ports/posix/main.c
++++ after/ports/posix/main.c
+@@ -18,6 +18,7 @@
+     (void)signal_number;
+     core_host_udp_stop(&udp);
+ }
++
+ static void diagnostic(void *context, const char *name, core_op_id id, size_t value)
+ {
+     (void)context;
+@@ -26,6 +27,7 @@
+     if (size > 0 && (size_t)size < sizeof(line))
+         (void)write(STDOUT_FILENO, line, (size_t)size);
+ }
++
+ /* Opt-in host instrumentation. A bounded line fits Linux PIPE_BUF and is
+  * written once to nonblocking stdout: no queue, allocation or retry under the
+  * registry lock. Sequence gaps and the final counters expose observation loss.
+@@ -60,6 +62,7 @@
+     if (write(STDOUT_FILENO, line, length) != (ssize_t)length)
+         ++observation_drops;
+ }
++
+ static void transport_summary(const core_host_stats *stats)
+ {
+     /* One bounded, nonblocking observation after workers join. A missing line
+@@ -84,6 +87,7 @@
+     if (size > 0 && (size_t)size < sizeof(line))
+         (void)write(STDOUT_FILENO, line, (size_t)size);
+ }
++
+ static bool number(const char *text, uint64_t max, uint64_t *out)
+ {
+     if (*text == '\0')
+@@ -99,12 +103,14 @@
+     *out = value;
+     return true;
+ }
++
+ static struct sockaddr_in address(uint16_t port)
+ {
+     return (struct sockaddr_in){.sin_family = AF_INET,
+                                 .sin_port = htons(port),
+                                 .sin_addr = {.s_addr = htonl(INADDR_LOOPBACK)}};
+ }
++
+ static bool local_route(const core_host_udp_peer *peer, uint16_t management, uint16_t application)
+ {
+     return (peer->address.sin_addr.s_addr == htonl(INADDR_LOOPBACK) &&
+@@ -114,6 +120,7 @@
+             (peer->application.sin_port == htons(management) ||
+              peer->application.sin_port == htons(application)));
+ }
++
+ int main(int argc, char **argv)
+ {
+     core_host_config config = {.node_bytes = 131072,
+@@ -135,6 +142,7 @@
+             argv[0]);
+         return 2;
+     }
++
+     config.peer_count = (size_t)argc - 5;
+     config.peers[0] = config.local_device;
+     core_host_udp_peer routes[CORE_MAX_PEERS + 1] = {
+@@ -153,6 +161,7 @@
+         }
+         config.peers[i] = routes[route_count++].id;
+     }
++
+     const char *collector = getenv("KAOS_COLLECTOR");
+     if (collector != NULL) {
+         if (!core_host_udp_parse_peer(collector, &routes[route_count]) ||
+@@ -166,6 +175,7 @@
+         config.collector_enabled = true;
+         config.collector = routes[route_count++].id;
+     }
++
+     const struct sockaddr_in management = address((uint16_t)management_port);
+     const struct sockaddr_in application = address((uint16_t)application_port);
+     core_host_platform platform;
+@@ -175,16 +185,19 @@
+             stderr);
+         return 1;
+     }
++
+     const int flags = fcntl(STDOUT_FILENO, F_GETFL, 0);
+     if (flags < 0 || fcntl(STDOUT_FILENO, F_SETFL, flags | O_NONBLOCK) != 0) {
+         core_host_udp_close(&udp);
+         return 1;
+     }
++
+     platform.diagnostic = diagnostic;
+     const char *trace = getenv("KAOS_TRACE_CHANNELS");
+     const bool tracing = trace != NULL && strcmp(trace, "1") == 0;
+     if (tracing)
+         platform.channel_observation = channel_observation;
++
+     const struct sigaction action = {.sa_handler = stop};
+     if (sigaction(SIGTERM, &action, NULL) != 0 || sigaction(SIGINT, &action, NULL) != 0 ||
+         !core_host_init(&host, &config, &platform)) {
+@@ -195,6 +208,7 @@
+     const int size = snprintf(ready, sizeof(ready), "LISTENING %" PRIu64 " %" PRIu64 "\n",
+                               management_port, application_port);
+     (void)write(STDOUT_FILENO, ready, (size_t)size);
++
+     const bool good = core_host_run(&host);
+     core_host_destroy(&host);
+     transport_summary(&host.stats);
+--- formatted/runtime/kaos_wamr.c
++++ after/runtime/kaos_wamr.c
+@@ -536,6 +536,7 @@
+     const bool profile =
+         core_wamr_profile_with_imports(slot->artifact, slot->artifact_size, &slot->imports);
+     bool good = profile;
++
+     allocate_runtime_arena(slot);
+     allocation_arena = &slot->memory;
+     bool thread_environment = wasm_runtime_init_thread_env();
+@@ -543,7 +544,9 @@
+     const size_t thread_payload = slot->memory.requested[0];
+ #endif
+     good = good && slot->memory.bytes && thread_environment;
++
+     char error[128] = {0};
++
+     if (good) {
+         slot->module =
+             wasm_runtime_load(slot->artifact, (uint32_t)slot->artifact_size, error, sizeof(error));
+@@ -589,6 +592,7 @@
+                 slot->memory.capacity, (unsigned)profile, (unsigned)thread_environment,
+                 slot->module != NULL, slot->instance != NULL, slot->execution != NULL, error);
+ #endif
++
+     publish_runtime_preparation_result(slot, good);
+ }
+ 
+@@ -607,20 +611,24 @@
+     const bool guarded = service.entry_lock != NULL;
+     const bool allowed =
+         !guarded || service.entry_lock(service.entry_context, (size_t)(slot - service.slots));
++
+     pthread_mutex_lock(&slot->mutex);
+     /* Lock contention must not turn an old timestamp into entry permission. */
+     const uint64_t now_us = entry_time_us();
+     const bool permitted = allowed && !slot->state.cancel_requested && !slot->shutdown &&
+                            !slot->state.exited && slot->state.prepared &&
+                            now_us < slot->state.start_deadline_us;
++
+     if (permitted) {
+         slot->executing = true;
+         slot->state.main_active = main;
+         slot->state.configuration_active = !main;
+     }
++
+     pthread_mutex_unlock(&slot->mutex);
+     if (guarded)
+         service.entry_unlock(service.entry_context);
++
+     if (permitted)
+         notify();
+     return permitted;
+@@ -638,15 +646,18 @@
+             if (address)
+                 memcpy(copy, slot->configuration, slot->configuration_size);
+         }
++
+         uint32_t arguments[2] = {address, (uint32_t)slot->configuration_size};
+         good = (!slot->configuration_size || address) &&
+                wasm_runtime_call_wasm(slot->execution, slot->configure, 2, arguments) &&
+                arguments[0] == 0;
++
+         pthread_mutex_lock(&slot->mutex);
+         slot->executing = false;
+         slot->state.configuration_active = false;
+         pthread_mutex_unlock(&slot->mutex);
+     }
++
+     /* Configuration permission does not carry over to main entry. */
+     if (good && begin_call(slot, true)) {
+         uint32_t result = 0;
+@@ -676,9 +687,11 @@
+      * allocations made after prepare and memory logically freed by WAMR. */
+     trace_arena(&slot->memory, "node-dispose", (size_t)(slot - service.slots));
+ #endif
++
+     free(slot->memory.bytes);
+     free(slot->artifact);
+     allocation_arena = NULL;
++
+     pthread_mutex_lock(&slot->mutex);
+     slot->execution = NULL;
+     slot->instance = NULL;
+@@ -693,6 +706,7 @@
+     slot->state.prepared = false;
+     slot->state.main_active = false;
+     slot->state.disposed = true;
++
+     pthread_mutex_unlock(&slot->mutex);
+     notify();
+ }
+@@ -745,7 +759,9 @@
+         return false;
+     if (!arena_bytes || arena_bytes > CORE_WAMR_ARENA_BYTES)
+         return false;
++
+     runtime_slot *slot = &service.slots[index];
++
+     pthread_mutex_lock(&slot->mutex);
+     if (slot->busy || slot->shutdown) {
+         pthread_mutex_unlock(&slot->mutex);
+@@ -864,6 +880,7 @@
+ {
+     if (!out || service.initialized)
+         return false;
++
+     memset(&service, 0, sizeof(service));
+     global_arena = (arena){.bytes = global_storage.bytes, .capacity = sizeof(global_storage.bytes)};
+     allocation_arena = &global_arena;
+@@ -886,6 +903,7 @@
+             (CORE_MAX_NODE_RESERVATIONS + 1) * 4 * sizeof(size_t), sizeof(allocation),
+             (size_t) _Alignof(allocation));
+ #endif
++
+     if (!initialized)
+         return false;
+     if (!core_native_register())
+@@ -906,6 +924,7 @@
+     if (pthread_condattr_setclock(&conditions, CLOCK_MONOTONIC) != 0)
+         goto fail_conditions;
+ #endif
++
+     size_t count = 0;
+     for (; count < CORE_MAX_NODE_RESERVATIONS; ++count) {
+         runtime_slot *slot = &service.slots[count];
+@@ -941,6 +960,7 @@
+         }
+         goto fail_runtime;
+     }
++
+     service.initialized = true;
+     *out = (core_node_runtime){.prepare = queue_prepare,
+                                .lock = lock,
+@@ -964,6 +984,7 @@
+ {
+     if (!service.initialized)
+         return;
++
+     /* Request cancellation for every worker before waiting for any of them. */
+     for (size_t i = 0; i < CORE_MAX_NODE_RESERVATIONS; ++i) {
+         runtime_slot *slot = &service.slots[i];
+@@ -979,6 +1000,7 @@
+         runtime_slot *slot = &service.slots[i];
+         join_and_destroy_worker(slot);
+     }
++
+     allocation_arena = &global_arena;
+ #ifdef CORE_WAMR_TRACE_PREPARE
+     trace_arena(&global_arena, "global-before-destroy", 0);
+--- formatted/runtime/profile.c
++++ after/runtime/profile.c
+@@ -61,17 +61,22 @@
+     if (!core_native_grants_registered(imports) || !bytes || size < sizeof(magic) ||
+         size > CORE_MAX_ARTIFACT_BYTES || memcmp(bytes, magic, sizeof(magic)) != 0)
+         return false;
++
+     reader input = {bytes + sizeof(magic), bytes + size};
+     bool memory = false, configure = false, main = false;
++
+     while (input.at < input.end) {
+         const uint8_t section = *input.at++;
+         uint32_t size, count;
+         if (section > 12 || !u32(&input, &size) || size > (size_t)(input.end - input.at))
+             return false;
++
+         reader r = {input.at, input.at + size};
+         input.at += size;
++
+         if (section == 8)
+             return false; /* implicit start always forbidden */
++
+         if (section == 2) {
+             if (!u32(&r, &count) || count > 6 + CORE_MAX_NATIVE_IMPORTS)
+                 return false;

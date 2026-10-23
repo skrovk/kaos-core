@@ -1,0 +1,26 @@
+Start testing: Oct 21 14:00 CEST
+----------------------------------------------------------
+12/30 Testing: graph_host_crash
+12/30 Test: graph_host_crash
+Command: "/home/karolina/.local/bin/uv" "--directory" "/home/karolina/Research/Code/kaos_core/verification/graph_core/../../../sim_env" "run" "--offline" "python" "/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/host_crash_test.py" "/tmp/kaos-refactor-four/core/kaos_host" "/tmp/kaos-refactor-four/alternatives.wasm" "/tmp/kaos-refactor-four/host-crash"
+Directory: /tmp/kaos-refactor-four
+"graph_host_crash" start time: Oct 21 14:00 CEST
+Output:
+----------------------------------------------------------
+{"host_crash_output": "/tmp/kaos-refactor-four/host-crash/run-epew80la"}
+test_shared_host_crash_preserves_remote_cleanup_obligations (__main__.HostCrashTests.test_shared_host_crash_preserves_remote_cleanup_obligations) ... ok
+test_unrequested_kill_still_fails_run (__main__.HostCrashTests.test_unrequested_kill_still_fails_run) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.737s
+
+OK
+<end of output>
+Test time =   1.00 sec
+----------------------------------------------------------
+Test Passed.
+"graph_host_crash" end time: Oct 21 14:00 CEST
+"graph_host_crash" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 21 14:00 CEST

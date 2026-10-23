@@ -1,0 +1,58 @@
+{
+  "host": {
+    "path": "/tmp/kaos-refactor-four/core/kaos_host",
+    "sha256": "dafec34c4284e04cf6ddf268346b38858ba9253e31fc05d092812522cc1f1ffa"
+  },
+  "python_sources": {
+    "/home/karolina/Research/Code/sim_env/sim_env/graph_alternatives.py": "ec71fb8096cf348adbe465136dc9cb7b3570615e9e94cb8d10c25caeae0f6b36",
+    "/home/karolina/Research/Code/sim_env/sim_env/graph_collector.py": "e1a4d9cd017441aa4f75aae7b85bfc1f56f30c0b0ea25776d621615b16298054",
+    "/home/karolina/Research/Code/sim_env/sim_env/graph_evidence.py": "0eb34d1ef10dd4d44e47f258b4365cb5b0950aaf6ccf10d4cdfa145504f71614",
+    "/home/karolina/Research/Code/sim_env/sim_env/graph_mixed.py": "64aa72e0597817ec3bff027e1b5b021eeda6aa59380ab261c117191ecf34a44e",
+    "/home/karolina/Research/Code/sim_env/sim_env/graph_protocol.py": "950320ab8b8d87078eb0ba259470e0e89036440b62a7a2b9a923126def13de1c",
+    "/home/karolina/Research/Code/sim_env/sim_env/graph_relay.py": "76cbcb90c1a91a18b6702567c90605a20b0f334ff448619ee77b27d3edc2ef8b",
+    "/home/karolina/Research/Code/sim_env/sim_env/graph_run.py": "3e6b503c08de164ecb587d708964db60f060c19a306b5e0f0caba1b900c2fc2c",
+    "/home/karolina/Research/Code/sim_env/sim_env/graph_transport.py": "6ce56ab3840b5e3db7a79b89d2dcdd245df61eebf761c5abcd727b734c886e37",
+    "/home/karolina/Research/Code/sim_env/sim_env/graph_workload_timing.py": "5c635157521925a4e77a8b65e5965b442dbe15f9531eb91e125b5a467035b6e5",
+    "/home/karolina/Research/Code/sim_env/sim_env/graph_workloads.py": "2db93aaf807670b1ec793b9b7cc44a9168b6de0649898a392361df6b98518faf",
+    "/home/karolina/Research/Code/sim_env/sim_env/orchestrator.py": "acedd46802cee90eac12f30f7ac87c51a1b6c8c4032ef2a3c297262dc7a16563",
+    "/home/karolina/Research/Code/sim_env/sim_env/models.py": "c0d09d6d126a42ad4e4f7f3ee63b15b1a90fafe085940417eef5c5132ab2e14f"
+  },
+  "devices": [
+    1,
+    2
+  ],
+  "authority": 99,
+  "seed": 0,
+  "actual_addresses": {
+    "1": [
+      "127.0.0.1",
+      49167
+    ],
+    "2": [
+      "127.0.0.1",
+      50286
+    ],
+    "99": [
+      "127.0.0.1",
+      40118
+    ]
+  },
+  "proxy_addresses": {
+    "1": [
+      "127.0.0.1",
+      57217
+    ],
+    "2": [
+      "127.0.0.1",
+      46572
+    ],
+    "99": [
+      "127.0.0.1",
+      40097
+    ]
+  },
+  "clock": "real monotonic time; host scheduling is not deterministic",
+  "diagnostics": "supplementary stdout; loss count unavailable",
+  "channel_trace": true,
+  "network": "bounded UDP proxy queue; kernel receive loss is not measured"
+}

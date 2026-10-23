@@ -1,0 +1,2290 @@
+--- a/graph_core/CMakeLists.txt
++++ b/graph_core/CMakeLists.txt
+@@ -13,13 +13,13 @@
+ if(ESP_PLATFORM)
+     set(host_sources)
+     if(CORE_BUILD_HOST)
+-        list(APPEND host_sources kaos_host.c ports/host_udp.c)
++        list(APPEND host_sources kaos_host.c host_udp.c)
+     endif()
+     idf_component_register(SRCS "kaos_graph.c" "kaos_predicate.c" "kaos_admission.c" "kaos_request.c"
+         "kaos_report.c" "kaos_coap.c" "kaos_artifact.c" "kaos_control.c" "kaos_node.c"
+         "kaos_endpoint.c" "kaos_edge.c"
+         "ports/clock_espidf.c" ${host_sources}
+-        INCLUDE_DIRS "include" "ports" PRIV_REQUIRES esp_timer pthread lwip vfs)
++        INCLUDE_DIRS "include" PRIV_REQUIRES esp_timer pthread lwip vfs)
+     target_compile_features(${COMPONENT_LIB} PUBLIC c_std_11)
+     if(CORE_FOUR_NODE_PROFILE)
+         target_compile_definitions(${COMPONENT_LIB} PUBLIC CORE_FOUR_NODE_PROFILE=1)
+@@ -52,8 +52,8 @@
+ endif()
+ if(CORE_BUILD_HOST OR CORE_BUILD_P3_HOST OR CORE_BUILD_P4_HOST)
+     add_subdirectory(runtime)
+-    add_library(kaos_graph_host STATIC kaos_host.c ports/host_udp.c)
+-    target_include_directories(kaos_graph_host PUBLIC include ports)
++    add_library(kaos_graph_host STATIC kaos_host.c host_udp.c)
++    target_include_directories(kaos_graph_host PUBLIC include)
+     target_link_libraries(kaos_graph_host PUBLIC kaos_graph_core kaos_wamr)
+     target_compile_options(kaos_graph_host PRIVATE -Wall -Wextra -Wpedantic -Werror)
+     set(host_targets kaos_host)
+--- /dev/null
++++ b/graph_core/host_udp.c
+@@ -0,0 +1,252 @@
++#define _POSIX_C_SOURCE 200809L
++#include "host_udp.h"
++#include <arpa/inet.h>
++#include <errno.h>
++#include <fcntl.h>
++#include <limits.h>
++#include <stdlib.h>
++#include <string.h>
++#include <sys/select.h>
++#include <sys/socket.h>
++#include <unistd.h>
++#ifdef ESP_PLATFORM
++#include "esp_vfs_eventfd.h"
++#else
++#include <sys/eventfd.h>
++#endif
++
++static bool clock_now(void *context, uint64_t *now)
++{
++    (void)context;
++    return core_clock_now(now);
++}
++static void registry_lock(void *context) { pthread_mutex_lock(&((core_host_udp *)context)->mutex); }
++static void registry_unlock(void *context) { pthread_mutex_unlock(&((core_host_udp *)context)->mutex); }
++static void notify(void *context)
++{
++    core_host_udp *udp = context;
++    const uint64_t one = 1;
++    const int saved_errno = errno;
++    ssize_t result;
++    do { result = write(udp->wake_fd, &one, sizeof(one)); } while (result < 0 && errno == EINTR);
++    /* A saturated counter already retains a wake. Mailboxes retain evidence. */
++    errno = saved_errno;
++}
++static const struct sockaddr_in *peer_address(const core_host_udp_peer *peer,
++                                              core_host_class traffic_class)
++{
++    return traffic_class == CORE_HOST_MANAGEMENT ? &peer->address : &peer->application;
++}
++static bool send_packet(void *context, core_host_class traffic_class, uint64_t peer,
++                         const uint8_t *bytes, size_t size)
++{
++    core_host_udp *udp = context;
++    if ((unsigned)traffic_class >= CORE_HOST_CLASSES || size > CORE_COAP_MAX_DATAGRAM) return false;
++    for (size_t i = 0; i < udp->peer_count; ++i) {
++        if (udp->peers[i].id != peer) continue;
++        const struct sockaddr_in *address = peer_address(&udp->peers[i], traffic_class);
++        if (address->sin_port == 0) return false;
++        return sendto(udp->sockets[traffic_class], bytes, size, 0,
++                      (const struct sockaddr *)address, sizeof(*address)) == (ssize_t)size;
++    }
++    return false;
++}
++static uint64_t retry_delay(void *context)
++{
++    core_host_udp *udp = context;
++    uint32_t x = udp->random_state;
++    x ^= x << 13;
++    x ^= x >> 17;
++    x ^= x << 5;
++    udp->random_state = x;
++    return CORE_COAP_ACK_TIMEOUT_US + x % 1000001u;
++}
++static core_host_event wait_input(void *context, uint64_t deadline)
++{
++    core_host_udp *udp = context;
++    if (udp->stopped) return CORE_HOST_STOP;
++    struct timeval timeout, *limit = NULL;
++    if (deadline != UINT64_MAX) {
++        uint64_t now;
++        if (!core_clock_now(&now)) return CORE_HOST_ERROR;
++        const uint64_t remaining = deadline > now ? deadline - now : 0;
++        timeout.tv_sec = remaining / 1000000 > INT_MAX ? INT_MAX : (long)(remaining / 1000000);
++        timeout.tv_usec = (long)(remaining % 1000000);
++        limit = &timeout;
++    }
++
++    fd_set read_fds;
++    FD_ZERO(&read_fds);
++    FD_SET(udp->wake_fd, &read_fds);
++    int max_fd = udp->wake_fd;
++    
++    for (size_t i = 0; i < CORE_HOST_CLASSES; ++i) {
++        FD_SET(udp->sockets[i], &read_fds);
++        if (udp->sockets[i] > max_fd) max_fd = udp->sockets[i];
++    }
++    const int ready = select(max_fd + 1, &read_fds, NULL, NULL, limit);
++    if (udp->stopped) return CORE_HOST_STOP;
++    if (ready < 0) return errno == EINTR ? CORE_HOST_WAKE : CORE_HOST_ERROR;
++    if (ready == 0) return CORE_HOST_WAKE;
++    if (FD_ISSET(udp->wake_fd, &read_fds)) {
++        uint64_t count;
++        (void)read(udp->wake_fd, &count, sizeof(count));
++    }
++    return CORE_HOST_WAKE;
++}
++static core_host_event receive_packet(void *context, core_host_class traffic_class,
++                                      core_host_packet *packet)
++{
++    core_host_udp *udp = context;
++    if (udp->stopped) return CORE_HOST_STOP;
++    if ((unsigned)traffic_class >= CORE_HOST_CLASSES) return CORE_HOST_ERROR;
++    /* One extra byte detects oversized/truncated packets on both BSD stacks. */
++    uint8_t bytes[CORE_COAP_MAX_DATAGRAM + 1];
++    struct sockaddr_in sender;
++    socklen_t address_size = sizeof(sender);
++    const ssize_t size = recvfrom(udp->sockets[traffic_class], bytes, sizeof(bytes), 0,
++                                  (struct sockaddr *)&sender, &address_size);
++    if (size < 0) return errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR ?
++                         CORE_HOST_EMPTY : CORE_HOST_ERROR;
++    if ((size_t)size > sizeof(packet->bytes) || address_size != sizeof(sender) ||
++        sender.sin_family != AF_INET) return CORE_HOST_DROPPED;
++    for (size_t i = 0; i < udp->peer_count; ++i) {
++        const struct sockaddr_in *address = peer_address(&udp->peers[i], traffic_class);
++        if (sender.sin_addr.s_addr != address->sin_addr.s_addr || sender.sin_port != address->sin_port)
++            continue;
++        packet->sender = udp->peers[i].id;
++        packet->traffic_class = traffic_class;
++        packet->size = (size_t)size;
++        memcpy(packet->bytes, bytes, packet->size);
++        return CORE_HOST_PACKET;
++    }
++    return CORE_HOST_DROPPED;
++}
++
++static bool same_address(const struct sockaddr_in *a, const struct sockaddr_in *b)
++{
++    return a->sin_port != 0 && a->sin_addr.s_addr == b->sin_addr.s_addr &&
++           a->sin_port == b->sin_port;
++}
++
++bool core_host_udp_open(core_host_udp *udp, const struct sockaddr_in *management,
++    const struct sockaddr_in *application,
++    const core_host_udp_peer *peers, size_t peer_count, core_host_platform *out)
++{
++    *udp = (core_host_udp){.sockets = {-1, -1}, .wake_fd = -1};
++    if (peer_count > CORE_MAX_PEERS + 1 || management->sin_family != AF_INET ||
++        application->sin_family != AF_INET ||
++        (management->sin_port != 0 && management->sin_port == application->sin_port)) return false;
++    for (size_t i = 0; i < peer_count; ++i) {
++        if (peers[i].address.sin_family != AF_INET || peers[i].address.sin_port == 0 ||
++            (peers[i].application.sin_port != 0 &&
++             (peers[i].application.sin_family != AF_INET ||
++              same_address(&peers[i].address, &peers[i].application)))) return false;
++        for (size_t j = 0; j < i; ++j)
++            if (peers[i].id == peers[j].id ||
++                same_address(&peers[i].address, &peers[j].address) ||
++                same_address(&peers[i].application, &peers[j].application)) return false;
++    }
++    if (pthread_mutex_init(&udp->mutex, NULL) != 0) return false;
++    udp->mutex_initialized = true;
++    memcpy(udp->peers, peers, peer_count * sizeof(*peers));
++    udp->peer_count = peer_count;
++    uint64_t time;
++    if (!core_clock_now(&time)) goto fail;
++    udp->random_state = (uint32_t)time | 1u;
++#ifdef ESP_PLATFORM
++    const esp_vfs_eventfd_config_t config = {.max_fds = 1};
++    if (esp_vfs_eventfd_register(&config) != ESP_OK) goto fail;
++    udp->eventfd_registered = true;
++    udp->wake_fd = eventfd(0, 0);
++#else
++    udp->wake_fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
++#endif
++    if (udp->wake_fd < 0 || udp->wake_fd >= FD_SETSIZE) goto fail;
++    const struct sockaddr_in *local[CORE_HOST_CLASSES] = {management, application};
++    for (size_t i = 0; i < CORE_HOST_CLASSES; ++i) {
++        udp->sockets[i] = socket(AF_INET, SOCK_DGRAM, 0);
++        if (udp->sockets[i] < 0 || udp->sockets[i] >= FD_SETSIZE) goto fail;
++        const int flags = fcntl(udp->sockets[i], F_GETFL, 0);
++        if (flags < 0 || fcntl(udp->sockets[i], F_SETFL, flags | O_NONBLOCK) != 0 ||
++            bind(udp->sockets[i], (const struct sockaddr *)local[i], sizeof(*local[i])) != 0) goto fail;
++    }
++    *out = (core_host_platform){.context = udp, .now = clock_now, .lock = registry_lock,
++        .unlock = registry_unlock, .wake = notify, .wait = wait_input,
++        .recv = receive_packet, .send = send_packet, .retry_us = retry_delay};
++    return true;
++fail:
++    core_host_udp_close(udp);
++    return false;
++}
++
++void core_host_udp_stop(core_host_udp *udp)
++{
++    udp->stopped = 1;
++    notify(udp);
++}
++void core_host_udp_close(core_host_udp *udp)
++{
++    for (size_t i = 0; i < CORE_HOST_CLASSES; ++i) {
++        if (udp->sockets[i] >= 0) close(udp->sockets[i]);
++        udp->sockets[i] = -1;
++    }
++    if (udp->wake_fd >= 0) close(udp->wake_fd);
++    udp->wake_fd = -1;
++#ifdef ESP_PLATFORM
++    if (udp->eventfd_registered) (void)esp_vfs_eventfd_unregister();
++    udp->eventfd_registered = false;
++#endif
++    if (udp->mutex_initialized) pthread_mutex_destroy(&udp->mutex);
++    udp->mutex_initialized = false;
++}
++
++/* Parse one port and leave its optional separator for the caller. */
++static bool parse_port(const char *text, char separator, uint16_t *port, const char **end)
++{
++    const char *p = text;
++    while (*p >= '0' && *p <= '9') ++p;
++    if (p == text || (*p != '\0' && *p != separator)) return false;
++    errno = 0;
++    char *parsed_end;
++    const unsigned long value = strtoul(text, &parsed_end, 10);
++    if (errno || parsed_end != p || value == 0 || value > UINT16_MAX) return false;
++    *port = (uint16_t)value;
++    *end = p;
++    return true;
++}
++
++bool core_host_udp_parse_peer(const char *text, core_host_udp_peer *out)
++{
++    if (text == NULL || *text < '0' || *text > '9') return false;
++    const char *p = text;
++    while (*p >= '0' && *p <= '9') ++p;
++    if (*p != ':' && *p != '@') return false;
++    errno = 0;
++    char *end;
++    const uint64_t id = strtoull(text, &end, 10);
++    if (errno || end != p) return false;
++    struct in_addr address = {.s_addr = htonl(INADDR_LOOPBACK)};
++    if (*p == '@') {
++        const char *colon = strchr(++p, ':');
++        char ip[INET_ADDRSTRLEN];
++        if (colon == NULL || colon == p || (size_t)(colon - p) >= sizeof(ip)) return false;
++        memcpy(ip, p, (size_t)(colon - p));
++        ip[colon - p] = '\0';
++        if (inet_pton(AF_INET, ip, &address) != 1) return false;
++        p = colon;
++    }
++    ++p;
++    const char *q;
++    uint16_t port;
++    if (!parse_port(p, ':', &port, &q)) return false;
++    *out = (core_host_udp_peer){.id = id, .address = {.sin_family = AF_INET,
++        .sin_addr = address, .sin_port = htons(port)}};
++    if (*q == ':') {
++        uint16_t app_port;
++        if (!parse_port(q + 1, '\0', &app_port, &q) || app_port == port) return false;
++        out->application = (struct sockaddr_in){.sin_family = AF_INET,
++            .sin_addr = address, .sin_port = htons(app_port)};
++    }
++    return true;
++}
+--- /dev/null
++++ b/graph_core/include/host_udp.h
+@@ -0,0 +1,43 @@
++#ifndef KAOS_HOST_UDP_H
++#define KAOS_HOST_UDP_H
++
++#include "kaos_host_platform.h"
++#include "kaos_admission.h"
++#ifdef ESP_PLATFORM
++#include "lwip/sockets.h"
++#else
++#include <netinet/in.h>
++#endif
++#include <pthread.h>
++#include <signal.h>
++
++typedef struct {
++    uint64_t id;
++    struct sockaddr_in address; /* management; required */
++    struct sockaddr_in application; /* zero port for management-only peers */
++} core_host_udp_peer;
++
++/* BSD socket adapter shared by POSIX and ESP-IDF. Address storage and OS
++ * handles stay here; the host knows only device IDs and complete datagrams. */
++typedef struct {
++    int sockets[CORE_HOST_CLASSES], wake_fd;
++    pthread_mutex_t mutex;
++    core_host_udp_peer peers[CORE_MAX_PEERS + 1]; /* remote owners + O + DB */
++    size_t peer_count;
++    uint32_t random_state;
++    volatile sig_atomic_t stopped;
++    bool eventfd_registered;
++    bool mutex_initialized;
++} core_host_udp;
++
++bool core_host_udp_open(core_host_udp *udp, const struct sockaddr_in *management,
++    const struct sockaddr_in *application,
++    const core_host_udp_peer *peers, size_t peer_count, core_host_platform *out);
++void core_host_udp_close(core_host_udp *udp);
++/* POSIX signal handler: only sets sig_atomic_t and writes the wake descriptor. */
++void core_host_udp_stop(core_host_udp *udp);
++/* id:management:application uses loopback; id@IPv4:management:application
++ * supplies an explicit address. Omit :application for authority/collector. */
++bool core_host_udp_parse_peer(const char *text, core_host_udp_peer *out);
++
++#endif
+--- a/graph_core/include/kaos_control.h
++++ b/graph_core/include/kaos_control.h
+@@ -75,4 +75,11 @@
+                            const uint8_t *data, size_t size, uint64_t now_us,
+                            uint8_t *response, size_t capacity, size_t *written);
+ 
++/* Decoded-input path for the host: request must come from core_coap_decode().
++ * The message and its borrowed options/payload live for this call only. Same
++ * serialization, output-capacity and resource semantics as the raw entrypoint. */
++bool core_control_receive_message(core_control *control, uint64_t sender,
++    const core_coap_message *request, uint64_t now_us,
++    uint8_t *response, size_t capacity, size_t *written);
++
+ #endif
+--- a/graph_core/include/kaos_host.h
++++ b/graph_core/include/kaos_host.h
+@@ -59,17 +59,21 @@
+  * one real WAMR host may run in a process. Adapters own their OS resources and
+  * must outlive destroy(), including all worker notifications. */
+ typedef struct {
++    /* Stable object reservations and their control-task lifecycle owners. */
+     core_admission admission;
+     core_control control;
+     core_node_service nodes;
+     core_endpoint_service endpoints;
+     core_edge_service edges;
++    /* Protocol exchanges borrow graph evidence; they do not own objects. */
+     core_control_peer peers[CORE_MAX_PEERS - 1];
+     size_t peer_count;
++    /* Host-owned buffers until runtime acceptance; at most one active download. */
+     core_host_staging staging[CORE_MAX_NODE_RESERVATIONS];
+     core_artifact_client artifact;
+     int active_staging;
+     core_coap_ids ids;
++    /* Platform resources outlive the workers; statistics/scheduling are host-owned. */
+     core_host_platform platform;
+     core_host_stats stats;
+     uint64_t artifact_interval_us, next_artifact_send_us, last_management_us;
+--- a/graph_core/include/kaos_host_platform.h
++++ b/graph_core/include/kaos_host_platform.h
+@@ -2,6 +2,7 @@
+ #define KAOS_HOST_PLATFORM_H
+ 
+ #include "kaos_coap.h"
++#include "kaos_admission.h"
+ 
+ typedef enum { CORE_HOST_MANAGEMENT, CORE_HOST_APPLICATION, CORE_HOST_CLASSES } core_host_class;
+ typedef struct {
+--- a/graph_core/kaos_admission.c
++++ b/graph_core/kaos_admission.c
+@@ -17,30 +17,6 @@
+ static bool removal(uint8_t kind)
+ {
+     return node_remove(kind) || kind == CORE_REQUEST_REMOVE_EDGE;
+-}
+-
+-static bool same_channel(const core_channel *a, const core_channel *b)
+-{
+-    return a->source_logical == b->source_logical &&
+-           a->destination_logical == b->destination_logical && a->service == b->service;
+-}
+-
+-static bool same_binding(const core_binding *a, const core_binding *b)
+-{
+-    return same_channel(&a->channel, &b->channel) &&
+-           a->creating_op.value == b->creating_op.value;
+-}
+-
+-static bool same_descriptor(const core_channel *a, const core_channel *b)
+-{
+-    return same_channel(a, b) &&
+-           a->source_instance.value == b->source_instance.value &&
+-           a->destination_instance.value == b->destination_instance.value &&
+-           a->source_owner == b->source_owner && a->destination_owner == b->destination_owner &&
+-           a->source_port == b->source_port && a->destination_port == b->destination_port &&
+-           a->type == b->type && a->payload_bytes == b->payload_bytes &&
+-           a->queue_messages == b->queue_messages &&
+-           a->addition_allowance_us == b->addition_allowance_us;
+ }
+ 
+ static bool incident(const core_channel *channel, uint64_t logical, core_instance_id instance)
+@@ -95,7 +71,7 @@
+             if ((record->channel_known & bit) &&
+                 (removal(record->scope.kind) || record->cleanup_selected ||
+                  (record->channel_cleanup & bit)) &&
+-                same_binding(&record->scope.bindings[j], binding)) {
++                core_binding_same_identity(&record->scope.bindings[j], binding)) {
+                 return true;
+             }
+         }
+@@ -286,8 +262,8 @@
+                             const core_binding *binding)
+ {
+     for (size_t i = 0; i < scope->channel_count; ++i) {
+-        if ((known & (1u << i)) && same_binding(&scope->bindings[i], binding) &&
+-            same_descriptor(&scope->bindings[i].channel, &binding->channel)) {
++        if ((known & (1u << i)) && core_binding_same_identity(&scope->bindings[i], binding) &&
++            core_channel_descriptor_equal(&scope->bindings[i].channel, &binding->channel)) {
+             return true;
+         }
+     }
+@@ -312,8 +288,8 @@
+         if (!record->occupied || record->endpoint_only) continue;
+         for (size_t c = 0; c < record->scope.channel_count; ++c) {
+             if ((record->channel_known & (1u << c)) &&
+-                same_binding(binding, &record->scope.bindings[c]) &&
+-                same_descriptor(&binding->channel, &record->scope.bindings[c].channel) &&
++                core_binding_same_identity(binding, &record->scope.bindings[c]) &&
++                core_channel_descriptor_equal(&binding->channel, &record->scope.bindings[c].channel) &&
+                 ((record->evidence.objects[endpoint_object(record, c, role)] & CORE_OBJECT_CLEANED) ||
+                  (record->closed_objects & (UINT32_C(1) << endpoint_object(record, c, role)))))
+                 return true;
+@@ -347,7 +323,7 @@
+                             const core_binding *binding)
+ {
+     for (size_t i = 0; i < *count; ++i)
+-        if (same_binding(bindings[i], binding)) return true;
++        if (core_binding_same_identity(bindings[i], binding)) return true;
+     if (*count == CORE_MAX_REQUEST_CHANNELS) return false;
+     bindings[(*count)++] = binding;
+     return true;
+@@ -459,24 +435,11 @@
+     }
+ }
+ 
+-core_admit_result core_admission_reserve(core_admission *pool, core_op_id id,
+-                                         const core_node_request *request,
+-                                         const core_request_scope *scope,
+-                                         uint64_t now_us, bool endpoint_only, bool cancel,
+-                                         const core_admission_record **out)
+-{
+-    uint64_t deadline, unused;
+-    if (!core_deadline(now_us, scope->allowance_us, &deadline) ||
+-        (!removal(scope->kind) &&
+-         !core_deadline(deadline, scope->cleanup_allowance_us, &unused))) {
+-        return CORE_ADMIT_INVALID;
+-    }
+-    core_admission_record *record = select_record(pool);
+-    if (record == NULL) {
+-        return CORE_ADMIT_FULL;
+-    }
++static core_admit_result check_scope_node(core_admission *pool, core_op_id id,
++    const core_node_request *request, const core_request_scope *scope,
++    bool endpoint_only, core_reserved_node **out)
++{
+     core_reserved_node *new_node = NULL;
+-    size_t bytes = 0;
+     if (node_add(scope->kind) && !endpoint_only) {
+         if (request->required_bytes > pool->node_bytes) {
+             return CORE_ADMIT_INVALID;
+@@ -493,7 +456,6 @@
+         if (new_node == NULL) {
+             return CORE_ADMIT_FULL;
+         }
+-        bytes = pool->node_bytes;
+     }
+     if (node_remove(scope->kind)) {
+         const core_reserved_node *target = find_node(pool, scope->instance);
+@@ -508,81 +470,117 @@
+             if (!scope_contains(scope, (core_channel_set)((1u << scope->channel_count) - 1u),
+                                 bindings[i])) return CORE_ADMIT_CONFLICT;
+     }
++    *out = new_node;
++    return CORE_ADMIT_ACCEPTED;
++}
++
++static core_admit_result check_scope_channel(core_admission *pool,
++    const core_request_scope *scope, size_t i, uint64_t now_us,
++    bool endpoint_only, bool cancel, size_t *endpoint_count)
++{
++    uint64_t unused;
++    const core_binding *binding = &scope->bindings[i];
++    const core_channel *channel = &binding->channel;
++    if (!configured_owner(pool, channel->source_owner) ||
++        !configured_owner(pool, channel->destination_owner) ||
++        (!endpoint_only && channel->source_owner != pool->local_device &&
++         channel->destination_owner != pool->local_device)) {
++        return CORE_ADMIT_UNAUTHORIZED;
++    }
++    const core_reserved_node *known_source = find_node(pool, channel->source_instance);
++    const core_reserved_node *known_destination = find_node(pool, channel->destination_instance);
++    if ((known_source != NULL &&
++         (known_source->logical_node_id != channel->source_logical ||
++          channel->source_owner != pool->local_device)) ||
++        (known_destination != NULL &&
++         (known_destination->logical_node_id != channel->destination_logical ||
++          channel->destination_owner != pool->local_device))) {
++        return CORE_ADMIT_CONFLICT;
++    }
++    if (node_add(scope->kind) || node_remove(scope->kind)) {
++        if (!incident(channel, scope->logical_node_id, scope->instance) ||
++            (channel->source_instance.value == scope->instance.value &&
++             channel->source_owner != scope->coordinator) ||
++            (channel->destination_instance.value == scope->instance.value &&
++             channel->destination_owner != scope->coordinator)) {
++            return CORE_ADMIT_INVALID;
++        }
++    }
++    for (size_t j = 0; j < i; ++j) {
++        if (core_channel_same_identity(channel, &scope->bindings[j].channel)) {
++            return CORE_ADMIT_INVALID;
++        }
++    }
++    /* Reclaimed endpoints may still have a retained creating/removal
++     * scope. A fresh request cannot redefine that concrete binding. */
++    for (size_t r = 0; r < CORE_MAX_ADMISSION_RECORDS; ++r) {
++        const core_admission_record *known = &pool->records[r];
++        if (!known->occupied) continue;
++        for (size_t c = 0; c < known->scope.channel_count; ++c) {
++            if (!(known->channel_known & (1u << c))) continue;
++            const core_binding *previous = &known->scope.bindings[c];
++            if (core_binding_same_identity(binding, previous) &&
++                !core_channel_descriptor_equal(channel, &previous->channel)) return CORE_ADMIT_CONFLICT;
++        }
++    }
++    if (!removal(scope->kind) && !cancel) {
++        if (!core_deadline(now_us, channel->addition_allowance_us, &unused) ||
++            !core_deadline(unused, scope->cleanup_allowance_us, &unused) ||
++            (node_add(scope->kind) && channel->addition_allowance_us < scope->allowance_us)) {
++            return CORE_ADMIT_INVALID;
++        }
++        if (binding_fenced(pool, binding) ||
++            node_fenced(pool, channel->source_logical, channel->source_instance) ||
++            node_fenced(pool, channel->destination_logical, channel->destination_instance) ||
++            !local_port_matches(pool, scope, channel, true) ||
++            !local_port_matches(pool, scope, channel, false)) {
++            return CORE_ADMIT_CONFLICT;
++        }
++        *endpoint_count += channel->source_owner == pool->local_device;
++        *endpoint_count += channel->destination_owner == pool->local_device;
++    }
++    for (size_t j = 0; j < CORE_MAX_ENDPOINT_RESERVATIONS; ++j) {
++        const core_reserved_endpoint *endpoint = &pool->endpoints[j];
++        if (!endpoint->occupied) {
++            continue;
++        }
++        if (!removal(scope->kind) && !cancel && core_channel_same_identity(channel, &endpoint->binding.channel)) {
++            return CORE_ADMIT_CONFLICT;
++        }
++        if ((removal(scope->kind) || cancel) && core_binding_same_identity(binding, &endpoint->binding) &&
++            !core_channel_descriptor_equal(channel, &endpoint->binding.channel)) {
++            return CORE_ADMIT_CONFLICT;
++        }
++    }
++    return CORE_ADMIT_ACCEPTED;
++}
++
++core_admit_result core_admission_reserve(core_admission *pool, core_op_id id,
++                                         const core_node_request *request,
++                                         const core_request_scope *scope,
++                                         uint64_t now_us, bool endpoint_only, bool cancel,
++                                         const core_admission_record **out)
++{
++    uint64_t deadline, unused;
++    if (!core_deadline(now_us, scope->allowance_us, &deadline) ||
++        (!removal(scope->kind) &&
++         !core_deadline(deadline, scope->cleanup_allowance_us, &unused))) {
++        return CORE_ADMIT_INVALID;
++    }
++    core_admission_record *record = select_record(pool);
++    if (record == NULL) {
++        return CORE_ADMIT_FULL;
++    }
++    core_reserved_node *new_node;
++    core_admit_result result = check_scope_node(pool, id, request, scope,
++                                               endpoint_only, &new_node);
++    if (result != CORE_ADMIT_ACCEPTED) return result;
++    size_t bytes = new_node == NULL ? 0 : pool->node_bytes;
+     size_t endpoint_count = 0;
+     for (size_t i = 0; i < scope->channel_count; ++i) {
+-        const core_binding *binding = &scope->bindings[i];
+-        const core_channel *channel = &binding->channel;
+-        if (!configured_owner(pool, channel->source_owner) ||
+-            !configured_owner(pool, channel->destination_owner) ||
+-            (!endpoint_only && channel->source_owner != pool->local_device &&
+-             channel->destination_owner != pool->local_device)) {
+-            return CORE_ADMIT_UNAUTHORIZED;
+-        }
+-        const core_reserved_node *known_source = find_node(pool, channel->source_instance);
+-        const core_reserved_node *known_destination = find_node(pool, channel->destination_instance);
+-        if ((known_source != NULL &&
+-             (known_source->logical_node_id != channel->source_logical ||
+-              channel->source_owner != pool->local_device)) ||
+-            (known_destination != NULL &&
+-             (known_destination->logical_node_id != channel->destination_logical ||
+-              channel->destination_owner != pool->local_device))) {
+-            return CORE_ADMIT_CONFLICT;
+-        }
+-        if (node_add(scope->kind) || node_remove(scope->kind)) {
+-            if (!incident(channel, scope->logical_node_id, scope->instance) ||
+-                (channel->source_instance.value == scope->instance.value &&
+-                 channel->source_owner != scope->coordinator) ||
+-                (channel->destination_instance.value == scope->instance.value &&
+-                 channel->destination_owner != scope->coordinator)) {
+-                return CORE_ADMIT_INVALID;
+-            }
+-        }
+-        for (size_t j = 0; j < i; ++j) {
+-            if (same_channel(channel, &scope->bindings[j].channel)) {
+-                return CORE_ADMIT_INVALID;
+-            }
+-        }
+-        /* Reclaimed endpoints may still have a retained creating/removal
+-         * scope. A fresh request cannot redefine that concrete binding. */
+-        for (size_t r = 0; r < CORE_MAX_ADMISSION_RECORDS; ++r) {
+-            const core_admission_record *known = &pool->records[r];
+-            if (!known->occupied) continue;
+-            for (size_t c = 0; c < known->scope.channel_count; ++c) {
+-                if (!(known->channel_known & (1u << c))) continue;
+-                const core_binding *previous = &known->scope.bindings[c];
+-                if (same_binding(binding, previous) &&
+-                    !same_descriptor(channel, &previous->channel)) return CORE_ADMIT_CONFLICT;
+-            }
+-        }
+-        if (!removal(scope->kind) && !cancel) {
+-            if (!core_deadline(now_us, channel->addition_allowance_us, &unused) ||
+-                !core_deadline(unused, scope->cleanup_allowance_us, &unused) ||
+-                (node_add(scope->kind) && channel->addition_allowance_us < scope->allowance_us)) {
+-                return CORE_ADMIT_INVALID;
+-            }
+-            if (binding_fenced(pool, binding) ||
+-                node_fenced(pool, channel->source_logical, channel->source_instance) ||
+-                node_fenced(pool, channel->destination_logical, channel->destination_instance) ||
+-                !local_port_matches(pool, scope, channel, true) ||
+-                !local_port_matches(pool, scope, channel, false)) {
+-                return CORE_ADMIT_CONFLICT;
+-            }
+-            endpoint_count += channel->source_owner == pool->local_device;
+-            endpoint_count += channel->destination_owner == pool->local_device;
+-        }
+-        for (size_t j = 0; j < CORE_MAX_ENDPOINT_RESERVATIONS; ++j) {
+-            const core_reserved_endpoint *endpoint = &pool->endpoints[j];
+-            if (!endpoint->occupied) {
+-                continue;
+-            }
+-            if (!removal(scope->kind) && !cancel && same_channel(channel, &endpoint->binding.channel)) {
+-                return CORE_ADMIT_CONFLICT;
+-            }
+-            if ((removal(scope->kind) || cancel) && same_binding(binding, &endpoint->binding) &&
+-                !same_descriptor(channel, &endpoint->binding.channel)) {
+-                return CORE_ADMIT_CONFLICT;
+-            }
+-        }
++        result = check_scope_channel(pool, scope, i, now_us,
++                                     endpoint_only, cancel, &endpoint_count);
++        if (result != CORE_ADMIT_ACCEPTED) return result;
+     }
+     if (!removal(scope->kind) && !cancel) {
+         for (size_t i = 0; i < CORE_MAX_NODE_RESERVATIONS; ++i) {
+@@ -717,7 +715,7 @@
+         record->scope.logical_node_id != new_logical || index >= record->scope.channel_count)
+         return CORE_ADMIT_CONFLICT;
+     if (record->channel_known & bit) {
+-        if (!same_descriptor(&record->scope.bindings[index].channel, channel))
++        if (!core_channel_descriptor_equal(&record->scope.bindings[index].channel, channel))
+             return CORE_ADMIT_CONFLICT;
+         return CORE_ADMIT_DUPLICATE;
+     }
+@@ -734,8 +732,8 @@
+         for (size_t c = 0; c < known->scope.channel_count; ++c) {
+             if (!(known->channel_known & (1u << c))) continue;
+             const core_binding *previous = &known->scope.bindings[c];
+-            if (same_binding(binding, previous) &&
+-                (!same_descriptor(channel, &previous->channel) || known == record))
++            if (core_binding_same_identity(binding, previous) &&
++                (!core_channel_descriptor_equal(channel, &previous->channel) || known == record))
+                 return CORE_ADMIT_CONFLICT;
+         }
+     }
+@@ -750,9 +748,9 @@
+     for (size_t e = 0; e < CORE_MAX_ENDPOINT_RESERVATIONS; ++e) {
+         core_reserved_endpoint *endpoint = &pool->endpoints[e];
+         if (endpoint->occupied) {
+-            if ((cancel && same_binding(binding, &endpoint->binding) &&
+-                 !same_descriptor(channel, &endpoint->binding.channel)) ||
+-                (!cancel && same_channel(channel, &endpoint->binding.channel)))
++            if ((cancel && core_binding_same_identity(binding, &endpoint->binding) &&
++                 !core_channel_descriptor_equal(channel, &endpoint->binding.channel)) ||
++                (!cancel && core_channel_same_identity(channel, &endpoint->binding.channel)))
+                 return CORE_ADMIT_CONFLICT;
+         } else if (available == NULL && endpoint->prepare.phase == CORE_ACTION_EMPTY &&
+                    endpoint->lifetime.last_ticket != UINT64_MAX &&
+@@ -926,8 +924,8 @@
+         record->scope.logical_node_id != logical || index >= record->scope.channel_count)
+         return CORE_ADMIT_CONFLICT;
+     if (record->channel_known & bit) {
+-        if (!same_binding(&record->scope.bindings[index], binding) ||
+-            !same_descriptor(&record->scope.bindings[index].channel, channel))
++        if (!core_binding_same_identity(&record->scope.bindings[index], binding) ||
++            !core_channel_descriptor_equal(&record->scope.bindings[index].channel, channel))
+             return CORE_ADMIT_CONFLICT;
+         return CORE_ADMIT_DUPLICATE;
+     }
+@@ -944,15 +942,15 @@
+         for (size_t c = 0; c < known->scope.channel_count; ++c) {
+             if (!(known->channel_known & (1u << c))) continue;
+             const core_binding *previous = &known->scope.bindings[c];
+-            if ((known == record && same_channel(channel, &previous->channel)) ||
+-                (same_binding(binding, previous) && !same_descriptor(channel, &previous->channel)))
++            if ((known == record && core_channel_same_identity(channel, &previous->channel)) ||
++                (core_binding_same_identity(binding, previous) && !core_channel_descriptor_equal(channel, &previous->channel)))
+                 return CORE_ADMIT_CONFLICT;
+         }
+     }
+     for (size_t e = 0; e < CORE_MAX_ENDPOINT_RESERVATIONS; ++e) {
+         const core_reserved_endpoint *endpoint = &pool->endpoints[e];
+-        if (endpoint->occupied && same_binding(binding, &endpoint->binding) &&
+-            !same_descriptor(channel, &endpoint->binding.channel)) return CORE_ADMIT_CONFLICT;
++        if (endpoint->occupied && core_binding_same_identity(binding, &endpoint->binding) &&
++            !core_channel_descriptor_equal(channel, &endpoint->binding.channel)) return CORE_ADMIT_CONFLICT;
+     }
+ 
+     return CORE_ADMIT_ACCEPTED;
+@@ -1068,8 +1066,8 @@
+     const core_binding *binding = &record->scope.bindings[channel];
+     for (size_t i = 0; i < CORE_MAX_ENDPOINT_RESERVATIONS; ++i) {
+         core_reserved_endpoint *endpoint = &pool->endpoints[i];
+-        if (endpoint->occupied && same_binding(&endpoint->binding, binding) &&
+-            same_descriptor(&endpoint->binding.channel, &binding->channel))
++        if (endpoint->occupied && core_binding_same_identity(&endpoint->binding, binding) &&
++            core_channel_descriptor_equal(&endpoint->binding.channel, &binding->channel))
+             core_lifetime_close(&endpoint->lifetime);
+     }
+     return true;
+@@ -1106,9 +1104,9 @@
+     bool found = false;
+     for (size_t i = 0; i < CORE_MAX_ENDPOINT_RESERVATIONS; ++i) {
+         const core_reserved_endpoint *endpoint = &pool->endpoints[i];
+-        if (endpoint->occupied && same_binding(&endpoint->binding, binding)) {
++        if (endpoint->occupied && core_binding_same_identity(&endpoint->binding, binding)) {
+             found = true;
+-            if (!same_descriptor(&endpoint->binding.channel, &binding->channel) ||
++            if (!core_channel_descriptor_equal(&endpoint->binding.channel, &binding->channel) ||
+                 !core_lifetime_reclaimed(&endpoint->lifetime) ||
+                 endpoint->prepare.phase != CORE_ACTION_EMPTY) {
+                 return false;
+@@ -1120,7 +1118,7 @@
+     }
+     for (size_t i = 0; i < CORE_MAX_ENDPOINT_RESERVATIONS; ++i) {
+         core_reserved_endpoint *endpoint = &pool->endpoints[i];
+-        if (endpoint->occupied && same_binding(&endpoint->binding, binding)) {
++        if (endpoint->occupied && core_binding_same_identity(&endpoint->binding, binding)) {
+             detach_notification(pool, endpoint);
+             endpoint->occupied = false;
+             pool->reserved_bytes -= CORE_ENDPOINT_BYTES;
+@@ -1258,8 +1256,8 @@
+                 if (!r->occupied || r->endpoint_only || r == retiring) continue;
+                 for (size_t j = 0; j < r->scope.channel_count; ++j)
+                     if ((r->channel_known & (1u << j)) &&
+-                        same_binding(&retiring->scope.bindings[c], &r->scope.bindings[j]) &&
+-                        same_descriptor(&retiring->scope.bindings[c].channel,
++                        core_binding_same_identity(&retiring->scope.bindings[c], &r->scope.bindings[j]) &&
++                        core_channel_descriptor_equal(&retiring->scope.bindings[c].channel,
+                                         &r->scope.bindings[j].channel))
+                         r->closed_objects |= UINT32_C(1) << endpoint_object(r, j, role);
+             }
+--- a/graph_core/kaos_admission_internal.h
++++ b/graph_core/kaos_admission_internal.h
+@@ -1,6 +1,53 @@
+ #ifndef KAOS_ADMISSION_INTERNAL_H
+ #define KAOS_ADMISSION_INTERNAL_H
+ #include "kaos_admission.h"
++#include "kaos_cbor.h"
++
++/* Channel identity is independent of the creating operation and descriptor. */
++static inline core_channel_id core_channel_identity(const core_channel *channel)
++{
++    return (core_channel_id){channel->source_logical, channel->destination_logical,
++                             channel->service};
++}
++
++static inline bool core_channel_id_equal(core_channel_id a, core_channel_id b)
++{
++    return a.source == b.source && a.destination == b.destination && a.service == b.service;
++}
++
++static inline bool core_channel_same_identity(const core_channel *a, const core_channel *b)
++{
++    return a->source_logical == b->source_logical &&
++           a->destination_logical == b->destination_logical && a->service == b->service;
++}
++
++static inline bool core_binding_same_identity(const core_binding *a, const core_binding *b)
++{
++    return core_channel_same_identity(&a->channel, &b->channel) &&
++           a->creating_op.value == b->creating_op.value;
++}
++
++static inline bool core_channel_descriptor_equal(const core_channel *a, const core_channel *b)
++{
++    return core_channel_same_identity(a, b) &&
++           a->source_instance.value == b->source_instance.value &&
++           a->destination_instance.value == b->destination_instance.value &&
++           a->source_owner == b->source_owner && a->destination_owner == b->destination_owner &&
++           a->source_port == b->source_port && a->destination_port == b->destination_port &&
++           a->type == b->type && a->payload_bytes == b->payload_bytes &&
++           a->queue_messages == b->queue_messages &&
++           a->addition_allowance_us == b->addition_allowance_us;
++}
++
++static inline bool core_binding_equal(const core_binding *a, const core_binding *b)
++{
++    return a->creating_op.value == b->creating_op.value &&
++           core_channel_descriptor_equal(&a->channel, &b->channel);
++}
++
++/* Descriptor schema lives beside its decoder in kaos_request.c. */
++void core_channel_encode(core_cbor_writer *writer, const core_channel *channel);
++
+ core_admit_result core_admission_reserve(core_admission *pool, core_op_id id,
+                                          const core_node_request *node_request,
+                                          const core_request_scope *scope,
+--- a/graph_core/kaos_artifact.c
++++ b/graph_core/kaos_artifact.c
+@@ -191,18 +191,10 @@
+ static bool artifact_options(const core_coap_message *message, size_t expected,
+                               uint32_t *block, const core_coap_option **etag)
+ {
+-    bool seen_etag = false, seen_format = false, seen_block = false, seen_size = false;
+-    for (size_t i = 0; i < message->option_count; ++i) {
+-        const uint16_t n = message->options[i].number;
+-        bool *seen = n == CORE_COAP_ETAG ? &seen_etag :
+-                     n == CORE_COAP_CONTENT_FORMAT ? &seen_format :
+-                     n == CORE_COAP_BLOCK2 ? &seen_block :
+-                     n == CORE_COAP_SIZE2 ? &seen_size : NULL;
+-        if (seen != NULL) {
+-            if (*seen) return false;
+-            *seen = true;
+-        } else if (n & 1u) return false;
+-    }
++    static const uint16_t options[] = {CORE_COAP_ETAG, CORE_COAP_CONTENT_FORMAT,
++        CORE_COAP_BLOCK2, CORE_COAP_SIZE2};
++    if (!core_coap_options_supported(message, options, sizeof(options) / sizeof(options[0])))
++        return false;
+     uint32_t format, size;
+     *etag = core_coap_find(message, CORE_COAP_ETAG);
+     return message->code == CORE_COAP_CONTENT && *etag != NULL &&
+--- a/graph_core/kaos_control.c
++++ b/graph_core/kaos_control.c
+@@ -8,22 +8,22 @@
+     CONTROL_ACTIVATE, CONTROL_OWNER, CONTROL_STORED
+ } control_resource;
+ 
+-static bool path_is(const core_coap_message *message, const char *path)
+-{
+-    const core_coap_option *option = core_coap_find(message, CORE_COAP_URI_PATH);
++static bool path_is(const core_coap_option *option, const char *path)
++{
+     return option != NULL && option->size == strlen(path) &&
+         memcmp(option->value, path, option->size) == 0;
+ }
+ 
+ static control_resource route(const core_coap_message *message)
+ {
+-    if (path_is(message, "graph")) return CONTROL_GRAPH;
+-    if (path_is(message, "prepare")) return CONTROL_PREPARE;
+-    if (path_is(message, "cancel")) return CONTROL_CANCEL;
+-    if (path_is(message, "query")) return CONTROL_QUERY;
+-    if (path_is(message, "activate")) return CONTROL_ACTIVATE;
+-    if (path_is(message, "owner")) return CONTROL_OWNER;
+-    if (path_is(message, "stored")) return CONTROL_STORED;
++    const core_coap_option *path = core_coap_find(message, CORE_COAP_URI_PATH);
++    if (path_is(path, "graph")) return CONTROL_GRAPH;
++    if (path_is(path, "prepare")) return CONTROL_PREPARE;
++    if (path_is(path, "cancel")) return CONTROL_CANCEL;
++    if (path_is(path, "query")) return CONTROL_QUERY;
++    if (path_is(path, "activate")) return CONTROL_ACTIVATE;
++    if (path_is(path, "owner")) return CONTROL_OWNER;
++    if (path_is(path, "stored")) return CONTROL_STORED;
+     return CONTROL_NOT_FOUND;
+ }
+ 
+@@ -356,63 +356,72 @@
+                            const uint8_t *data, size_t size, uint64_t now,
+                            uint8_t *out, size_t capacity, size_t *written)
+ {
+-    /* A response must fit before any admission or assembly mutation. */
+     if (capacity < CORE_COAP_MAX_DATAGRAM) return false;
+     core_coap_message request;
+-    if (!core_coap_decode(data, size, &request) || request.type != CORE_COAP_CON) return false;
+-    if (request.code == 0) return core_coap_reset(request.message_id, out, capacity, written);
+-    if (request.code >= 32) return false;
++    if (!core_coap_decode(data, size, &request)) return false;
++    return core_control_receive_message(control, sender, &request, now, out, capacity, written);
++}
++
++bool core_control_receive_message(core_control *control, uint64_t sender,
++    const core_coap_message *request, uint64_t now,
++    uint8_t *out, size_t capacity, size_t *written)
++{
++    /* A response must fit before any admission or assembly mutation. */
++    if (capacity < CORE_COAP_MAX_DATAGRAM || request == NULL ||
++        request->type != CORE_COAP_CON) return false;
++    if (request->code == 0) return core_coap_reset(request->message_id, out, capacity, written);
++    if (request->code >= 32) return false;
+ 
+     /* A final Block1 retry must replay even after its workspace was released. */
+-    if (core_coap_cache_replay(&control->cache, sender, request.message_id, now,
++    if (core_coap_cache_replay(&control->cache, sender, request->message_id, now,
+                                out, capacity, written)) return true;
+-    if (request.code != CORE_COAP_POST)
+-        return reply(&request, CORE_COAP_METHOD_NOT_ALLOWED, NULL, 0, NULL, out, capacity, written);
+-    const control_resource resource = route(&request);
+-    const uint8_t error = request_error(&request, resource);
+-    if (error) return reply(&request, error, NULL, 0, NULL, out, capacity, written);
++    if (request->code != CORE_COAP_POST)
++        return reply(request, CORE_COAP_METHOD_NOT_ALLOWED, NULL, 0, NULL, out, capacity, written);
++    const control_resource resource = route(request);
++    const uint8_t error = request_error(request, resource);
++    if (error) return reply(request, error, NULL, 0, NULL, out, capacity, written);
+     if (!authorized(control, sender, resource))
+-        return reply(&request, CORE_COAP_UNAUTHORIZED, NULL, 0, NULL, out, capacity, written);
++        return reply(request, CORE_COAP_UNAUTHORIZED, NULL, 0, NULL, out, capacity, written);
+ 
+     const uint8_t *body;
+     size_t body_size;
+-    const core_coap_option *block = core_coap_find(&request, CORE_COAP_BLOCK1);
+-    const uint8_t body_result = receive_body(control, sender, resource, &request, now,
++    const core_coap_option *block = core_coap_find(request, CORE_COAP_BLOCK1);
++    const uint8_t body_result = receive_body(control, sender, resource, request, now,
+                                              &body, &body_size);
+     if (body_result != 0)
+-        return reply(&request, body_result, NULL, 0,
++        return reply(request, body_result, NULL, 0,
+                       body_result == CORE_COAP_CONTINUE ? block : NULL, out, capacity, written);
+ 
+     switch (resource) {
+     case CONTROL_QUERY:
+-        return query_reply(control->admission, &request, body, body_size, out, capacity, written);
++        return query_reply(control->admission, request, body, body_size, out, capacity, written);
+     case CONTROL_STORED:
+-        return reply(&request, storage_ack(control->admission, body, body_size) ?
++        return reply(request, storage_ack(control->admission, body, body_size) ?
+             CORE_COAP_CHANGED : CORE_COAP_BAD_REQUEST, NULL, 0, NULL, out, capacity, written);
+     case CONTROL_ACTIVATE:
+     case CONTROL_OWNER: {
+         if (control->edges == NULL)
+-            return reply(&request, CORE_COAP_NOT_FOUND, NULL, 0, NULL, out, capacity, written);
++            return reply(request, CORE_COAP_NOT_FOUND, NULL, 0, NULL, out, capacity, written);
+         const bool accepted = resource == CONTROL_ACTIVATE ?
+             core_edge_activate(control->edges, sender, body, body_size) :
+-            owner_report(control, sender, &request, now);
+-        return reply(&request, accepted ? CORE_COAP_CHANGED : CORE_COAP_BAD_REQUEST,
++            owner_report(control, sender, request, now);
++        return reply(request, accepted ? CORE_COAP_CHANGED : CORE_COAP_BAD_REQUEST,
+                       NULL, 0, NULL, out, capacity, written);
+     }
+     case CONTROL_PREPARE:
+     case CONTROL_CANCEL: {
+         indexed_command_header header;
+         if (control->edges != NULL && recognize_indexed_command(resource, body, body_size, &header))
+-            return receive_indexed_command(control, sender, resource, &request, body, body_size,
++            return receive_indexed_command(control, sender, resource, request, body, body_size,
+                                              now, block, &header, out, capacity, written);
+-        return receive_operation(control, sender, resource, &request, body, body_size,
++        return receive_operation(control, sender, resource, request, body, body_size,
+                                    now, block, out, capacity, written);
+     }
+     case CONTROL_GRAPH:
+-        return receive_operation(control, sender, resource, &request, body, body_size,
++        return receive_operation(control, sender, resource, request, body, body_size,
+                                    now, block, out, capacity, written);
+     default:
+-        return reply(&request, CORE_COAP_NOT_FOUND, NULL, 0, NULL, out, capacity, written);
++        return reply(request, CORE_COAP_NOT_FOUND, NULL, 0, NULL, out, capacity, written);
+     }
+ }
+ 
+--- a/graph_core/kaos_edge.c
++++ b/graph_core/kaos_edge.c
+@@ -1,4 +1,5 @@
+ #include "kaos_edge.h"
++#include "kaos_admission_internal.h"
+ #include "kaos_cbor.h"
+ #include "kaos_coap.h"
+ 
+@@ -322,23 +323,6 @@
+     return next;
+ }
+ 
+-static void channel_encode(core_cbor_writer *w, const core_channel *c)
+-{
+-    core_cbor_write_array(w, 13);
+-    core_cbor_write_uint(w, c->source_logical);
+-    core_cbor_write_uint(w, c->destination_logical);
+-    core_cbor_write_uint(w, c->service);
+-    core_cbor_write_uint(w, c->source_instance.value);
+-    core_cbor_write_uint(w, c->destination_instance.value);
+-    core_cbor_write_uint(w, c->source_owner);
+-    core_cbor_write_uint(w, c->destination_owner);
+-    core_cbor_write_uint(w, c->source_port);
+-    core_cbor_write_uint(w, c->destination_port);
+-    core_cbor_write_uint(w, c->type);
+-    core_cbor_write_uint(w, c->payload_bytes);
+-    core_cbor_write_uint(w, c->queue_messages);
+-    core_cbor_write_uint(w, c->addition_allowance_us);
+-}
+ 
+ static bool encode_channel_operation_request(const core_admission_record *r, size_t c,
+                                               core_edge_effect *effect)
+@@ -350,7 +334,7 @@
+         core_cbor_write_uint(&w, CORE_CHANNEL_COMMAND_KIND);
+         core_cbor_write_uint(&w, r->id.value);
+         core_cbor_write_uint(&w, c);
+-        channel_encode(&w, &r->scope.bindings[c].channel);
++        core_channel_encode(&w, &r->scope.bindings[c].channel);
+     } else if (r->scope.kind == CORE_REQUEST_REMOVE_NODE) {
+         /* Keep this observer's original index and operation identity. The
+          * binding's creation and target instance are independent identities. */
+@@ -361,14 +345,14 @@
+         core_cbor_write_uint(&w, c);
+         core_cbor_write_uint(&w, r->scope.instance.value);
+         core_cbor_write_array(&w, 2);
+-        channel_encode(&w, &r->scope.bindings[c].channel);
++        core_channel_encode(&w, &r->scope.bindings[c].channel);
+         core_cbor_write_uint(&w, r->scope.bindings[c].creating_op.value);
+     } else {
+         uint8_t body[CORE_EDGE_MESSAGE_BYTES];
+         core_cbor_writer b = {.data = body, .size = sizeof(body)};
+         core_cbor_write_array(&b, 2);
+         if (r->scope.kind == CORE_REQUEST_REMOVE_EDGE) core_cbor_write_array(&b, 2);
+-        channel_encode(&b, &r->scope.bindings[0].channel);
++        core_channel_encode(&b, &r->scope.bindings[0].channel);
+         if (r->scope.kind == CORE_REQUEST_REMOVE_EDGE)
+             core_cbor_write_uint(&b, r->scope.bindings[0].creating_op.value);
+         core_cbor_write_uint(&b, r->scope.kind == CORE_REQUEST_REMOVE_EDGE ?
+--- a/graph_core/kaos_endpoint.c
++++ b/graph_core/kaos_endpoint.c
+@@ -1,30 +1,7 @@
+ #include "kaos_endpoint.h"
++#include "kaos_admission_internal.h"
+ 
+ #include <string.h>
+-
+-static core_channel_id channel_id(const core_binding *binding)
+-{
+-    return (core_channel_id){binding->channel.source_logical,
+-                             binding->channel.destination_logical, binding->channel.service};
+-}
+-
+-static bool same_channel(core_channel_id a, core_channel_id b)
+-{
+-    return a.source == b.source && a.destination == b.destination && a.service == b.service;
+-}
+-
+-static bool same_binding(const core_binding *a, const core_binding *b)
+-{
+-    const core_channel *x = &a->channel, *y = &b->channel;
+-    return same_channel(channel_id(a), channel_id(b)) &&
+-        a->creating_op.value == b->creating_op.value &&
+-        x->source_instance.value == y->source_instance.value &&
+-        x->destination_instance.value == y->destination_instance.value &&
+-        x->source_owner == y->source_owner && x->destination_owner == y->destination_owner &&
+-        x->source_port == y->source_port && x->destination_port == y->destination_port &&
+-        x->type == y->type && x->payload_bytes == y->payload_bytes &&
+-        x->queue_messages == y->queue_messages && x->addition_allowance_us == y->addition_allowance_us;
+-}
+ 
+ static bool node_kind(uint8_t kind)
+ {
+@@ -40,7 +17,7 @@
+         if (!record->occupied) continue;
+         for (size_t c = 0; c < record->scope.channel_count; ++c) {
+             if (!(record->channel_known & (1u << c)) ||
+-                !same_binding(binding, &record->scope.bindings[c])) continue;
++                !core_binding_equal(binding, &record->scope.bindings[c])) continue;
+             const size_t object = (node_kind(record->scope.kind) ? 1u : 0u) + 2 * c + !sender;
+             const uint8_t observed = record->scope.kind >= CORE_REQUEST_REMOVE_NODE_NO_EDGES ?
+                 (uint8_t)(added & ~(CORE_OBJECT_READY | CORE_OBJECT_ACTIVE)) : added;
+@@ -60,7 +37,7 @@
+         if (!record->occupied) continue;
+         for (size_t c = 0; c < record->scope.channel_count; ++c) {
+             if (!(record->channel_known & (1u << c)) ||
+-                !same_binding(binding, &record->scope.bindings[c])) continue;
++                !core_binding_equal(binding, &record->scope.bindings[c])) continue;
+             const size_t object = (node_kind(record->scope.kind) ? 1u : 0u) + 2 * c + !sender;
+             result |= record->local_facts[object];
+         }
+@@ -92,7 +69,7 @@
+     for (size_t e = 0; e < CORE_MAX_REQUEST_CHANNELS; ++e) {
+         core_channel_notification *event = &node->notifications[e];
+         if (!event->occupied || event->creating_op.value != endpoint->binding.creating_op.value ||
+-            !same_channel(event->channel, channel_id(&endpoint->binding))) continue;
++            !core_channel_id_equal(event->channel, core_channel_identity(&endpoint->binding.channel))) continue;
+         event->permissions = permissions;
+         event->pending = true;
+         if (service->notify) service->notify(service->context,
+@@ -107,18 +84,22 @@
+     *service = (core_endpoint_service){.admission = admission, .notify = notify, .context = context};
+ }
+ 
++static void close_endpoint_queue(core_endpoint_service *service, size_t index)
++{
++    core_endpoint_queue *queue = &service->queues[index];
++    if (queue->closed) return;
++    queue->closed = true;
++    queue->active = false;
++    notification(service, &service->admission->endpoints[index], 0);
++}
++
+ void core_endpoint_close(core_endpoint_service *service, const core_binding *binding)
+ {
+     for (size_t e = 0; e < CORE_MAX_ENDPOINT_RESERVATIONS; ++e) {
+         core_reserved_endpoint *endpoint = &service->admission->endpoints[e];
+-        if (endpoint->occupied && same_binding(binding, &endpoint->binding)) {
++        if (endpoint->occupied && core_binding_equal(binding, &endpoint->binding)) {
+             core_lifetime_close(&endpoint->lifetime);
+-            core_endpoint_queue *queue = &service->queues[e];
+-            if (!queue->closed) {
+-                queue->closed = true;
+-                queue->active = false;
+-                notification(service, endpoint, 0);
+-            }
++            close_endpoint_queue(service, e);
+         }
+     }
+ }
+@@ -150,11 +131,7 @@
+         core_endpoint_queue *queue = &service->queues[e];
+         if (!endpoint->occupied) continue;
+         if (endpoint->lifetime.closing) {
+-            if (!queue->closed) {
+-                queue->closed = true;
+-                queue->active = false;
+-                notification(service, endpoint, 0);
+-            }
++            close_endpoint_queue(service, e);
+             facts(service, &endpoint->binding, endpoint->sender, CORE_OBJECT_CLEANUP);
+             if (!core_lifetime_unclaimed(&endpoint->lifetime) ||
+                 endpoint->prepare.phase != CORE_ACTION_EMPTY) continue;
+@@ -187,7 +164,7 @@
+         const core_binding binding = endpoint->binding;
+         if (!core_admission_release_binding(pool, &binding)) continue;
+         for (size_t q = 0; q < CORE_MAX_ENDPOINT_RESERVATIONS; ++q) {
+-            if (!same_binding(&binding, &pool->endpoints[q].binding)) continue;
++            if (!core_binding_equal(&binding, &pool->endpoints[q].binding)) continue;
+             service->queues[q].prepared = service->queues[q].active = service->queues[q].closed = false;
+             service->queues[q].head = service->queues[q].count = 0;
+         }
+@@ -217,7 +194,7 @@
+                 bool present = false;
+                 for (size_t e = 0; e < CORE_MAX_ENDPOINT_RESERVATIONS; ++e)
+                     present |= pool->endpoints[e].occupied && pool->endpoints[e].sender == sender &&
+-                               same_binding(binding, &pool->endpoints[e].binding);
++                               core_binding_equal(binding, &pool->endpoints[e].binding);
+                 if (!present) facts(service, binding, sender,
+                     CORE_OBJECT_CLEANUP | CORE_OBJECT_STOPPED | CORE_OBJECT_CLEANED);
+             }
+@@ -239,7 +216,7 @@
+         const core_reserved_endpoint *endpoint = &service->admission->endpoints[e];
+         core_endpoint_queue *queue = &service->queues[e];
+         if (!endpoint->occupied || endpoint->sender != sender ||
+-            !same_binding(binding, &endpoint->binding)) continue;
++            !core_binding_equal(binding, &endpoint->binding)) continue;
+         const core_reserved_node *node = endpoint_node(service, endpoint);
+         if (!queue->prepared || endpoint->lifetime.closing || node == NULL || node->lifetime.closing)
+             return false;
+@@ -264,7 +241,7 @@
+         const core_instance_id instance = sender ? endpoint->binding.channel.source_instance :
+                                                    endpoint->binding.channel.destination_instance;
+         if (endpoint->occupied && endpoint->sender == sender && instance.value == caller.value &&
+-            same_channel(channel, channel_id(&endpoint->binding)) && service->queues[e].active &&
++            core_channel_id_equal(channel, core_channel_identity(&endpoint->binding.channel)) && service->queues[e].active &&
+             core_access_acquire(&endpoint->lifetime, access)) return endpoint;
+     }
+     return NULL;
+@@ -364,7 +341,7 @@
+         if (!endpoint->occupied || !endpoint->sender || !queue->active || queue->count == 0 ||
+             node == NULL || node->lifetime.closing ||
+             !core_access_acquire(&endpoint->lifetime, &access)) continue;
+-        frame->channel = channel_id(&endpoint->binding);
++        frame->channel = core_channel_identity(&endpoint->binding.channel);
+         frame->creating_op = endpoint->binding.creating_op;
+         frame->source_instance = endpoint->binding.channel.source_instance;
+         frame->destination_instance = endpoint->binding.channel.destination_instance;
+@@ -378,6 +355,19 @@
+     return false;
+ }
+ 
++/* Match the exact creating operation and executions before acquiring access. */
++static bool frame_matches_endpoint(const core_reserved_endpoint *endpoint,
++    uint64_t sender_owner, const core_data_frame *frame)
++{
++    const core_channel *channel = &endpoint->binding.channel;
++    return endpoint->occupied && !endpoint->sender &&
++        core_channel_id_equal(frame->channel, core_channel_identity(channel)) &&
++        frame->creating_op.value == endpoint->binding.creating_op.value &&
++        frame->source_instance.value == channel->source_instance.value &&
++        frame->destination_instance.value == channel->destination_instance.value &&
++        sender_owner == channel->source_owner;
++}
++
+ core_data_result core_endpoint_receive(core_endpoint_service *service, uint64_t sender_owner,
+                                         const core_data_frame *frame)
+ {
+@@ -385,12 +375,7 @@
+     for (size_t e = 0; e < CORE_MAX_ENDPOINT_RESERVATIONS; ++e) {
+         core_reserved_endpoint *endpoint = &service->admission->endpoints[e];
+         const core_channel *channel = &endpoint->binding.channel;
+-        if (!endpoint->occupied || endpoint->sender ||
+-            !same_channel(frame->channel, channel_id(&endpoint->binding)) ||
+-            frame->creating_op.value != endpoint->binding.creating_op.value ||
+-            frame->source_instance.value != channel->source_instance.value ||
+-            frame->destination_instance.value != channel->destination_instance.value ||
+-            sender_owner != channel->source_owner) continue;
++        if (!frame_matches_endpoint(endpoint, sender_owner, frame)) continue;
+         const core_reserved_node *node = endpoint_node(service, endpoint);
+         core_endpoint_queue *queue = &service->queues[e];
+         core_access access;
+--- a/graph_core/kaos_host.c
++++ b/graph_core/kaos_host.c
+@@ -150,9 +150,32 @@
+     return true;
+ }
+ 
+-/* Called under the registry lock. Only the control task allocates/releases
+- * staging, and the charge prevents node reuse while that lock is released. */
+-static bool cleanup_staging(core_host *h)
++/* Only core_host_step schedules paired lifecycle passes. Close expired nodes
++ * before constructing edges: channel deadlines may outlast node startup.
++ * Then two bounded rounds propagate
++ * endpoint READY -> node COMMIT -> endpoint ACTIVE -> node DISPATCH, including
++ * entirely local graphs with no incoming packet to trigger another turn.
++ * Edges run first so admitted edge removals close dependencies before node
++ * startup evidence is considered. No I/O or registry unlock occurs here. */
++static void advance_graph_lifecycles_locked(core_host *h, uint64_t time)
++{
++    core_node_apply_cleanup(&h->nodes, time);
++    for (unsigned round = 0; round < 2; ++round) {
++        core_edge_step(&h->edges, time);
++        core_node_step(&h->nodes, time);
++    }
++}
++
++static void advance_due_lifecycles_locked(core_host *h, uint64_t time)
++{
++    if (time >= core_node_next_deadline(&h->nodes) || time >= core_edge_next_deadline(&h->edges))
++        advance_graph_lifecycles_locked(h, time);
++}
++
++/* Registry lock held on entry and return, temporarily released around free.
++ * Only the control task releases staging; its charge prevents node reuse
++ * until the buffer is detached, freed and uncharged in that order. */
++static bool release_closing_staging(core_host *h)
+ {
+     bool released = false;
+     for (size_t i = 0; i < CORE_MAX_NODE_RESERVATIONS; ++i) {
+@@ -196,7 +219,9 @@
+     return available;
+ }
+ 
+-static bool start_artifact(core_host *h, uint64_t time)
++/* Registry lock held on entry and return, temporarily released around malloc.
++ * Keep the staging charge and re-sample time before starting the transfer. */
++static bool start_next_artifact_download(core_host *h, uint64_t time)
+ {
+     if (h->active_staging >= 0) return true;
+     for (size_t r = 0; r < CORE_MAX_ADMISSION_RECORDS; ++r) {
+@@ -242,26 +267,14 @@
+     wake(h);
+ }
+ 
+-/* Only core_host_step schedules paired lifecycle passes. Close expired nodes
+- * before constructing edges: channel deadlines may outlast node startup.
+- * Then two bounded rounds propagate
+- * endpoint READY -> node COMMIT -> endpoint ACTIVE -> node DISPATCH, including
+- * entirely local graphs with no incoming packet to trigger another turn.
+- * Edges run first so admitted edge removals close dependencies before node
+- * startup evidence is considered. No I/O or registry unlock occurs here. */
+-static void advance_lifecycles(core_host *h, uint64_t time)
+-{
+-    core_node_apply_cleanup(&h->nodes, time);
+-    for (unsigned round = 0; round < 2; ++round) {
+-        core_edge_step(&h->edges, time);
+-        core_node_step(&h->nodes, time);
+-    }
+-}
+-
+-static void advance_due(core_host *h, uint64_t time)
+-{
+-    if (time >= core_node_next_deadline(&h->nodes) || time >= core_edge_next_deadline(&h->edges))
+-        advance_lifecycles(h, time);
++static bool artifact_timeout_due(const core_artifact *transfer,
++    const core_coap_exchange *exchange, uint64_t time)
++{
++    if (time >= transfer->deadline_us) return true;
++    if (!exchange->active) return false;
++    if (time >= exchange->deadline_us) return true;
++    return !exchange->acknowledged && exchange->retransmissions == CORE_COAP_MAX_RETRANSMIT &&
++           time >= exchange->next_retry_us;
+ }
+ 
+ static bool send_artifact(core_host *h)
+@@ -275,10 +288,7 @@
+         const core_coap_exchange *exchange = &h->artifact.exchange;
+         /* Timeout decisions are never paced, including the terminal retry.
+          * Pacing changes send opportunities, not existing deadlines. */
+-        const bool timeout_due = time >= s->transfer.deadline_us ||
+-            (exchange->active && (time >= exchange->deadline_us ||
+-             (!exchange->acknowledged && exchange->retransmissions == CORE_COAP_MAX_RETRANSMIT &&
+-              time >= exchange->next_retry_us)));
++        const bool timeout_due = artifact_timeout_due(&s->transfer, exchange, time);
+         if (time < h->next_artifact_send_us && !timeout_due) { unlock(h); return true; }
+         const core_coap_poll_result result = core_artifact_client_next(&h->artifact,
+             h->admission.authority, r->request.artifact_ref, r->request.artifact_ref_size,
+@@ -301,7 +311,7 @@
+     return true;
+ }
+ 
+-static bool send_management(core_host *h)
++static bool send_management_peers(core_host *h)
+ {
+     uint64_t time;
+     for (size_t i = 0; i < h->peer_count; ++i) {
+@@ -317,14 +327,14 @@
+     return true;
+ }
+ 
+-static bool send_data(core_host *h, bool *exhausted)
++static bool send_application_batch(core_host *h, bool *exhausted)
+ {
+     for (size_t i = 0; i < CORE_HOST_APPLICATION_TX_BUDGET; ++i) {
+         core_data_frame frame;
+         uint64_t destination, time;
+         lock(h);
+         if (!now(h, &time)) { unlock(h); return false; }
+-        advance_due(h, time);
++        advance_due_lifecycles_locked(h, time);
+         const bool available = core_endpoint_next(&h->endpoints, &destination, &frame);
+         if (available && destination == h->admission.local_device)
+             if (core_endpoint_receive(&h->endpoints, h->admission.local_device, &frame) != CORE_DATA_OK)
+@@ -343,7 +353,7 @@
+ }
+ 
+ /* Registry lock held; diagnostics must be nonblocking. */
+-static void runtime_diagnostics(core_host *h)
++static void runtime_diagnostics_locked(core_host *h)
+ {
+     for (size_t i = 0; i < CORE_MAX_NODE_RESERVATIONS; ++i) {
+         if (!h->nodes.executions[i].occupied) continue;
+@@ -355,7 +365,22 @@
+     }
+ }
+ 
+-static bool receive_artifact(core_host *h, uint64_t sender, const core_coap_message *message,
++/* Registry lock held. Detach the finished client before runtime submission.
++ * Only successful submission transfers the staging allocation and its charge. */
++static void handoff_staged_artifact_locked(core_host *h, core_host_staging *s,
++    uint8_t *bytes, size_t size, uint64_t time)
++{
++    h->active_staging = -1;
++    h->artifact.transfer = NULL;
++    diagnostic(h, "ARTIFACT", s->id, size);
++    if (core_node_artifact(&h->nodes, s->id, bytes, size, time)) {
++        s->bytes = NULL;
++        s->charged = s->used = false;
++    } else core_node_artifact_failed(&h->nodes, s->id, time);
++}
++
++/* Registry lock held; transfer access is released before runtime handoff. */
++static bool receive_artifact_locked(core_host *h, uint64_t sender, const core_coap_message *message,
+                               uint64_t time, bool *acknowledge)
+ {
+     const core_artifact_result result = core_artifact_client_receive(&h->artifact,
+@@ -378,13 +403,7 @@
+         artifact_failure(h, time);
+         return true;
+     }
+-    h->active_staging = -1;
+-    h->artifact.transfer = NULL;
+-    diagnostic(h, "ARTIFACT", s->id, size);
+-    if (core_node_artifact(&h->nodes, s->id, bytes, size, time)) {
+-        s->bytes = NULL;
+-        s->charged = s->used = false;
+-    } else core_node_artifact_failed(&h->nodes, s->id, time);
++    handoff_staged_artifact_locked(h, s, bytes, size, time);
+     return true;
+ }
+ 
+@@ -397,7 +416,7 @@
+ /* Registry lock held. Incorporate one packet and encode its reply, without
+  * performing I/O or scheduling node/edge passes. Control handlers may finish
+  * synchronous endpoint work needed to construct a cleanup reply. */
+-static bool receive(core_host *h, const core_host_packet *packet, uint64_t time,
++static bool apply_received_packet_locked(core_host *h, const core_host_packet *packet, uint64_t time,
+                       core_host_packet *response)
+ {
+     if (packet->size == 0 || packet->size > sizeof(packet->bytes)) {
+@@ -407,10 +426,10 @@
+     response->sender = packet->sender;
+     if (packet->traffic_class == CORE_HOST_APPLICATION) {
+         core_data_frame frame;
+-        if (core_data_decode(packet->bytes, packet->size, &frame))
+-            { if (core_endpoint_receive(&h->endpoints, packet->sender, &frame) != CORE_DATA_OK)
+-                count(&h->stats.endpoint_drops); }
+-        else count(&h->stats.invalid_packets[CORE_HOST_APPLICATION]);
++        if (core_data_decode(packet->bytes, packet->size, &frame)) {
++            if (core_endpoint_receive(&h->endpoints, packet->sender, &frame) != CORE_DATA_OK)
++                count(&h->stats.endpoint_drops);
++        } else count(&h->stats.invalid_packets[CORE_HOST_APPLICATION]);
+         return true;
+     }
+     core_coap_message message;
+@@ -420,13 +439,13 @@
+         return true;
+     }
+     if (!is_response(&message)) {
+-        (void)core_control_receive(&h->control, packet->sender, packet->bytes, packet->size,
++        (void)core_control_receive_message(&h->control, packet->sender, &message,
+             time, response->bytes, sizeof(response->bytes), &response->size);
+         return true;
+     }
+     bool acknowledge = false;
+     if (packet->sender == h->admission.authority) {
+-        if (!receive_artifact(h, packet->sender, &message, time, &acknowledge)) return false;
++        if (!receive_artifact_locked(h, packet->sender, &message, time, &acknowledge)) return false;
+     } else for (size_t i = 0; i < h->peer_count; ++i) {
+         if (h->peers[i].id != packet->sender) continue;
+         core_control_peer_receive(&h->control, &h->peers[i], &message, time, &acknowledge);
+@@ -447,6 +466,7 @@
+     uint64_t next = h->next_artifact_send_us;
+     if (exchange->active) {
+         next = core_coap_exchange_deadline(exchange);
++        /* Pace retry opportunities, but never postpone a terminal timeout. */
+         if (!exchange->acknowledged && exchange->retransmissions < CORE_COAP_MAX_RETRANSMIT &&
+             next < h->next_artifact_send_us) next = h->next_artifact_send_us;
+         if (next > exchange->deadline_us) next = exchange->deadline_us;
+@@ -478,32 +498,42 @@
+         uint64_t time;
+         lock(h);
+         if (!now(h, &time)) { unlock(h); return false; }
+-        advance_due(h, time);
++        advance_due_lifecycles_locked(h, time);
+         unlock(h);
+         const core_host_event event = h->platform.recv(h->platform.context, traffic_class, &packet);
+-        if (event == CORE_HOST_EMPTY) return true;
+-        if (event == CORE_HOST_STOP) { atomic_store(&h->stopping, true); return true; }
+-        if (event == CORE_HOST_ERROR) return false;
+-        if (event == CORE_HOST_DROPPED) count(&h->stats.receive_drops[traffic_class]);
+-        else if (event == CORE_HOST_PACKET) {
++        switch (event) {
++        case CORE_HOST_EMPTY:
++            return true;
++        case CORE_HOST_STOP:
++            atomic_store(&h->stopping, true);
++            return true;
++        case CORE_HOST_DROPPED:
++            count(&h->stats.receive_drops[traffic_class]);
++            break;
++        case CORE_HOST_PACKET: {
+             count(&h->stats.received[traffic_class]);
+-            if (packet.traffic_class != traffic_class) count(&h->stats.invalid_packets[traffic_class]);
+-            else {
+-                /* Application handlers never reply. Management consumes at
+-                 * most one reply slot per budget unit, avoiding a datagram
+-                 * temporary and copy on the embedded control stack. */
+-                core_host_packet *response = &responses[*response_count];
+-                response->size = 0;
+-                lock(h);
+-                if (!now(h, &time)) { unlock(h); return false; }
+-                advance_lifecycles(h, time); /* expiry also wins after socket reception */
+-                const bool good = receive(h, &packet, time, response) && now(h, &time);
+-                if (good) advance_lifecycles(h, time);
+-                unlock(h);
+-                if (!good) return false;
+-                if (response->size) ++*response_count;
++            if (packet.traffic_class != traffic_class) {
++                count(&h->stats.invalid_packets[traffic_class]);
++                break;
+             }
+-        } else return false;
++            /* Application handlers never reply. Management consumes at
++             * most one reply slot per budget unit, avoiding a datagram
++             * temporary and copy on the embedded control stack. */
++            core_host_packet *response = &responses[*response_count];
++            response->size = 0;
++            lock(h);
++            if (!now(h, &time)) { unlock(h); return false; }
++            advance_graph_lifecycles_locked(h, time); /* expiry wins after reception too */
++            const bool good = apply_received_packet_locked(h, &packet, time, response) && now(h, &time);
++            if (good) advance_graph_lifecycles_locked(h, time);
++            unlock(h);
++            if (!good) return false;
++            if (response->size) ++*response_count;
++            break;
++        }
++        default:
++            return false;
++        }
+         if (i + 1 == budget) *exhausted = true;
+     }
+     return true;
+@@ -520,7 +550,7 @@
+     lock(h);
+     if (!now(h, &started)) goto failed;
+     time = started;
+-    advance_lifecycles(h, time); /* expiry wins over queued input */
++    advance_graph_lifecycles_locked(h, time); /* expiry wins over queued input */
+     unlock(h);
+ 
+     if (!receive_batch(h, CORE_HOST_APPLICATION, CORE_HOST_APPLICATION_RX_BUDGET,
+@@ -538,28 +568,28 @@
+     h->last_management_us = time;
+     h->management_observed = true;
+ 
+-    if (cleanup_staging(h)) {
++    if (release_closing_staging(h)) {
+         if (!now(h, &time)) goto failed;
+-        advance_lifecycles(h, time); /* accept released staging before sleeping */
+-    }
+-    if (!start_artifact(h, time)) goto failed;
++        advance_graph_lifecycles_locked(h, time); /* accept released staging before sleeping */
++    }
++    if (!start_next_artifact_download(h, time)) goto failed;
+     unlock(h);
+ 
+     /* All output follows the control decisions. Each bounded sender borrows
+      * the registry only to select work; network I/O always runs unlocked. */
+-    if (!send_data(h, &exhausted)) return false;
++    if (!send_application_batch(h, &exhausted)) return false;
+     for (size_t i = 0; i < response_count; ++i)
+         (void)send_packet(h, CORE_HOST_MANAGEMENT, responses[i].sender,
+                          responses[i].bytes, responses[i].size);
+     /* The full finite peer pass gives each peer one opportunity per round;
+      * there is no deferred partial scan needing a second fairness cursor. */
+-    if (!send_management(h) || !send_artifact(h)) return false;
+-
+-    lock(h);
+-    runtime_diagnostics(h);
++    if (!send_management_peers(h) || !send_artifact(h)) return false;
++
++    lock(h);
++    runtime_diagnostics_locked(h);
+     core_admission_maintain(&h->admission);
+     if (!now(h, &time)) goto failed;
+-    advance_due(h, time);
++    advance_due_lifecycles_locked(h, time);
+     *deadline = exhausted ? 0 : next_deadline(h);
+     count(&h->stats.rounds);
+     if (time >= started) maximum(&h->stats.max_round_us, time - started);
+--- a/graph_core/kaos_node.c
++++ b/graph_core/kaos_node.c
+@@ -1,4 +1,5 @@
+ #include "kaos_node.h"
++#include "kaos_admission_internal.h"
+ #include "kaos_edge.h"
+ 
+ static core_admission_record *find(core_node_service *s, core_op_id id)
+@@ -72,25 +73,39 @@
+     select_cleanup(s, r, now);
+ }
+ 
+-bool core_node_artifact(core_node_service *s, core_op_id id, uint8_t *artifact,
+-                        size_t size, uint64_t now)
+-{
+-    core_admission_record *r = find(s, id);
++static bool artifact_handoff_allowed(const core_node_service *s,
++    const core_admission_record *r, const uint8_t *artifact, size_t size, uint64_t now)
++{
+     if (!core_node_supported(r) || (r->scope.kind != CORE_REQUEST_ADD_NODE_NO_EDGES &&
+          r->scope.kind != CORE_REQUEST_ADD_NODE) ||
+         r->node == NULL || artifact == NULL || size != r->request.artifact_bytes ||
+         r->cleanup_selected || r->node->lifetime.closing ||
+         !core_before_deadline(now, r->deadline_us) || s->runtime.prepare == NULL ||
+         s->runtime.lock == NULL || s->runtime.unlock == NULL) return false;
++    return true;
++}
++
++static bool execution_can_take_artifact(const core_node_execution *execution,
++    const core_reserved_node *node, size_t artifact_bytes, size_t arena_bytes)
++{
++    const core_lifetime *owner = &node->lifetime;
++    return !execution->occupied && node->prepare.phase == CORE_ACTION_EMPTY &&
++        core_lifetime_unclaimed(owner) && owner->bytes == artifact_bytes &&
++        owner->allocations == 1 && owner->last_ticket != UINT64_MAX &&
++        arena_bytes <= owner->byte_limit - owner->bytes;
++}
++
++bool core_node_artifact(core_node_service *s, core_op_id id, uint8_t *artifact,
++                        size_t size, uint64_t now)
++{
++    core_admission_record *r = find(s, id);
++    if (!artifact_handoff_allowed(s, r, artifact, size, now)) return false;
+     core_reserved_node *node = r->node;
+     const size_t index = (size_t)(node - s->admission->nodes);
+     core_node_execution *e = &s->executions[index];
+     const size_t arena = r->request.required_bytes - size;
+     core_lifetime *owner = &node->lifetime;
+-    if (e->occupied || node->prepare.phase != CORE_ACTION_EMPTY ||
+-        !core_lifetime_unclaimed(owner) || owner->bytes != size ||
+-        owner->allocations != 1 || owner->last_ticket == UINT64_MAX ||
+-        arena > owner->byte_limit - owner->bytes) return false;
++    if (!execution_can_take_artifact(e, node, size, arena)) return false;
+ 
+     /* Admission and these checks guarantee both reservations. Preparation
+      * retains one ownership action through private runtime destruction. */
+@@ -146,10 +161,7 @@
+         const core_reserved_endpoint *endpoint = &pool->endpoints[i];
+         const core_binding *installed = &endpoint->binding;
+         if (endpoint->occupied && !endpoint->lifetime.closing && endpoint->sender == sender &&
+-            installed->creating_op.value == binding->creating_op.value &&
+-            installed->channel.source_logical == binding->channel.source_logical &&
+-            installed->channel.destination_logical == binding->channel.destination_logical &&
+-            installed->channel.service == binding->channel.service) return true;
++            core_binding_same_identity(installed, binding)) return true;
+     }
+     return false;
+ }
+--- a/graph_core/kaos_request.c
++++ b/graph_core/kaos_request.c
+@@ -49,23 +49,43 @@
+     return true;
+ }
+ 
++void core_channel_encode(core_cbor_writer *w, const core_channel *c)
++{
++    core_cbor_write_array(w, 13);
++    core_cbor_write_uint(w, c->source_logical);
++    core_cbor_write_uint(w, c->destination_logical);
++    core_cbor_write_uint(w, c->service);
++    core_cbor_write_uint(w, c->source_instance.value);
++    core_cbor_write_uint(w, c->destination_instance.value);
++    core_cbor_write_uint(w, c->source_owner);
++    core_cbor_write_uint(w, c->destination_owner);
++    core_cbor_write_uint(w, c->source_port);
++    core_cbor_write_uint(w, c->destination_port);
++    core_cbor_write_uint(w, c->type);
++    core_cbor_write_uint(w, c->payload_bytes);
++    core_cbor_write_uint(w, c->queue_messages);
++    core_cbor_write_uint(w, c->addition_allowance_us);
++}
++
+ static bool read_channel(core_cbor_reader *reader, core_channel *channel)
+ {
+     uint64_t count, queue_messages;
+-    if (!core_cbor_array(reader, &count) || count != 13 ||
+-        !core_cbor_uint(reader, &channel->source_logical) ||
++    if (!core_cbor_array(reader, &count) || count != 13) return false;
++    /* Channel and execution identities precede owner/port descriptors. */
++    if (!core_cbor_uint(reader, &channel->source_logical) ||
+         !core_cbor_uint(reader, &channel->destination_logical) ||
+         channel->source_logical == channel->destination_logical ||
+         !core_cbor_uint(reader, &channel->service) ||
+         !core_cbor_uint(reader, &channel->source_instance.value) ||
+         !core_cbor_uint(reader, &channel->destination_instance.value) ||
+-        channel->source_instance.value == channel->destination_instance.value ||
+-        !core_cbor_uint(reader, &channel->source_owner) ||
++        channel->source_instance.value == channel->destination_instance.value) return false;
++    if (!core_cbor_uint(reader, &channel->source_owner) ||
+         !core_cbor_uint(reader, &channel->destination_owner) ||
+         !read_u16(reader, &channel->source_port) ||
+         !read_u16(reader, &channel->destination_port) ||
+-        !read_u16(reader, &channel->type) ||
+-        !read_u16(reader, &channel->payload_bytes) || channel->payload_bytes == 0 ||
++        !read_u16(reader, &channel->type)) return false;
++    /* Payload, queue and time bounds retain their wire/check order. */
++    if (!read_u16(reader, &channel->payload_bytes) || channel->payload_bytes == 0 ||
+         channel->payload_bytes > CORE_MAX_PAYLOAD_BYTES ||
+         !core_cbor_uint(reader, &queue_messages) || queue_messages == 0 ||
+         queue_messages > CORE_MAX_QUEUE_MESSAGES ||
+@@ -120,8 +140,9 @@
+         !read_u32(reader, &request->artifact_bytes) || request->artifact_bytes == 0 ||
+         request->artifact_bytes > CORE_MAX_ARTIFACT_BYTES ||
+         !read_u32(reader, &request->artifact_crc32) ||
+-        !read_u32(reader, &request->required_bytes) || request->required_bytes < request->artifact_bytes ||
+-        !core_cbor_bytes(reader, &configuration, &configuration_size) ||
++        !read_u32(reader, &request->required_bytes) ||
++        request->required_bytes < request->artifact_bytes) return false;
++    if (!core_cbor_bytes(reader, &configuration, &configuration_size) ||
+         configuration_size > CORE_MAX_CONFIGURATION_BYTES ||
+         !core_cbor_uint(reader, &request->addition_allowance_us) ||
+         !core_cbor_uint(reader, &request->cleanup_allowance_us) ||
+@@ -186,12 +207,12 @@
+     }
+     switch (scope->kind) {
+     case CORE_REQUEST_ADD_NODE_NO_EDGES:
+-    case CORE_REQUEST_ADD_NODE:
++    case CORE_REQUEST_ADD_NODE: {
++        const uint64_t fields = scope->kind == CORE_REQUEST_ADD_NODE ? 11 : 9;
+         /* Schema 4 preserves its original no-grant shape. A nonempty list is
+          * the only extension and follows all existing fields. Old decoders
+          * reject the larger shape instead of ignoring the requested grants. */
+-        if ((count != (scope->kind == CORE_REQUEST_ADD_NODE ? 11 : 9) &&
+-             count != (scope->kind == CORE_REQUEST_ADD_NODE ? 12 : 10)) ||
++        if ((count != fields && count != fields + 1) ||
+             !read_node(reader, request, scope, id)) {
+             return false;
+         }
+@@ -205,9 +226,10 @@
+                 return false;
+             }
+         }
+-        if (count == (scope->kind == CORE_REQUEST_ADD_NODE ? 12 : 10) &&
++        if (count == fields + 1 &&
+             !read_imports(reader, &request->imports)) return false;
+         break;
++    }
+     case CORE_REQUEST_ADD_EDGE:
+         scope->channel_count = 1;
+         scope->bindings[0].creating_op = id;
+@@ -245,11 +267,20 @@
+     return reader->offset == reader->size;
+ }
+ 
++typedef enum {
++    SUBMIT_AUTHORITY,
++    SUBMIT_TRUSTED_NODE,
++    SUBMIT_FORWARDED_PREPARE,
++    SUBMIT_FORWARDED_CANCEL
++} submission_mode;
++
+ static core_admit_result submit(core_admission *pool, uint64_t sender,
+                                 const uint8_t *data, size_t size, uint64_t now_us,
+-                                const core_admission_record **out, bool trusted_node,
+-                                bool endpoint_only, bool cancel)
+-{
++                                const core_admission_record **out, submission_mode mode)
++{
++    const bool trusted_node = mode == SUBMIT_TRUSTED_NODE;
++    const bool endpoint_only = mode == SUBMIT_FORWARDED_PREPARE || mode == SUBMIT_FORWARDED_CANCEL;
++    const bool cancel = mode == SUBMIT_FORWARDED_CANCEL;
+     if (data == NULL || size == 0 || size > CORE_MAX_REQUEST_BYTES) {
+         return CORE_ADMIT_INVALID;
+     }
+@@ -262,8 +293,8 @@
+         !core_cbor_uint(&envelope, &version) || version != CORE_SCHEMA_VERSION ||
+         !core_cbor_uint(&envelope, &kind) || kind < CORE_REQUEST_ADD_NODE_NO_EDGES ||
+         kind > CORE_REQUEST_REMOVE_EDGE ||
+-        (trusted_node && kind != CORE_REQUEST_ADD_NODE_NO_EDGES) ||
+-        !core_cbor_uint(&envelope, &id.value) ||
++        (trusted_node && kind != CORE_REQUEST_ADD_NODE_NO_EDGES)) return CORE_ADMIT_INVALID;
++    if (!core_cbor_uint(&envelope, &id.value) ||
+         !core_cbor_bytes(&envelope, &body, &body_size) || envelope.offset != size) {
+         return CORE_ADMIT_INVALID;
+     }
+@@ -320,7 +351,7 @@
+                                       const uint8_t *data, size_t size,
+                                       uint64_t now_us, const core_admission_record **out)
+ {
+-    return submit(pool, sender, data, size, now_us, out, false, false, false);
++    return submit(pool, sender, data, size, now_us, out, SUBMIT_AUTHORITY);
+ }
+ 
+ core_admit_result core_endpoint_channel_submit(core_admission *pool, uint64_t coordinator,
+@@ -369,19 +400,19 @@
+                                    size_t size, uint64_t now_us,
+                                    const core_admission_record **out)
+ {
+-    return submit(pool, 0, data, size, now_us, out, true, false, false);
++    return submit(pool, 0, data, size, now_us, out, SUBMIT_TRUSTED_NODE);
+ }
+ 
+ core_admit_result core_endpoint_submit(core_admission *pool, uint64_t coordinator,
+                                        const uint8_t *data, size_t size,
+                                        uint64_t now_us, const core_admission_record **out)
+ {
+-    return submit(pool, coordinator, data, size, now_us, out, false, true, false);
++    return submit(pool, coordinator, data, size, now_us, out, SUBMIT_FORWARDED_PREPARE);
+ }
+ 
+ core_admit_result core_endpoint_cancel(core_admission *pool, uint64_t coordinator,
+                                        const uint8_t *data, size_t size,
+                                        uint64_t now_us, const core_admission_record **out)
+ {
+-    return submit(pool, coordinator, data, size, now_us, out, false, true, true);
+-}
++    return submit(pool, coordinator, data, size, now_us, out, SUBMIT_FORWARDED_CANCEL);
++}
+--- a/graph_core/ports/espidf/app_main.c
++++ b/graph_core/ports/espidf/app_main.c
+@@ -1,4 +1,5 @@
+ #include "host_udp.h"
++#include "kaos_host.h"
+ #include "esp_event.h"
+ #include "esp_netif.h"
+ #include "nvs_flash.h"
+--- a/graph_core/ports/host_udp.c
++++ /dev/null
+@@ -1,245 +0,0 @@
+-#define _POSIX_C_SOURCE 200809L
+-#include "host_udp.h"
+-#include <arpa/inet.h>
+-#include <errno.h>
+-#include <fcntl.h>
+-#include <limits.h>
+-#include <stdlib.h>
+-#include <string.h>
+-#include <sys/select.h>
+-#include <sys/socket.h>
+-#include <unistd.h>
+-#ifdef ESP_PLATFORM
+-#include "esp_vfs_eventfd.h"
+-#else
+-#include <sys/eventfd.h>
+-#endif
+-
+-static bool clock_now(void *context, uint64_t *now)
+-{
+-    (void)context;
+-    return core_clock_now(now);
+-}
+-static void registry_lock(void *context) { pthread_mutex_lock(&((core_host_udp *)context)->mutex); }
+-static void registry_unlock(void *context) { pthread_mutex_unlock(&((core_host_udp *)context)->mutex); }
+-static void notify(void *context)
+-{
+-    core_host_udp *udp = context;
+-    const uint64_t one = 1;
+-    const int saved_errno = errno;
+-    ssize_t result;
+-    do { result = write(udp->wake_fd, &one, sizeof(one)); } while (result < 0 && errno == EINTR);
+-    /* A saturated counter already retains a wake. Mailboxes retain evidence. */
+-    errno = saved_errno;
+-}
+-static const struct sockaddr_in *peer_address(const core_host_udp_peer *peer,
+-                                              core_host_class traffic_class)
+-{
+-    return traffic_class == CORE_HOST_MANAGEMENT ? &peer->address : &peer->application;
+-}
+-static bool send_packet(void *context, core_host_class traffic_class, uint64_t peer,
+-                         const uint8_t *bytes, size_t size)
+-{
+-    core_host_udp *udp = context;
+-    if ((unsigned)traffic_class >= CORE_HOST_CLASSES || size > CORE_COAP_MAX_DATAGRAM) return false;
+-    for (size_t i = 0; i < udp->peer_count; ++i) {
+-        if (udp->peers[i].id != peer) continue;
+-        const struct sockaddr_in *address = peer_address(&udp->peers[i], traffic_class);
+-        if (address->sin_port == 0) return false;
+-        return sendto(udp->sockets[traffic_class], bytes, size, 0,
+-                      (const struct sockaddr *)address, sizeof(*address)) == (ssize_t)size;
+-    }
+-    return false;
+-}
+-static uint64_t retry_delay(void *context)
+-{
+-    core_host_udp *udp = context;
+-    uint32_t x = udp->random_state;
+-    x ^= x << 13;
+-    x ^= x >> 17;
+-    x ^= x << 5;
+-    udp->random_state = x;
+-    return CORE_COAP_ACK_TIMEOUT_US + x % 1000001u;
+-}
+-static core_host_event wait_input(void *context, uint64_t deadline)
+-{
+-    core_host_udp *udp = context;
+-    if (udp->stopped) return CORE_HOST_STOP;
+-    struct timeval timeout, *limit = NULL;
+-    if (deadline != UINT64_MAX) {
+-        uint64_t now;
+-        if (!core_clock_now(&now)) return CORE_HOST_ERROR;
+-        const uint64_t remaining = deadline > now ? deadline - now : 0;
+-        timeout.tv_sec = remaining / 1000000 > INT_MAX ? INT_MAX : (long)(remaining / 1000000);
+-        timeout.tv_usec = (long)(remaining % 1000000);
+-        limit = &timeout;
+-    }
+-
+-    fd_set read_fds;
+-    FD_ZERO(&read_fds);
+-    FD_SET(udp->wake_fd, &read_fds);
+-    int max_fd = udp->wake_fd;
+-    
+-    for (size_t i = 0; i < CORE_HOST_CLASSES; ++i) {
+-        FD_SET(udp->sockets[i], &read_fds);
+-        if (udp->sockets[i] > max_fd) max_fd = udp->sockets[i];
+-    }
+-    const int ready = select(max_fd + 1, &read_fds, NULL, NULL, limit);
+-    if (udp->stopped) return CORE_HOST_STOP;
+-    if (ready < 0) return errno == EINTR ? CORE_HOST_WAKE : CORE_HOST_ERROR;
+-    if (ready == 0) return CORE_HOST_WAKE;
+-    if (FD_ISSET(udp->wake_fd, &read_fds)) {
+-        uint64_t count;
+-        (void)read(udp->wake_fd, &count, sizeof(count));
+-    }
+-    return CORE_HOST_WAKE;
+-}
+-static core_host_event receive_packet(void *context, core_host_class traffic_class,
+-                                      core_host_packet *packet)
+-{
+-    core_host_udp *udp = context;
+-    if (udp->stopped) return CORE_HOST_STOP;
+-    if ((unsigned)traffic_class >= CORE_HOST_CLASSES) return CORE_HOST_ERROR;
+-    /* One extra byte detects oversized/truncated packets on both BSD stacks. */
+-    uint8_t bytes[CORE_COAP_MAX_DATAGRAM + 1];
+-    struct sockaddr_in sender;
+-    socklen_t address_size = sizeof(sender);
+-    const ssize_t size = recvfrom(udp->sockets[traffic_class], bytes, sizeof(bytes), 0,
+-                                  (struct sockaddr *)&sender, &address_size);
+-    if (size < 0) return errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR ?
+-                         CORE_HOST_EMPTY : CORE_HOST_ERROR;
+-    if ((size_t)size > sizeof(packet->bytes) || address_size != sizeof(sender) ||
+-        sender.sin_family != AF_INET) return CORE_HOST_DROPPED;
+-    for (size_t i = 0; i < udp->peer_count; ++i) {
+-        const struct sockaddr_in *address = peer_address(&udp->peers[i], traffic_class);
+-        if (sender.sin_addr.s_addr != address->sin_addr.s_addr || sender.sin_port != address->sin_port)
+-            continue;
+-        packet->sender = udp->peers[i].id;
+-        packet->traffic_class = traffic_class;
+-        packet->size = (size_t)size;
+-        memcpy(packet->bytes, bytes, packet->size);
+-        return CORE_HOST_PACKET;
+-    }
+-    return CORE_HOST_DROPPED;
+-}
+-
+-static bool same_address(const struct sockaddr_in *a, const struct sockaddr_in *b)
+-{
+-    return a->sin_port != 0 && a->sin_addr.s_addr == b->sin_addr.s_addr &&
+-           a->sin_port == b->sin_port;
+-}
+-
+-bool core_host_udp_open(core_host_udp *udp, const struct sockaddr_in *management,
+-    const struct sockaddr_in *application,
+-    const core_host_udp_peer *peers, size_t peer_count, core_host_platform *out)
+-{
+-    *udp = (core_host_udp){.sockets = {-1, -1}, .wake_fd = -1};
+-    if (peer_count > CORE_MAX_PEERS + 1 || management->sin_family != AF_INET ||
+-        application->sin_family != AF_INET ||
+-        (management->sin_port != 0 && management->sin_port == application->sin_port)) return false;
+-    for (size_t i = 0; i < peer_count; ++i) {
+-        if (peers[i].address.sin_family != AF_INET || peers[i].address.sin_port == 0 ||
+-            (peers[i].application.sin_port != 0 &&
+-             (peers[i].application.sin_family != AF_INET ||
+-              same_address(&peers[i].address, &peers[i].application)))) return false;
+-        for (size_t j = 0; j < i; ++j)
+-            if (peers[i].id == peers[j].id ||
+-                same_address(&peers[i].address, &peers[j].address) ||
+-                same_address(&peers[i].application, &peers[j].application)) return false;
+-    }
+-    if (pthread_mutex_init(&udp->mutex, NULL) != 0) return false;
+-    udp->mutex_initialized = true;
+-    memcpy(udp->peers, peers, peer_count * sizeof(*peers));
+-    udp->peer_count = peer_count;
+-    uint64_t time;
+-    if (!core_clock_now(&time)) goto fail;
+-    udp->random_state = (uint32_t)time | 1u;
+-#ifdef ESP_PLATFORM
+-    const esp_vfs_eventfd_config_t config = {.max_fds = 1};
+-    if (esp_vfs_eventfd_register(&config) != ESP_OK) goto fail;
+-    udp->eventfd_registered = true;
+-    udp->wake_fd = eventfd(0, 0);
+-#else
+-    udp->wake_fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+-#endif
+-    if (udp->wake_fd < 0 || udp->wake_fd >= FD_SETSIZE) goto fail;
+-    const struct sockaddr_in *local[CORE_HOST_CLASSES] = {management, application};
+-    for (size_t i = 0; i < CORE_HOST_CLASSES; ++i) {
+-        udp->sockets[i] = socket(AF_INET, SOCK_DGRAM, 0);
+-        if (udp->sockets[i] < 0 || udp->sockets[i] >= FD_SETSIZE) goto fail;
+-        const int flags = fcntl(udp->sockets[i], F_GETFL, 0);
+-        if (flags < 0 || fcntl(udp->sockets[i], F_SETFL, flags | O_NONBLOCK) != 0 ||
+-            bind(udp->sockets[i], (const struct sockaddr *)local[i], sizeof(*local[i])) != 0) goto fail;
+-    }
+-    *out = (core_host_platform){.context = udp, .now = clock_now, .lock = registry_lock,
+-        .unlock = registry_unlock, .wake = notify, .wait = wait_input,
+-        .recv = receive_packet, .send = send_packet, .retry_us = retry_delay};
+-    return true;
+-fail:
+-    core_host_udp_close(udp);
+-    return false;
+-}
+-
+-void core_host_udp_stop(core_host_udp *udp)
+-{
+-    udp->stopped = 1;
+-    notify(udp);
+-}
+-void core_host_udp_close(core_host_udp *udp)
+-{
+-    for (size_t i = 0; i < CORE_HOST_CLASSES; ++i) {
+-        if (udp->sockets[i] >= 0) close(udp->sockets[i]);
+-        udp->sockets[i] = -1;
+-    }
+-    if (udp->wake_fd >= 0) close(udp->wake_fd);
+-    udp->wake_fd = -1;
+-#ifdef ESP_PLATFORM
+-    if (udp->eventfd_registered) (void)esp_vfs_eventfd_unregister();
+-    udp->eventfd_registered = false;
+-#endif
+-    if (udp->mutex_initialized) pthread_mutex_destroy(&udp->mutex);
+-    udp->mutex_initialized = false;
+-}
+-
+-bool core_host_udp_parse_peer(const char *text, core_host_udp_peer *out)
+-{
+-    if (text == NULL || *text < '0' || *text > '9') return false;
+-    const char *p = text;
+-    while (*p >= '0' && *p <= '9') ++p;
+-    if (*p != ':' && *p != '@') return false;
+-    errno = 0;
+-    char *end;
+-    const uint64_t id = strtoull(text, &end, 10);
+-    if (errno || end != p) return false;
+-    struct in_addr address = {.s_addr = htonl(INADDR_LOOPBACK)};
+-    if (*p == '@') {
+-        const char *colon = strchr(++p, ':');
+-        char ip[INET_ADDRSTRLEN];
+-        if (colon == NULL || colon == p || (size_t)(colon - p) >= sizeof(ip)) return false;
+-        memcpy(ip, p, (size_t)(colon - p));
+-        ip[colon - p] = '\0';
+-        if (inet_pton(AF_INET, ip, &address) != 1) return false;
+-        p = colon;
+-    }
+-    ++p;
+-    if (*p == '\0') return false;
+-    const char *q = p;
+-    while (*q >= '0' && *q <= '9') ++q;
+-    if (q == p || (*q != '\0' && *q != ':')) return false;
+-    errno = 0;
+-    const unsigned long port = strtoul(p, &end, 10);
+-    if (errno || end != q || port == 0 || port > UINT16_MAX) return false;
+-    *out = (core_host_udp_peer){.id = id, .address = {.sin_family = AF_INET,
+-        .sin_addr = address, .sin_port = htons((uint16_t)port)}};
+-    if (*q == ':') {
+-        p = q + 1;
+-        if (*p == '\0') return false;
+-        for (q = p; *q; ++q) if (*q < '0' || *q > '9') return false;
+-        errno = 0;
+-        const unsigned long app_port = strtoul(p, &end, 10);
+-        if (errno || *end || app_port == 0 || app_port > UINT16_MAX || app_port == port) return false;
+-        out->application = (struct sockaddr_in){.sin_family = AF_INET,
+-            .sin_addr = address, .sin_port = htons((uint16_t)app_port)};
+-    }
+-    return true;
+-}
+--- a/graph_core/ports/host_udp.h
++++ /dev/null
+@@ -1,42 +0,0 @@
+-#ifndef KAOS_HOST_UDP_H
+-#define KAOS_HOST_UDP_H
+-
+-#include "kaos_host.h"
+-#ifdef ESP_PLATFORM
+-#include "lwip/sockets.h"
+-#else
+-#include <netinet/in.h>
+-#endif
+-#include <pthread.h>
+-#include <signal.h>
+-
+-typedef struct {
+-    uint64_t id;
+-    struct sockaddr_in address; /* management; required */
+-    struct sockaddr_in application; /* zero port for management-only peers */
+-} core_host_udp_peer;
+-
+-/* BSD socket adapter shared by POSIX and ESP-IDF. Address storage and OS
+- * handles stay here; the host knows only device IDs and complete datagrams. */
+-typedef struct {
+-    int sockets[CORE_HOST_CLASSES], wake_fd;
+-    pthread_mutex_t mutex;
+-    core_host_udp_peer peers[CORE_MAX_PEERS + 1]; /* remote owners + O + DB */
+-    size_t peer_count;
+-    uint32_t random_state;
+-    volatile sig_atomic_t stopped;
+-    bool eventfd_registered;
+-    bool mutex_initialized;
+-} core_host_udp;
+-
+-bool core_host_udp_open(core_host_udp *udp, const struct sockaddr_in *management,
+-    const struct sockaddr_in *application,
+-    const core_host_udp_peer *peers, size_t peer_count, core_host_platform *out);
+-void core_host_udp_close(core_host_udp *udp);
+-/* POSIX signal handler: only sets sig_atomic_t and writes the wake descriptor. */
+-void core_host_udp_stop(core_host_udp *udp);
+-/* id:management:application uses loopback; id@IPv4:management:application
+- * supplies an explicit address. Omit :application for authority/collector. */
+-bool core_host_udp_parse_peer(const char *text, core_host_udp_peer *out);
+-
+-#endif
+--- a/graph_core/ports/posix/main.c
++++ b/graph_core/ports/posix/main.c
+@@ -1,5 +1,6 @@
+ #define _POSIX_C_SOURCE 200809L
+-#include "../host_udp.h"
++#include "host_udp.h"
++#include "kaos_host.h"
+ #include <arpa/inet.h>
+ #include <errno.h>
+ #include <fcntl.h>
+--- a/graph_core/runtime/kaos_wamr.c
++++ b/graph_core/runtime/kaos_wamr.c
+@@ -459,25 +459,13 @@
+ #endif
+ }
+ 
+-static bool load_wasm_module(runtime_slot *slot, char *error, size_t error_size)
+-{
+-    slot->module = wasm_runtime_load(slot->artifact, (uint32_t)slot->artifact_size,
+-                                     error, error_size);
+-    return slot->module != NULL;
+-}
+-
+-static bool instantiate_wasm_module(runtime_slot *slot, char *error, size_t error_size)
+-{
+-    /* These fixed stacks/heaps are inside the bounded arena, and the
+-     * profile rejects paths that execute guest code during instantiate. */
+-    slot->instance = wasm_runtime_instantiate(slot->module, 8192, 4096, error, error_size);
+-    return slot->instance != NULL;
+-}
++/* Both allocations remain inside the charged runtime arena. */
++enum { GUEST_EXECUTION_STACK_BYTES = 8192, GUEST_APP_HEAP_BYTES = 4096 };
+ 
+ static bool resolve_guest_entrypoints(runtime_slot *slot)
+ {
+     wasm_runtime_set_custom_data(slot->instance, slot);
+-    slot->execution = wasm_runtime_create_exec_env(slot->instance, 8192);
++    slot->execution = wasm_runtime_create_exec_env(slot->instance, GUEST_EXECUTION_STACK_BYTES);
+     slot->configure = wasm_runtime_lookup_function(slot->instance, "kaos_configure");
+     slot->main = wasm_runtime_lookup_function(slot->instance, "kaos_main");
+     return slot->execution && signature(slot->instance, slot->configure, 2, 1) &&
+@@ -508,12 +496,21 @@
+ #endif
+     good = good && slot->memory.bytes && thread_environment;
+     char error[128] = {0};
+-    if (good) good = load_wasm_module(slot, error, sizeof(error));
++    if (good) {
++        slot->module = wasm_runtime_load(slot->artifact, (uint32_t)slot->artifact_size,
++                                         error, sizeof(error));
++        good = slot->module != NULL;
++    }
+     if (good) good = validate_loaded_imports(slot);
+ #ifdef CORE_WAMR_TRACE_PREPARE
+     const size_t loader_payload = slot->memory.requested[0] - thread_payload;
+ #endif
+-    if (good) good = instantiate_wasm_module(slot, error, sizeof(error));
++    if (good) {
++        /* The restricted profile prevents guest execution during instantiate. */
++        slot->instance = wasm_runtime_instantiate(slot->module, GUEST_EXECUTION_STACK_BYTES,
++                                                  GUEST_APP_HEAP_BYTES, error, sizeof(error));
++        good = slot->instance != NULL;
++    }
+ #ifdef CORE_WAMR_TRACE_PREPARE
+     const size_t instance_payload = slot->memory.requested[0] - thread_payload - loader_payload;
+ #endif
+@@ -544,20 +541,26 @@
+     publish_runtime_preparation_result(slot, good);
+ }
+ 
+-static bool begin_call(runtime_slot *slot, bool main)
+-{
+-    const bool guarded = service.entry_lock != NULL;
+-    const bool allowed = !guarded || service.entry_lock(service.entry_context,
+-        (size_t)(slot - service.slots));
+-    pthread_mutex_lock(&slot->mutex);
+-    /* Lock contention must not turn an old timestamp into entry permission. */
++/* Sample only after the entry guard and mailbox locks have been acquired. */
++static uint64_t entry_time_us(void)
++{
+     struct timespec now;
+     const bool clock_valid = clock_gettime(CLOCK_MONOTONIC, &now) == 0 &&
+                              now.tv_sec >= 0 && now.tv_nsec >= 0 &&
+                              (uint64_t)now.tv_sec <=
+                              (UINT64_MAX - (uint64_t)now.tv_nsec / 1000) / 1000000;
+-    const uint64_t now_us = clock_valid ? (uint64_t)now.tv_sec * 1000000 +
++    return clock_valid ? (uint64_t)now.tv_sec * 1000000 +
+                                          (uint64_t)now.tv_nsec / 1000 : UINT64_MAX;
++}
++
++static bool begin_call(runtime_slot *slot, bool main)
++{
++    const bool guarded = service.entry_lock != NULL;
++    const bool allowed = !guarded || service.entry_lock(service.entry_context,
++        (size_t)(slot - service.slots));
++    pthread_mutex_lock(&slot->mutex);
++    /* Lock contention must not turn an old timestamp into entry permission. */
++    const uint64_t now_us = entry_time_us();
+     const bool permitted = allowed && !slot->state.cancel_requested && !slot->shutdown &&
+                            !slot->state.exited && slot->state.prepared &&
+                            now_us < slot->state.start_deadline_us;
+@@ -572,7 +575,7 @@
+     return permitted;
+ }
+ 
+-static void run(runtime_slot *slot)
++static void run_guest_entrypoints(runtime_slot *slot)
+ {
+     bool good = false;
+     if (begin_call(slot, false)) {
+@@ -592,6 +595,7 @@
+         slot->state.configuration_active = false;
+         pthread_mutex_unlock(&slot->mutex);
+     }
++    /* Configuration permission does not carry over to main entry. */
+     if (good && begin_call(slot, true)) {
+         uint32_t result = 0;
+         good = wasm_runtime_call_wasm(slot->execution, slot->main, 0, &result);
+@@ -659,7 +663,7 @@
+                    !slot->start_consumed && !slot->state.cancel_requested) {
+             slot->start_consumed = true;
+             pthread_mutex_unlock(&slot->mutex);
+-            run(slot);
++            run_guest_entrypoints(slot);
+             pthread_mutex_lock(&slot->mutex);
+         } else if (slot->shutdown) {
+             break;
+@@ -677,12 +681,13 @@
+                           size_t arena_bytes, const core_native_imports *imports)
+ {
+     (void)context;
+-    if (!core_native_imports_valid(imports) ||
+-        !service.initialized || index >= CORE_MAX_NODE_RESERVATIONS || !artifact ||
+-        !size || size > CORE_MAX_ARTIFACT_BYTES ||
+-        configuration_size > CORE_MAX_CONFIGURATION_BYTES ||
+-        (configuration_size && !configuration) || !arena_bytes ||
+-        arena_bytes > CORE_WAMR_ARENA_BYTES) return false;
++    /* Immutable input checks precede mutex-protected worker availability. */
++    if (!core_native_imports_valid(imports) || !service.initialized ||
++        index >= CORE_MAX_NODE_RESERVATIONS) return false;
++    if (!artifact || !size || size > CORE_MAX_ARTIFACT_BYTES) return false;
++    if (configuration_size > CORE_MAX_CONFIGURATION_BYTES ||
++        (configuration_size && !configuration)) return false;
++    if (!arena_bytes || arena_bytes > CORE_WAMR_ARENA_BYTES) return false;
+     runtime_slot *slot = &service.slots[index];
+     pthread_mutex_lock(&slot->mutex);
+     if (slot->busy || slot->shutdown) { pthread_mutex_unlock(&slot->mutex); return false; }
+@@ -782,6 +787,14 @@
+     pthread_mutex_unlock(&slot->mutex);
+ }
+ 
++/* Only for a slot whose mutex, wake mechanism and thread all initialized. */
++static void join_and_destroy_worker(runtime_slot *slot)
++{
++    pthread_join(slot->thread, NULL);
++    destroy_wakeup(slot);
++    pthread_mutex_destroy(&slot->mutex);
++}
++
+ bool core_wamr_init(core_node_runtime *out, void (*callback)(void *), void *context)
+ {
+     if (!out || service.initialized) return false;
+@@ -852,9 +865,7 @@
+             slot->shutdown = true;
+             signal_worker(slot);
+             pthread_mutex_unlock(&slot->mutex);
+-            pthread_join(slot->thread, NULL);
+-            destroy_wakeup(slot);
+-            pthread_mutex_destroy(&slot->mutex);
++            join_and_destroy_worker(slot);
+         }
+         goto fail_runtime;
+     }
+@@ -878,6 +889,7 @@
+ void core_wamr_shutdown(void)
+ {
+     if (!service.initialized) return;
++    /* Request cancellation for every worker before waiting for any of them. */
+     for (size_t i = 0; i < CORE_MAX_NODE_RESERVATIONS; ++i) {
+         runtime_slot *slot = &service.slots[i];
+         pthread_mutex_lock(&slot->mutex);
+@@ -889,9 +901,7 @@
+     }
+     for (size_t i = 0; i < CORE_MAX_NODE_RESERVATIONS; ++i) {
+         runtime_slot *slot = &service.slots[i];
+-        pthread_join(slot->thread, NULL);
+-        destroy_wakeup(slot);
+-        pthread_mutex_destroy(&slot->mutex);
++        join_and_destroy_worker(slot);
+     }
+     allocation_arena = &global_arena;
+ #ifdef CORE_WAMR_TRACE_PREPARE

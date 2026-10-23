@@ -1,0 +1,323 @@
+--- a/sim_env/graph_relay.py
++++ b/sim_env/graph_relay.py
+@@ -3,7 +3,7 @@
+ Each participant enrolls its peers' proxy addresses. A packet received at B's
+ proxy from actual A is forwarded from A's proxy to actual B. The recipient
+ therefore sees exactly its enrolled source address, with no relay envelope.
+-Seeded decisions are reproducible per directed link and traffic plane; process
++Seeded decisions are reproducible per directed link; process
+ scheduling and the resulting packet order are not deterministic.
+ """
+ 
+@@ -96,23 +96,23 @@
+         self,
+         source,
+         destination,
+-        plane="control",
++        *,
+         loss=0.0,
+         delay_ms=0.0,
+         duplicate=0.0,
+     ):
+-        """Replace one directed plane's policy; loss=1 also drops queued packets.
+-
+-        Control includes graph commands, reports, artifacts and storage ACKs.
+-        Data uses only the host's leading schema-byte discriminator. No graph
+-        operation or binding is decoded, resolved or rewritten here.
++        """Replace one directed link's policy for every packet it carries.
++
++        The reverse direction is independent. Loss=1 also drops queued packets
++        at delivery. Packet classification is diagnostic only: control and data
++        share the same policy and packet-indexed random streams.
+         """
+         uint(source)
+         uint(destination)
+         if source not in self.addresses or destination not in self.addresses:
+             raise ValueError("link participants must be enrolled")
+-        if source == destination or plane not in ("control", "data"):
+-            raise ValueError("link requires distinct participants and a known plane")
++        if source == destination:
++            raise ValueError("link requires distinct participants")
+         loss = _number(loss, 1)
+         duplicate = _number(duplicate, 1)
+         delay = round(_number(delay_ms, U64_MAX / 1000) * 1000)
+@@ -123,12 +123,11 @@
+                 "link_policy",
+                 source=source,
+                 destination=destination,
+-                plane=plane,
+                 loss=loss,
+                 delay_us=delay,
+                 duplicate=duplicate,
+             )
+-            self._policies[source, destination, plane] = (loss, delay, duplicate)
++            self._policies[source, destination] = (loss, delay, duplicate)
+ 
+     def check(self):
+         if self._failure is not None:
+@@ -200,7 +199,7 @@
+                 )
+                 continue
+             plane = "data" if payload[:1] == bytes([SCHEMA_VERSION]) else "control"
+-            key = source, destination, plane
++            key = source, destination
+             with self._lock:
+                 loss, delay, duplicate = self._policies.get(key, (0, 0, 0))
+             if key not in self._streams:
+@@ -250,12 +249,10 @@
+             if self._pending[0][0] > now:
+                 return
+             due, _, _, fields, payload = heapq.heappop(self._pending)
+-            source, destination, plane = (
+-                fields[k] for k in ("source", "destination", "plane")
+-            )
++            source, destination = fields["source"], fields["destination"]
+             with self._lock:
+                 partitioned = (
+-                    self._policies.get((source, destination, plane), (0, 0, 0))[0] == 1
++                    self._policies.get((source, destination), (0, 0, 0))[0] == 1
+                 )
+                 if not partitioned:
+                     self._sockets[source].sendto(payload, self._actual[destination])
+--- a/tests/test_graph_relay.py
++++ b/tests/test_graph_relay.py
+@@ -69,30 +69,40 @@
+             self.sockets[99].recvfrom(100), (b"\x60response", self.relay.addresses[1])
+         )
+ 
+-    def test_control_data_and_reverse_link_are_independent(self):
+-        self.start()
+-        self.relay.set_link(1, 2, plane="data", loss=1)
++    def test_control_and_data_share_policy_with_independent_reverse_link(self):
++        self.start()
++        self.relay.set_link(1, 2, loss=1)
+         data = bytes([SCHEMA_VERSION]) + b"payload"
+         self.send(1, 2, data)
+         self.send(1, 2)
+-        self.assertEqual(self.sockets[2].recvfrom(100)[0], b"\x40control")
+-        self.send(2, 1, data)
+-        self.assertEqual(self.sockets[1].recvfrom(100)[0], data)
+-        self.wait_event(
+-            lambda e: e["kind"] == "packet_dropped" and e["plane"] == "data"
+-        )
++        self.wait_event(
++            lambda e: e["kind"] == "packet_dropped" and e["plane"] == "control"
++        )
++        dropped = [e for e in self.events if e["kind"] == "packet_dropped"]
++        self.assertEqual({e["plane"] for e in dropped}, {"control", "data"})
++        self.assertTrue(all(e["reason"] == "loss" for e in dropped))
++        for payload in (data, b"\x40control"):
++            self.send(2, 1, payload)
++            self.assertEqual(self.sockets[1].recvfrom(100)[0], payload)
+ 
+     def test_duplicate_delivery_observes_configured_delay(self):
+         self.start()
+         self.relay.set_link(1, 2, delay_ms=40, duplicate=1)
+-        self.send(1, 2)
+-        expected = b"\x40control", self.relay.addresses[1]
+-        self.assertEqual(self.sockets[2].recvfrom(100), expected)
+-        self.assertEqual(self.sockets[2].recvfrom(100), expected)
+-        self.wait_event(lambda e: e["kind"] == "packet_delivered" and e["copy"] == 1)
++        for payload in (b"\x40control", bytes([SCHEMA_VERSION]) + b"data"):
++            self.send(1, 2, payload)
++            expected = payload, self.relay.addresses[1]
++            self.assertEqual(self.sockets[2].recvfrom(100), expected)
++            self.assertEqual(self.sockets[2].recvfrom(100), expected)
++        self.wait_event(
++            lambda e: (
++                e["kind"] == "packet_delivered"
++                and e["packet_id"] == 2
++                and e["copy"] == 1
++            )
++        )
+         delivered = [e for e in self.events if e["kind"] == "packet_delivered"]
+-        self.assertEqual(len(delivered), 2)
+-        self.assertEqual({e["packet_id"] for e in delivered}, {1})
++        self.assertEqual(len(delivered), 4)
++        self.assertEqual({e["packet_id"] for e in delivered}, {1, 2})
+         self.assertTrue(all(e["actual_delay_us"] >= 40_000 for e in delivered))
+         self.assertTrue(all(e["lateness_us"] >= 0 for e in delivered))
+ 
+@@ -112,9 +122,17 @@
+         self.start()
+         self.relay.set_link(1, 2, delay_ms=100)
+         self.send(1, 2)
+-        self.wait_event(lambda e: e["kind"] == "packet_decision")
++        self.send(1, 2, bytes([SCHEMA_VERSION]) + b"data")
++        self.wait_event(
++            lambda e: e["kind"] == "packet_decision" and e["packet_id"] == 2
++        )
+         self.relay.set_link(1, 2, loss=1)
+-        self.wait_event(lambda e: e.get("reason") == "partition_at_delivery")
++        self.wait_event(
++            lambda e: e.get("reason") == "partition_at_delivery" and e["packet_id"] == 2
++        )
++        self.assertEqual(
++            sum(e.get("reason") == "partition_at_delivery" for e in self.events), 2
++        )
+         self.assertFalse(any(e["kind"] == "packet_delivered" for e in self.events))
+ 
+     def test_changed_delay_can_reorder_queued_datagrams(self):
+@@ -156,7 +174,7 @@
+             {"loss": float("nan")},
+             {"delay_ms": -1},
+             {"duplicate": 2},
+-            {"plane": "other"},
++            {"loss": 2},
+         ):
+             with self.subTest(fields=fields), self.assertRaises(ValueError):
+                 self.relay.set_link(1, 2, **fields)
+@@ -164,16 +182,14 @@
+         with self.assertRaises(RuntimeError):
+             self.relay.start(actual)
+ 
+-    def test_seeded_decisions_survive_unrelated_plane_traffic(self):
++    def test_seeded_decisions_survive_unrelated_direction_traffic(self):
+         def decisions(interleave):
+             self.start()
+             self.relay.set_link(1, 2, loss=0.5, delay_ms=5000, duplicate=0.5)
+-            self.relay.set_link(
+-                1, 2, plane="data", loss=0.5, delay_ms=5000, duplicate=0.5
+-            )
++            self.relay.set_link(2, 1, loss=0.5, delay_ms=5000, duplicate=0.5)
+             for index in range(64):
+                 if interleave:
+-                    self.send(1, 2, bytes([SCHEMA_VERSION, index]))
++                    self.send(2, 1, bytes([SCHEMA_VERSION, index]))
+                 self.send(1, 2, bytes([0x40, index]))
+             self.wait_event(
+                 lambda e: e["kind"] == "packet_decision" and e["payload_hex"] == "403f"
+@@ -183,7 +199,33 @@
+             result = [
+                 (e["payload_hex"], e["copy"], e["drop"])
+                 for e in self.events
+-                if e["kind"] == "packet_decision" and e["plane"] == "control"
++                if e["kind"] == "packet_decision"
++                and e["source"] == 1
++                and e["destination"] == 2
++            ]
++            self.events = []
++            return result
++
++        self.assertEqual(decisions(False), decisions(True))
++
++    def test_packet_type_does_not_change_seeded_link_decisions(self):
++        def decisions(mixed):
++            self.start()
++            self.relay.set_link(1, 2, loss=0.5, delay_ms=5000, duplicate=0.5)
++            for index in range(64):
++                prefix = SCHEMA_VERSION if mixed and index % 2 else 0x40
++                self.send(1, 2, bytes([prefix, index]))
++            self.wait_event(
++                lambda e: (
++                    e["kind"] == "packet_decision" and e["payload_hex"].endswith("3f")
++                )
++            )
++            self.relay.close()
++            self.relay.check()
++            result = [
++                (e["payload_hex"][-2:], e["copy"], e["drop"])
++                for e in self.events
++                if e["kind"] == "packet_decision"
+             ]
+             self.events = []
+             return result
+--- a/tests/test_graph_run.py
++++ b/tests/test_graph_run.py
+@@ -167,7 +167,7 @@
+             request = run.o.add_node(
+                 self.description(run, 1, 10, addition_us=8_000_000)
+             )
+-            run.network.set_link(1, 99, "control", loss=1)
++            run.network.set_link(1, 99, loss=1)
+             with self.assertRaises(TimeoutError):
+                 run.submit(request, allowance_us=150_000)
+             # Timeout never releases the original authorization or hands its
+@@ -175,7 +175,7 @@
+             self.assertEqual(run.o.incidence(request.instance), ())
+             with self.assertRaises(AuthorizationError):
+                 run.o.dispatch(request.operation)
+-            run.network.set_link(1, 99, "control")
++            run.network.set_link(1, 99)
+             report = run.wait(request, timeout_s=7)
+             self.assertEqual(report[5], 1, report)
+             self.assertEqual(report[6] & 39, 39, report)
+@@ -185,10 +185,11 @@
+             self.assertEqual(run.o.incidence(request.instance), ())
+             self.remove_plain_node(run, request)
+ 
+-    def test_data_loss_preserves_control_progress_and_complete_cleanup(self):
++    def test_link_outage_blocks_data_and_cleanup_until_restored(self):
+         with GraphRun(self.host, self.output) as run:
+-            run.network.set_link(1, 2, "data", loss=1)
+             source, destination, edge = self.add_pair(run)
++            binding = edge.bindings[0]
++            run.network.set_link(1, 2, loss=1)
+             deadline = time.monotonic() + 2
+             while time.monotonic() < deadline:
+                 dropped = [
+@@ -204,20 +205,48 @@
+                     break
+                 time.sleep(0.01)
+             self.assertTrue(dropped, "the real source guest must emit data")
+-            removal = run.o.remove_edge(edge.bindings[0], cleanup_us=1_000_000)
+-            removed = self.succeed(run, removal)
++            removal = run.o.remove_edge(binding, cleanup_us=5_000_000)
++            self.assertEqual(run.submit(removal).code, CREATED)
++            pending = run.query(removal)
++            self.assertIsNotNone(pending)
++            self.assertEqual(pending[5], 0, pending)
++            self.assertFalse(pending[7][1] & 32, pending)
++            self.assertEqual(run.o.incidence(source.instance), (binding,))
++            deadline = time.monotonic() + 1
++            while time.monotonic() < deadline:
++                control_dropped = any(
++                    event["kind"] == "packet_dropped"
++                    and event["source"] == 1
++                    and event["destination"] == 2
++                    and event["plane"] == "control"
++                    for event in self.events()
++                )
++                if control_dropped:
++                    break
++                time.sleep(0.01)
++            self.assertTrue(control_dropped, "cleanup traffic shares the failed link")
++            # Restore before the original cutoff; its existing CoAP exchange
++            # may retry without a new authorization or renewed deadline.
++            run.network.set_link(1, 2)
++            removed = run.wait(removal, timeout_s=6)
++            self.assertEqual(removed[5], 1, removed)
++            self.assertEqual(removed[2], pending[2])
++            self.assertGreater(removed[4], pending[4])
+             self.assertTrue(all(flags & 56 == 56 for flags in removed[7]), removed)
+             self.assertEqual(run.o.incidence(source.instance), ())
+             self.assertEqual(run.o.incidence(destination.instance), ())
+             self.remove_plain_node(run, source)
+             self.remove_plain_node(run, destination)
+ 
++        dropped_ids = {
++            event["packet_id"]
++            for event in self.events()
++            if event["kind"] == "packet_dropped" and event["reason"] == "loss"
++        }
+         self.assertFalse(
+             any(
+                 event["kind"] == "packet_delivered"
+-                and event["source"] == 1
+-                and event["destination"] == 2
+-                and event["plane"] == "data"
++                and event["packet_id"] in dropped_ids
+                 for event in self.events()
+             )
+         )
+@@ -225,8 +254,8 @@
+     def test_unresolved_removal_evidence_survives_run_shutdown(self):
+         with GraphRun(self.host, self.output) as run:
+             source, _, edge = self.add_pair(run)
+-            run.network.set_link(1, 2, "control", loss=1)
+-            run.network.set_link(2, 1, "control", loss=1)
++            run.network.set_link(1, 2, loss=1)
++            run.network.set_link(2, 1, loss=1)
+             removal = run.o.remove_node(source.instance, cleanup_us=200_000)
+             self.assertEqual(run.submit(removal).code, CREATED)
+             report = run.wait(removal)

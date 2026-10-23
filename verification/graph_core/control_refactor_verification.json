@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-09",
+  "scope": "Behavior-preserving control handler refactor; CoAP reply/reset encoding, supported singleton/critical options and read-only cache replay extracted; routing, authority, multipart policy and admission remain in control.",
+  "source_sha256": {
+    "graph_core/kaos_control.c": "beadfa3f9ed505a44bbd97e859c20362d17b050a2ce3e25c8d5a3095673dfecd",
+    "graph_core/kaos_coap.c": "496fb6984da8a0647d712d87226953ec907dc6f53436223e6a553e4dc85420c6",
+    "graph_core/include/kaos_coap.h": "9c898cfbe7eb5e0337d431b5306d4788d8af37efcb2cff9b4536fdd9cdab91eb",
+    "graph_core/include/kaos_control.h": "f97e07f13578c150a6311965e56dd15519404ebc6d6c55b7c64e057b313edb1d",
+    "verification/graph_core/tests/coap_server_test.c": "4abb9467491d301a86c9c383c92eb09530bc9df5cc3043e10636fec62329f7a7",
+    "verification/graph_core/CMakeLists.txt": "8a6402b47fe995a3520295771aba1bc840b3bb0bf05cab16693c37d6c64189dd",
+    "docs/graph_p2_contract.md": "a9e46f02f4fe52ec3c57180ca1e708eafac8f9c816e5550e5521d8f8308a1cf0"
+  },
+  "preserved_test_sha256": {
+    "verification/graph_core/tests/request_test.c": "eee17fd121fc9a1523f11b30c2adb2e4739b69eb5c9fed38056e2c7d4ef709fa",
+    "verification/graph_core/tests/p2_host_test.c": "ab0a7472366cdcbe0c0698e2aa7e3d5face0d0d36c2c2abf9fbed5032805bbd5",
+    "verification/graph_core/tests/coap_test.c": "12c5b3a3da9c01f69fad2e10511ddd410b1c1ea7c4cf6cf2d1a8685642657a92",
+    "verification/graph_core/tests/core_test.c": "9fd73b5b7b853f88344205d7dc067f0bbddbd6544f20092f37805d39458e1788",
+    "verification/graph_core/tests/artifact_test.c": "221a6286321e6f1b73dea05ea6dbf2aab9632876295f7c2bb2a23b65f514c48e",
+    "verification/graph_core/tests/control_test.c": "e162aae95b7e8982a138cb194b8afea3f1b7427d1c6cd45b4be203892f93f188",
+    "verification/graph_core/tests/admission_fixture.h": "7eb03d3a821aa49670cd9ed4f2260f2ed35cfc99c1a3986e82f47fa85a7da389",
+    "verification/graph_core/tests/object_facts_test.c": "1abcde792faa6e4c518e794abf51b27df508a3846170a8ec6cdd7916452e3395",
+    "verification/graph_core/tests/report_test.c": "56b76751e40234a7df9e36f096eb6c48b6a1a14b50d5f0fb6bdd52668f100e74",
+    "verification/graph_core/tests/admission_test.c": "680d1323c1ad87d6c8eb81d03f373f4c5d1bae9e3e4fdd24e8ed3cfb84c67ff5"
+  },
+  "c": {
+    "command": "ctest --test-dir /tmp/kaos-object-facts-build --output-on-failure",
+    "result": "10/10 passed with ASan/UBSan/LeakSanitizer; 0.27s"
+  },
+  "process": {
+    "command": "KAOS_P2_HOST=/tmp/kaos-object-facts-build/core/kaos_p2_host uv --directory ../sim_env run --offline python -m unittest discover -s tests -p test_graph_core_process.py -v",
+    "result": "4/4 passed; 0.382s"
+  },
+  "review": "Compared against captured pre-refactor sources: no observed behavior drift in error precedence, authorization, early duplicate replay, block deadline/resource correlation, reset ordering, cache-before-admission or cancellation bypass.",
+  "limits": "Host verification only; no new hardware qualification claimed. No existing tests changed; one helper regression and its registration added. Tests ran outside sandbox for sanitizer/UDP access."
+}

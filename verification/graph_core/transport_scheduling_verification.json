@@ -1,0 +1,866 @@
+{
+  "date": "2026-10-21",
+  "head": "b8372d8c61fe9ff4531048a7bfcdaf825d439c57",
+  "scope": "P8/R04 functional two-port transport scheduling increment; R05/P9 timing/resource and Q14 qualification remain open.",
+  "architecture": {
+    "tasks": "Existing one control task; unchanged WAMR workers and priorities",
+    "ports": "Distinct management/application sockets; authority and collector management-only",
+    "round": [
+      "Initial lifecycle pass",
+      "Application RX up to 4",
+      "Management RX up to 1",
+      "Staging cleanup/start",
+      "Application TX up to endpoint reservation cap",
+      "Management replies and complete finite peer pass",
+      "At most one eligible artifact attempt",
+      "Maintenance and deadline calculation"
+    ],
+    "pacing_us": 1000,
+    "pacing_semantics": "Attempt spacing persists across blocks/retries/failure/restart/new transfer; zero disables. Terminal timeout bypasses pacing; no deadline renewal.",
+    "lifecycle": "Due timers before each receive and application send; accepted input has pre/post lifecycle decisions under registry lock.",
+    "continuation": "Exhausted receive/transmit budget gives deadline 0; run repeats without another external wake.",
+    "fairness": "Existing persistent endpoint cursor by message; full management peer pass needs no extra cursor.",
+    "application_semantics": "Best effort, dequeue before send, failure does not requeue.",
+    "relay": "One policy/RNG per directed link across both classes; one global pending-copy heap/capacity; reverse link independent."
+  },
+  "baseline": "verification/graph_core/results/transport_scheduling/baseline.json",
+  "baseline_files": 189,
+  "baseline_files_changed": 21,
+  "baseline_files_unchanged": 168,
+  "changes_from_baseline": {
+    "graph_core/kaos_host.c": {
+      "before": "119a80854e181391b99883104100fc4f3757a9ed7c8b750a76c5de502e0c288a",
+      "after": "46b8cf6b3b4daf6a445b2a6d67dec7c8d06ccebe3a37dabf1f40663746465466"
+    },
+    "graph_core/ports/host_udp.h": {
+      "before": "1cada54040a3b7eb340a48ff77a29282bbade237db37716f4578cc8ef43ae7c5",
+      "after": "28a47d0b2a0c906abad0c649a9caecc7838ce9591957b633f997045c6f3cac23"
+    },
+    "graph_core/ports/host_udp.c": {
+      "before": "140d4c2f9a2ec14f24a5507eea50c63f5d56491511fd729b040604c73f0fbc02",
+      "after": "203814fd01098aab820b26d713730e72568972ea2d71cc2e32fb2c167f5ff7b0"
+    },
+    "graph_core/include/kaos_host.h": {
+      "before": "cf22ce62c7bd34e483d5bd02d0e59092ee35ec3c0d068ee30ecbccce9337d181",
+      "after": "5ff4ddd9d3d776550a5b186a1d48dd909016d5303ac0decb5dfd7de668c3a478"
+    },
+    "graph_core/include/kaos_host_platform.h": {
+      "before": "38ebd53c8fb48f4e9d6350944cfd1d8a864488b2d4c42327d416e0fa687e0335",
+      "after": "990a6fb73499dc9838ab44c325a258856cb675c19264f6c4f99099abbad9f4fc"
+    },
+    "graph_core/ports/espidf/app_main.c": {
+      "before": "75663542324e4fd34e0942df9168ad19c226c5455a59b15d8ac9a5dd2c9fba02",
+      "after": "b857a40f2dcf8ea96ee9f466913124108e8f5a7455fcd72bc4086e71986ba1f7"
+    },
+    "graph_core/ports/posix/main.c": {
+      "before": "0993959ade9220f6d94a2d7dd819b47d323c1fc3298a9729e463968ff0210c23",
+      "after": "121e2d6bd0d62742a3ac34034f4c70024d135080a5a7e149399fccf6f66a048a"
+    },
+    "graph_core/ports/espidf/main/Kconfig.projbuild": {
+      "before": "e14b3a2ff5756365d25279a2de577a4e8a08bd5a40dd4af33fecbe029e8faa99",
+      "after": "b979e55c12e77d2a6f501174733c4acd8be729dac3b7b03ccc6604e8699e564a"
+    },
+    "verification/graph_core/workloads.cmake": {
+      "before": "1e9265dfa561e8bf0ca51dcecc0e470de1da58abb89164a3a3624c9e28fad149",
+      "after": "f4b8b2d6b76bf1c860e0af18ef6b60b9e48fb1db8a9874f4996c3d45c7f984cb"
+    },
+    "verification/graph_core/tests/host_scheduling_test.c": {
+      "before": "358c33fcf8a018efde373651af8ad9467a50a8a95c21ee1e2a5e3cc95e22f7ab",
+      "after": "f2068280723e5b3edf5fbcc39e9e061f3a83230f9e2d8c9d02e3385c4db54341"
+    },
+    "verification/graph_core/tests/p4_process_test.py": {
+      "before": "1e3ee30f991840bd69682576a9cca6ef552bc559c66d57e8034c46756c2868bd",
+      "after": "386ee2f970505f8afa893b1a3c01e228f0ead4a651023a91dc244b2592ac364c"
+    },
+    "verification/graph_core/tests/host_test.c": {
+      "before": "4f1f5250b1a715c5b9239933684e4be200e0dc3db22c2a9b5ec3385d3da61b8d",
+      "after": "364af571b9ba6f6073f2de03d6ac56b395359b7b084638aa646134fee76fed24"
+    },
+    "verification/graph_core/tests/host_udp_test.c": {
+      "before": "7aea06353e4c91a489e26600a83c0210a24ce3a2aa0b110ed88288db111da368",
+      "after": "2460106ee481d47cea19e8fb63196194ff32a192ccec50e156f1c4e56a9c2152"
+    },
+    "verification/graph_core/tests/collector_crash_test.py": {
+      "before": "c212de0c36343f5019df18db1406c93a3e88a06a72394cf4c2bd2d00ed613d07",
+      "after": "8ef9a2bbd2955135e692c758b1d3fcfb9fce9567ce63a48e75379c073f0699e6"
+    },
+    "verification/graph_core/tests/p7_process_test.py": {
+      "before": "26eacbe53dd60701d0916b3d7bcd09b18244a00ce99eed62e99de93624c80a6b",
+      "after": "be2cb34470e0b7e6caa1818a7941639ebca275f2dc19636aa0e664558cde9960"
+    },
+    "/home/karolina/Research/Code/sim_env/sim_env/graph_relay.py": {
+      "before": "76cbcb90c1a91a18b6702567c90605a20b0f334ff448619ee77b27d3edc2ef8b",
+      "after": "80f5eac637cb97b7461ce464125e24ebbe30b81940925f04fe1257062f573bdf"
+    },
+    "/home/karolina/Research/Code/sim_env/sim_env/graph_run.py": {
+      "before": "3e6b503c08de164ecb587d708964db60f060c19a306b5e0f0caba1b900c2fc2c",
+      "after": "9cfd699a3ba6613846de56a9266975b4418f654a9b911bc95ce10401ddab8440"
+    },
+    "/home/karolina/Research/Code/sim_env/sim_env/graph_transport.py": {
+      "before": "6ce56ab3840b5e3db7a79b89d2dcdd245df61eebf761c5abcd727b734c886e37",
+      "after": "ed0625dd9ed7158b7c07290320f0900befe626fbf801b11a7ba7b5eb79a575ea"
+    },
+    "/home/karolina/Research/Code/sim_env/tests/test_graph_run.py": {
+      "before": "69205ea548ce3aad619440a626dc971b07f7878349303d2fd9cde80541e3b0fb",
+      "after": "f9398fecacb65f884d0fe50486ff324b103b6903ca8c8ec33bed66a27d4a908f"
+    },
+    "/home/karolina/Research/Code/sim_env/tests/test_graph_relay.py": {
+      "before": "c4128dd55884e96000566412766d1b71e0919f5b9f9471710336c2e4cf4a185c",
+      "after": "b7b42fca118059a87e66e5a2c16e846b4e53688aa08420ebefac6d6302a8f8a8"
+    },
+    "/home/karolina/Research/Code/sim_env/tests/test_graph_runtime_process.py": {
+      "before": "ac7eb0e3f95c79f872bda05b11b86dae3426729ea0cf1887c158d24734be3f5b",
+      "after": "dc8d51a33bb5f0235710fb0b96be56e0bfa02ab1df203a541b6fdb553a711547"
+    }
+  },
+  "fixture_approval": {
+    "user_instruction": "Proceed with implementation and change the fixtures with single port conflicts",
+    "existing_fixture_sources_changed": [
+      "verification/graph_core/tests/host_scheduling_test.c",
+      "verification/graph_core/tests/p4_process_test.py",
+      "verification/graph_core/tests/host_test.c",
+      "verification/graph_core/tests/host_udp_test.c",
+      "verification/graph_core/tests/collector_crash_test.py",
+      "verification/graph_core/tests/p7_process_test.py",
+      "/home/karolina/Research/Code/sim_env/tests/test_graph_run.py",
+      "/home/karolina/Research/Code/sim_env/tests/test_graph_relay.py",
+      "/home/karolina/Research/Code/sim_env/tests/test_graph_runtime_process.py"
+    ],
+    "behavioral_assertions_preserved": true,
+    "adaptations": "Two-port startup/routes/readiness, wait/receive split and class-aware fake adapters, canonical-host argument indexes. Explicit zero pacing preserves old timing assertions.",
+    "collector_formatting": "Ruff-only formatting after full suite execution; AST equality checked against the adapted pre-format source.",
+    "historical_P2": "Single-port artifact-only binary/fixture preserved."
+  },
+  "new_files": [
+    "verification/graph_core/tests/host_transport_scheduling_test.c",
+    "verification/graph_core/transport_scheduling.cmake",
+    "verification/graph_core/transport_contention.py",
+    "verification/graph_core/transport_checksum_probe.c"
+  ],
+  "new_scheduler_scenarios": 10,
+  "verification": {
+    "runs": [
+      {
+        "profile": "default",
+        "passed": 58,
+        "failed": 0,
+        "duration_seconds": 62.17,
+        "build_command": "cmake --build /tmp/kaos-timing-host -j4",
+        "test_command": "ctest --test-dir /tmp/kaos-timing-host --output-on-failure --output-log /home/karolina/Research/Code/kaos_core/verification/graph_core/results/transport_scheduling/default-ctest.log",
+        "host_path": "/tmp/kaos-timing-host/core/kaos_host",
+        "host_sha256": "12267543290b826a2b1e23ef3876e5f595d7128cfaae2dbe7c8385b13d52aa84",
+        "new_fixture_sha256": "4baba3ef286cc559058b74ee05841ba76ae54bfdd36afdf9e909918dccba618c"
+      },
+      {
+        "profile": "four",
+        "passed": 32,
+        "failed": 0,
+        "duration_seconds": 47.37,
+        "build_command": "cmake --build /tmp/kaos-refactor-four -j4",
+        "test_command": "ctest --test-dir /tmp/kaos-refactor-four --output-on-failure --output-log /home/karolina/Research/Code/kaos_core/verification/graph_core/results/transport_scheduling/four-ctest.log",
+        "host_path": "/tmp/kaos-refactor-four/core/kaos_host",
+        "host_sha256": "ff40c8efbfed33e0a68add43651e4dc3748123e9a1d5cdf017704ea09e8731dc",
+        "new_fixture_sha256": "e8f9c65583a7dff6a01bfd9752f5d8aa5855ce00991b4e57e8a86261f050f366"
+      }
+    ],
+    "sanitizers": [
+      "AddressSanitizer",
+      "UndefinedBehaviorSanitizer fail-fast",
+      "LeakSanitizer"
+    ],
+    "wamr_asan_exception": "detect_stack_use_after_return=0 for WAMR native-stack checks",
+    "default_python_discovery": {
+      "discovered": 171,
+      "passed": 130,
+      "skipped_opt_in": 41
+    },
+    "default_workload_skip": "One colocated three-node pipeline; executes in four-node profile",
+    "explicit_runtime_process": {
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "command": "KAOS_P3_HOST=/tmp/kaos-timing-host/core/kaos_host KAOS_P3_GUEST=/tmp/kaos-timing-host/node.wasm uv --directory /home/karolina/Research/Code/sim_env run --offline python -m unittest discover -s tests -p test_graph_runtime_process.py -v"
+    },
+    "relay_and_runner": "14 relay and 8 GraphRun cases execute in default CTest",
+    "python_quality": "Ruff lint and format check passed on all ten changed Python files",
+    "diff_check": "git diff --check passed",
+    "post_suite_changes": "Documentation/evidence plus whitespace-only host-loop layout and AST-equivalent collector formatting; final host source also recompiled with recorded Xtensa command.",
+    "initial_full_run": "56/58: collector_crash and p7_process still read the old positional device-ID argument. Updated index 3 to 4 without changing assertions; final full run 58/58. Initial log retained."
+  },
+  "experiments": [
+    {
+      "name": "default-before",
+      "command": "PYTHONPATH=/tmp/kaos-transport-baseline uv --directory /home/karolina/Research/Code/sim_env run --offline python /home/karolina/Research/Code/kaos_core/verification/graph_core/transport_contention.py --host /tmp/kaos-transport-baseline/default-host --feedback-guest /tmp/kaos-timing-host/feedback.wasm --node-guest /tmp/kaos-timing-host/node.wasm --output /home/karolina/Research/Code/kaos_core/verification/graph_core/results/transport_scheduling/default-before",
+      "result": "verification/graph_core/results/transport_scheduling/default-before/result.json",
+      "host_sha256": "4a514bd1ea73f4ca6a2fda8125013e4e268066e7db99b00b9f98dbcdc61fb2cb",
+      "artifact_block_transfer": {
+        "begin_us": 172982098505,
+        "end_us": 172982202780,
+        "duration_us": 104275,
+        "requests": 64,
+        "responses": 64,
+        "feedback_gets_during_block_transfer": 78
+      },
+      "phases": [
+        {
+          "name": "before",
+          "received": 207,
+          "unique_sequences": 71,
+          "duplicates": 136,
+          "observed_sequence_gaps": 0,
+          "first_sequence": 3,
+          "last_sequence": 73,
+          "duration_us": 250161,
+          "source_put_to_final_get": {
+            "count": 71,
+            "p50_us": 3466,
+            "p95_us": 4605,
+            "max_us": 4976
+          }
+        },
+        {
+          "name": "artifact",
+          "received": 88,
+          "unique_sequences": 26,
+          "duplicates": 62,
+          "observed_sequence_gaps": 0,
+          "first_sequence": 74,
+          "last_sequence": 99,
+          "duration_us": 119971,
+          "source_put_to_final_get": {
+            "count": 26,
+            "p50_us": 4717,
+            "p95_us": 5911,
+            "max_us": 5914
+          }
+        },
+        {
+          "name": "after",
+          "received": 202,
+          "unique_sequences": 72,
+          "duplicates": 130,
+          "observed_sequence_gaps": 0,
+          "first_sequence": 99,
+          "last_sequence": 170,
+          "duration_us": 250296,
+          "source_put_to_final_get": {
+            "count": 72,
+            "p50_us": 3459,
+            "p95_us": 4864,
+            "max_us": 5848
+          }
+        }
+      ],
+      "transport": {
+        "1": {
+          "available": false,
+          "reason": "no TRANSPORT stdout summary"
+        },
+        "2": {
+          "available": false,
+          "reason": "no TRANSPORT stdout summary"
+        }
+      }
+    },
+    {
+      "name": "default-after",
+      "command": "PYTHONPATH=/home/karolina/Research/Code/sim_env uv --directory /home/karolina/Research/Code/sim_env run --offline python /home/karolina/Research/Code/kaos_core/verification/graph_core/transport_contention.py --host /tmp/kaos-timing-host/core/kaos_host --feedback-guest /tmp/kaos-timing-host/feedback.wasm --node-guest /tmp/kaos-timing-host/node.wasm --output /home/karolina/Research/Code/kaos_core/verification/graph_core/results/transport_scheduling/default-after",
+      "result": "verification/graph_core/results/transport_scheduling/default-after/result.json",
+      "host_sha256": "12267543290b826a2b1e23ef3876e5f595d7128cfaae2dbe7c8385b13d52aa84",
+      "artifact_block_transfer": {
+        "begin_us": 173021609150,
+        "end_us": 173021687627,
+        "duration_us": 78477,
+        "requests": 64,
+        "responses": 64,
+        "feedback_gets_during_block_transfer": 63
+      },
+      "phases": [
+        {
+          "name": "before",
+          "received": 209,
+          "unique_sequences": 82,
+          "duplicates": 127,
+          "observed_sequence_gaps": 0,
+          "first_sequence": 1,
+          "last_sequence": 82,
+          "duration_us": 250716,
+          "source_put_to_final_get": {
+            "count": 82,
+            "p50_us": 3415,
+            "p95_us": 3767,
+            "max_us": 14048
+          }
+        },
+        {
+          "name": "artifact",
+          "received": 73,
+          "unique_sequences": 23,
+          "duplicates": 50,
+          "observed_sequence_gaps": 0,
+          "first_sequence": 83,
+          "last_sequence": 105,
+          "duration_us": 92248,
+          "source_put_to_final_get": {
+            "count": 23,
+            "p50_us": 4473,
+            "p95_us": 4817,
+            "max_us": 5052
+          }
+        },
+        {
+          "name": "after",
+          "received": 206,
+          "unique_sequences": 83,
+          "duplicates": 123,
+          "observed_sequence_gaps": 0,
+          "first_sequence": 105,
+          "last_sequence": 187,
+          "duration_us": 250093,
+          "source_put_to_final_get": {
+            "count": 83,
+            "p50_us": 3386,
+            "p95_us": 3591,
+            "max_us": 5890
+          }
+        }
+      ],
+      "transport": {
+        "1": {
+          "available": true,
+          "rounds": 1211,
+          "rx_app": 512,
+          "rx_mgmt": 106,
+          "drop_app": 0,
+          "drop_mgmt": 0,
+          "invalid_app": 0,
+          "invalid_mgmt": 0,
+          "sent_app": 516,
+          "sent_mgmt": 106,
+          "send_fail_app": 0,
+          "send_fail_mgmt": 0,
+          "endpoint_drops": 11,
+          "artifact_requests": 68,
+          "max_round_us": 1628,
+          "max_management_gap_us": 23453,
+          "artifact_receive_max_us": 1454,
+          "artifact_complete_max_us": 1454
+        },
+        "2": {
+          "available": true,
+          "rounds": 1059,
+          "rx_app": 516,
+          "rx_mgmt": 26,
+          "drop_app": 0,
+          "drop_mgmt": 0,
+          "invalid_app": 0,
+          "invalid_mgmt": 0,
+          "sent_app": 512,
+          "sent_mgmt": 26,
+          "send_fail_app": 0,
+          "send_fail_mgmt": 0,
+          "endpoint_drops": 4,
+          "artifact_requests": 4,
+          "max_round_us": 2301,
+          "max_management_gap_us": 12120,
+          "artifact_receive_max_us": 132,
+          "artifact_complete_max_us": 132
+        }
+      }
+    },
+    {
+      "name": "four-before",
+      "command": "PYTHONPATH=/tmp/kaos-transport-baseline uv --directory /home/karolina/Research/Code/sim_env run --offline python /home/karolina/Research/Code/kaos_core/verification/graph_core/transport_contention.py --host /tmp/kaos-transport-baseline/four-host --feedback-guest /tmp/kaos-timing-host/feedback.wasm --node-guest /tmp/kaos-timing-host/node.wasm --output /home/karolina/Research/Code/kaos_core/verification/graph_core/results/transport_scheduling/four-before",
+      "result": "verification/graph_core/results/transport_scheduling/four-before/result.json",
+      "host_sha256": "dafec34c4284e04cf6ddf268346b38858ba9253e31fc05d092812522cc1f1ffa",
+      "artifact_block_transfer": {
+        "begin_us": 173038135836,
+        "end_us": 173038217552,
+        "duration_us": 81716,
+        "requests": 64,
+        "responses": 64,
+        "feedback_gets_during_block_transfer": 65
+      },
+      "phases": [
+        {
+          "name": "before",
+          "received": 212,
+          "unique_sequences": 71,
+          "duplicates": 141,
+          "observed_sequence_gaps": 0,
+          "first_sequence": 4,
+          "last_sequence": 74,
+          "duration_us": 250323,
+          "source_put_to_final_get": {
+            "count": 71,
+            "p50_us": 3450,
+            "p95_us": 3596,
+            "max_us": 3936
+          }
+        },
+        {
+          "name": "artifact",
+          "received": 75,
+          "unique_sequences": 22,
+          "duplicates": 53,
+          "observed_sequence_gaps": 0,
+          "first_sequence": 74,
+          "last_sequence": 95,
+          "duration_us": 95833,
+          "source_put_to_final_get": {
+            "count": 22,
+            "p50_us": 4592,
+            "p95_us": 5854,
+            "max_us": 7579
+          }
+        },
+        {
+          "name": "after",
+          "received": 204,
+          "unique_sequences": 66,
+          "duplicates": 138,
+          "observed_sequence_gaps": 0,
+          "first_sequence": 95,
+          "last_sequence": 160,
+          "duration_us": 250273,
+          "source_put_to_final_get": {
+            "count": 66,
+            "p50_us": 3495,
+            "p95_us": 4793,
+            "max_us": 7043
+          }
+        }
+      ],
+      "transport": {
+        "1": {
+          "available": false,
+          "reason": "no TRANSPORT stdout summary"
+        },
+        "2": {
+          "available": false,
+          "reason": "no TRANSPORT stdout summary"
+        }
+      }
+    },
+    {
+      "name": "four-after",
+      "command": "PYTHONPATH=/home/karolina/Research/Code/sim_env uv --directory /home/karolina/Research/Code/sim_env run --offline python /home/karolina/Research/Code/kaos_core/verification/graph_core/transport_contention.py --host /tmp/kaos-refactor-four/core/kaos_host --feedback-guest /tmp/kaos-timing-host/feedback.wasm --node-guest /tmp/kaos-timing-host/node.wasm --output /home/karolina/Research/Code/kaos_core/verification/graph_core/results/transport_scheduling/four-after",
+      "result": "verification/graph_core/results/transport_scheduling/four-after/result.json",
+      "host_sha256": "ff40c8efbfed33e0a68add43651e4dc3748123e9a1d5cdf017704ea09e8731dc",
+      "artifact_block_transfer": {
+        "begin_us": 173067638939,
+        "end_us": 173067727233,
+        "duration_us": 88294,
+        "requests": 64,
+        "responses": 64,
+        "feedback_gets_during_block_transfer": 68
+      },
+      "phases": [
+        {
+          "name": "before",
+          "received": 211,
+          "unique_sequences": 86,
+          "duplicates": 125,
+          "observed_sequence_gaps": 0,
+          "first_sequence": 2,
+          "last_sequence": 87,
+          "duration_us": 250356,
+          "source_put_to_final_get": {
+            "count": 86,
+            "p50_us": 2492,
+            "p95_us": 3560,
+            "max_us": 4784
+          }
+        },
+        {
+          "name": "artifact",
+          "received": 73,
+          "unique_sequences": 24,
+          "duplicates": 49,
+          "observed_sequence_gaps": 0,
+          "first_sequence": 88,
+          "last_sequence": 111,
+          "duration_us": 98056,
+          "source_put_to_final_get": {
+            "count": 24,
+            "p50_us": 3671,
+            "p95_us": 5284,
+            "max_us": 5846
+          }
+        },
+        {
+          "name": "after",
+          "received": 179,
+          "unique_sequences": 55,
+          "duplicates": 124,
+          "observed_sequence_gaps": 0,
+          "first_sequence": 111,
+          "last_sequence": 165,
+          "duration_us": 250229,
+          "source_put_to_final_get": {
+            "count": 55,
+            "p50_us": 3471,
+            "p95_us": 10517,
+            "max_us": 12077
+          }
+        }
+      ],
+      "transport": {
+        "1": {
+          "available": true,
+          "rounds": 1126,
+          "rx_app": 488,
+          "rx_mgmt": 106,
+          "drop_app": 0,
+          "drop_mgmt": 0,
+          "invalid_app": 0,
+          "invalid_mgmt": 0,
+          "sent_app": 501,
+          "sent_mgmt": 106,
+          "send_fail_app": 0,
+          "send_fail_mgmt": 0,
+          "endpoint_drops": 12,
+          "artifact_requests": 68,
+          "max_round_us": 1931,
+          "max_management_gap_us": 19197,
+          "artifact_receive_max_us": 1738,
+          "artifact_complete_max_us": 1738
+        },
+        "2": {
+          "available": true,
+          "rounds": 992,
+          "rx_app": 501,
+          "rx_mgmt": 26,
+          "drop_app": 0,
+          "drop_mgmt": 0,
+          "invalid_app": 0,
+          "invalid_mgmt": 0,
+          "sent_app": 488,
+          "sent_mgmt": 26,
+          "send_fail_app": 0,
+          "send_fail_mgmt": 0,
+          "endpoint_drops": 12,
+          "artifact_requests": 4,
+          "max_round_us": 669,
+          "max_management_gap_us": 12406,
+          "artifact_receive_max_us": 117,
+          "artifact_complete_max_us": 117
+        }
+      }
+    }
+  ],
+  "experiment_interpretation": {
+    "repetitions": "One run per capacity profile/version; exploratory, not performance acceptance",
+    "clock": "Common machine CLOCK_MONOTONIC; no cross-device synchronization claim",
+    "complete_trace": true,
+    "guest_get": "Host copy to guest memory, not application acceptance or physical execution",
+    "artifact_transfer": "64 block requests/responses for 16 KiB; positive feedback GET count inside actual transfer window in each run",
+    "latency": "First source PUT to first final feedback GET per sequence; phase assigned by GET time",
+    "baseline_instrumentation": "Old host has no TRANSPORT summary; counters are unavailable, not zero",
+    "new_counters": "No send failures in these captures; endpoint rejects observed. Reject counter combines full/disabled/stale/invalid deliveries.",
+    "management_gap": "Includes idle waits; no busy-load service bound inferred",
+    "source_baseline": "Original tracked core sources match HEAD; exact source diff retained. Old binaries/package remain under /tmp/kaos-transport-baseline; retained results hash them, not a claim of committed/rebuildable old simulator state."
+  },
+  "checksum": {
+    "command": "cc -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror -ffunction-sections -fdata-sections -Igraph_core/include verification/graph_core/transport_checksum_probe.c graph_core/kaos_artifact.c -Wl,--gc-sections -o /tmp/kaos-transport-checksum-probe",
+    "run_command": "/tmp/kaos-transport-checksum-probe",
+    "result": "verification/graph_core/results/transport_scheduling/checksum.json",
+    "executable_sha256": "3c0d6c0b39b34bef59ef29969ea9efdab8f24f2f23b530f664b3737082c16298",
+    "scope": "Unchanged CRC, unsanitized -O2 call only, 100 repeats/size 256/4096/16384/65536, zero-byte timestamp-pair measurement; no lock contention",
+    "optimization": "None; target/workload threshold not declared"
+  },
+  "esp32": {
+    "status": "Network host cross-build passed; not flashed or physically exercised",
+    "idf": "v5.5",
+    "profile": "CORE_FOUR_NODE_PROFILE",
+    "optimization": "-Og",
+    "main_stack_bytes": 12288,
+    "image_bytes": 917712,
+    "image_sha256": "51cf10045ed6dc3a4c5b81c398e99a7d6cfcdb9828b7aea7e68e5dd740f2074c",
+    "build_command": "source /home/karolina/esp/esp-idf/export.sh && idf.py -C /home/karolina/Research/Code/kaos_core/graph_core/ports/espidf -B /tmp/kaos-transport-esp32 build",
+    "stack_usage": "Same compiler command plus -fstack-usage: step=1232, receive_batch=1232, run=48 bytes. Excludes callees; no complete call-graph bound/high-water claim.",
+    "stack_command": "verification/graph_core/results/transport_scheduling/esp32-stack-compile.json",
+    "config": "verification/graph_core/results/transport_scheduling/esp32-sdkconfig.txt",
+    "config_redactions": {
+      "original_sha256": "3fc879973366b030ec318236360b899dd314a1df5ca3f2bdbc08aa0ecc15cbbc",
+      "redacted_keys": [
+        "CONFIG_EXAMPLE_WIFI_SSID",
+        "CONFIG_EXAMPLE_WIFI_PASSWORD"
+      ]
+    }
+  },
+  "reviews": {
+    "scheduler": "Independent review found no protocol blocker; retained full finite peer pass as simplest fairness design.",
+    "embedded_stack": "Removed duplicate reply datagram temporary/copy; receive handlers encode into existing bounded reply storage.",
+    "fixture_regression": "Preserved behavioral assertions; excessive unconditional lifecycle passes discovered by an existing worker-entry assertion were corrected using due-timer checks between empty phases."
+  },
+  "environment": {
+    "system": "Linux-7.0.0-38-generic-x86_64-with-glibc2.39",
+    "cc": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0"
+  },
+  "limitations": [
+    "Two sockets do not reserve radio airtime or fully isolate lower network buffers.",
+    "Management and artifact responses share the management receive FIFO.",
+    "Receive fairness is by class, not endpoint; noisy application producer can fill the shared application socket.",
+    "Continuous host work can keep ESP priority-3 control runnable ahead of priority-2 workers on the same core.",
+    "No declared workload rates/latency/loss/progress acceptance limits; short POSIX runs do not qualify them.",
+    "No physical Wi-Fi/heap/stack measurements, complete lock-wait/hold instrumentation or timer-lateness measurement.",
+    "No separated RX-to-enqueue, Put-to-submission or guest-consumption/acquisition-age timing guarantee.",
+    "Kernel socket loss and observer overhead not isolated; successful send is not remote receipt.",
+    "Q14 final composed scheduler model and R05/P9 qualification remain open."
+  ],
+  "source_sha256": {
+    "graph_core/kaos_cbor.h": "31ef5d10a7914ab48d03356f1133d1c40452a93c9ddc57384956d46848fee131",
+    "graph_core/kaos_request.c": "a166b486b84be1d8377c492630fdb22f2d83dfdc8136d8b8728910b9a35b3f2e",
+    "graph_core/kaos_predicate.c": "f578bfd625987922f8dca4eeec43ee329e129eec12ea98f8c4412d27f27e9d2e",
+    "graph_core/kaos_admission.c": "e6c3b4399c222a98828d0b1ad4e5d751a4e7818c4b90d4c467e0213edd9d6ab4",
+    "graph_core/kaos_artifact.c": "b82adb947e9b76f6706d13450cc67a7f2e59303b180be5f8a363e9e4afbfbfa1",
+    "graph_core/kaos_graph.c": "fc3e63bff1d5fa615fddd9e2b931274a0f610e19caa608dceffea6f256ceecac",
+    "graph_core/kaos_host.c": "46b8cf6b3b4daf6a445b2a6d67dec7c8d06ccebe3a37dabf1f40663746465466",
+    "graph_core/kaos_endpoint.c": "e57e108bafc22fc91d317b6c61a0b68f3f08ff14f511dff5e0cb987b2881a25f",
+    "graph_core/kaos_control.c": "ffc947c80ef9bbbbd93e0aded20e683d6db9d440464ef1964d5aebeb6b220980",
+    "graph_core/kaos_report.c": "efcc3473b5657053aaba1e4c85ddccf22031d6fd740d131ca6d680ebdbd224d8",
+    "graph_core/kaos_edge.c": "e935e7ad4e5195f5d768bb921d57141077d63d26f88a5aea6337583dd93b0501",
+    "graph_core/kaos_admission_internal.h": "3bd06ffee9208051364e4f89079533ce9fec1043407f417e1df62644631c6e7d",
+    "graph_core/CMakeLists.txt": "331852e8be1c0cc4457609d86e0ad76cbaccb01cd829518379eab6242ee18083",
+    "graph_core/kaos_node.c": "8194ad784261f4960fb0474a32c26749202c7011151efd977b800edd52a966ea",
+    "graph_core/kaos_coap.c": "904ec321886c49dc39a70ed8661e1269551371dae9dab35387dcf0fc000424eb",
+    "graph_core/runtime/native_fixture.c": "62ca02bf0139c51fdfee794fc41e8e7f3a83c05a00bfacea5b1aa4d35f29ef1d",
+    "graph_core/runtime/CMakeLists.txt": "9f4e3721cd7c86bc05ee4c71aed966ae59e6bd8f34bd7e4fb9180d3e58711816",
+    "graph_core/runtime/wamr.cmake": "9fdafb52d97b808e6c45f0db0f9c9b531b35600e2e773b3d8d2295d707df6740",
+    "graph_core/runtime/native_internal.h": "c743491c952c9db8c5414671a8249f24f517c1e21ffc5e50df99b485e74d673f",
+    "graph_core/runtime/profile.c": "d087952ec698a1c41be85b7faeb09f4eec0967ce0ac18311f46e1236e30a208c",
+    "graph_core/runtime/kaos_wamr.c": "d7bff7e125d02cd48fa9404f8b0ab1a85739468fab4f10a11d87febee62c7dab",
+    "graph_core/ports/clock_posix.c": "d6b83af5f0088cdb02d264a7c270e8311bd5df5b9d264f5baaa6ea45d148e458",
+    "graph_core/ports/host_udp.h": "28a47d0b2a0c906abad0c649a9caecc7838ce9591957b633f997045c6f3cac23",
+    "graph_core/ports/clock_espidf.c": "d78583e5eb356cb200b84fde8536bb597c85cc887e66fe2117f2532b1577488c",
+    "graph_core/ports/host_udp.c": "203814fd01098aab820b26d713730e72568972ea2d71cc2e32fb2c167f5ff7b0",
+    "graph_core/include/kaos_control.h": "c8117f29956a34acb7da956993f185842c65ba60dd16afbd0f7c9848595bc540",
+    "graph_core/include/kaos_wamr.h": "aec7fe294802286d7a358e3f31183210fcc3ce5d704450404f8dffbdc65d3932",
+    "graph_core/include/kaos_admission.h": "c03a63636ed0ad82264d572172f80399d8c0602c54899e0062babde31acbe381",
+    "graph_core/include/kaos_coap.h": "d325494043daa939025e6c76ad259496f7cd9f1ee8ffbe8ace64013f44701881",
+    "graph_core/include/kaos_predicate.h": "da0a6b6e1281f32d604a0347daa556f0729f32e17e7bb8ca3bfa04be98d06221",
+    "graph_core/include/kaos_host.h": "5ff4ddd9d3d776550a5b186a1d48dd909016d5303ac0decb5dfd7de668c3a478",
+    "graph_core/include/kaos_limits.h": "cf78da6da9a38b7d967232401a3fbf4e2eef1c1acea1653b8d895d495ada3bbd",
+    "graph_core/include/kaos_node.h": "b4cefbdf42bfb2da7162b9f99ad2dcf40d217d193a0add90ea8351155b8a9d6a",
+    "graph_core/include/kaos_report.h": "f99c818857ae483e25a7e5878daa29a4b06717e68f2a1a52063610b74130a8d6",
+    "graph_core/include/kaos_artifact.h": "b7c881a2c5d4bfe4863140c5f07adca6e531cb438484bbd647d131ef9805af66",
+    "graph_core/include/kaos_endpoint.h": "4352573e910b43c1945b98903080d78c39ab80ec554a60549d082974530a661e",
+    "graph_core/include/kaos_native.h": "d94b986c8b30e1c29323a675906437cdb2203489253776f03daf2d5e8011b8c2",
+    "graph_core/include/kaos_runtime.h": "62fd59c696b02a5e4fd59b6f3f98eeb382f3bb5d98fdd921e820f7c05dba850c",
+    "graph_core/include/kaos_edge.h": "fbed64cb1c6321f02c6df40870a855b7370e4e9f0e47588f75f5c40b17e8960f",
+    "graph_core/include/kaos_host_platform.h": "990a6fb73499dc9838ab44c325a258856cb675c19264f6c4f99099abbad9f4fc",
+    "graph_core/include/kaos_graph.h": "8cedf2bf6a76987f6e4935d726c7740833a7cadefa66e9004cba6523233a9d2e",
+    "graph_core/ports/espidf/CMakeLists.txt": "488d1ba8e3bca726178ae51faa144b0d02f63020d94c32419fc4927bb91dae87",
+    "graph_core/ports/espidf/app_main.c": "b857a40f2dcf8ea96ee9f466913124108e8f5a7455fcd72bc4086e71986ba1f7",
+    "graph_core/ports/posix/main.c": "121e2d6bd0d62742a3ac34034f4c70024d135080a5a7e149399fccf6f66a048a",
+    "graph_core/ports/espidf/main/Kconfig.projbuild": "b979e55c12e77d2a6f501174733c4acd8be729dac3b7b03ccc6604e8699e564a",
+    "graph_core/ports/espidf/main/CMakeLists.txt": "5c7c28ba47a48954c6c6604a5fdf313dc20d1238386ff41172e9d2fe8268c541",
+    "verification/graph_core/relay_overflow.cmake": "b032af9932baa551dbc4334470ce650c20e47f949cca47ebed1db45c8df128a0",
+    "verification/graph_core/barriers.cmake": "e8bef113dc784ef5b373655d36c9c8ffed3efae07be49bbda02335404c3d8938",
+    "verification/graph_core/p4_capacity.c": "c436ad48dcb9cd4a306e3c8ae3b74b9d9c490d9cb78f6788d3d0a0144be779fa",
+    "verification/graph_core/p7_capacity.c": "e6c8fe424987eab629955ca73abc22cdd7cb1722d28066e0d3d3e30ff94c3811",
+    "verification/graph_core/runtime_phase_barriers.cmake": "0a2b147fa2884756c15dd7f50a384fceaf5541f4748f530c4410dc3e825602d9",
+    "verification/graph_core/wamr_phase_barriers.cmake": "7d4d08f40383c11220a5c1443a25f8146ba514e3f0209a50c415387b3063ab14",
+    "verification/graph_core/p5_capacity.c": "a47727b430255fa94f2940d74b6191cce926ab45ce010d732ff20b760a7ab7ff",
+    "verification/graph_core/observation_loss.cmake": "20e734fbd62753d0e19a4ab92eccd505678b88597d304f44a554b6cb8971fdba",
+    "verification/graph_core/p2_fixture_host.c": "17dc6f6d97409112b50ce5ac96bfaaea34f79e007c0355368a50db572c928f90",
+    "verification/graph_core/host_crash.cmake": "9544ea799e4acc81b085c4faab6d3ce6ffb89aeb68c2b2233f2f685fd86fc0e6",
+    "verification/graph_core/p6_capacity.c": "81f1f28398e66a0441368757ddeb651a33868928530238d5f8bff479a0f271d9",
+    "verification/graph_core/CMakeLists.txt": "535263ad1423d98fbb6a9db09514a4f17b412507700441423f8e7a4dd9b47f92",
+    "verification/graph_core/read_serial.py": "3e4fb8428d23508a30e89ff65eb33f47c1c566860756b5e90f0b97baae05124b",
+    "verification/graph_core/collector_crash.cmake": "cd7f8684bc946d6b7d0cdbf5b826b3235bc03ff0705454db085dedeb408bf695",
+    "verification/graph_core/native.cmake": "70a9dfd6c61b1d35bf5998b89c69d3575f2a1e8634068e09a2212bc497516377",
+    "verification/graph_core/workloads.cmake": "f4b8b2d6b76bf1c860e0af18ef6b60b9e48fb1db8a9874f4996c3d45c7f984cb",
+    "verification/graph_core/profile_sizes.c": "5ad65524e02becc14108fa253ed98e0ad0a8f2421bd92647b69e8c2df9f59ed8",
+    "verification/graph_core/tests/request_test.c": "eee17fd121fc9a1523f11b30c2adb2e4739b69eb5c9fed38056e2c7d4ef709fa",
+    "verification/graph_core/tests/p7_control_test.c": "7b5de3d8a0a08831a38f6c9b240260050b6148702cb7a545fde4cc720b06babe",
+    "verification/graph_core/tests/wamr_test.c": "0fb5c460de9edcfd8feb3f59d74bce7ab62e038568a58bc4f59956cba9f2f84b",
+    "verification/graph_core/tests/p5_test.c": "87b98adba1cd7aeb73ef4c3ecb54b6e9997cde58a2aaa81813db11836aa88545",
+    "verification/graph_core/tests/native_process_test.py": "a37a4f2c74c6c002ae78bb7c544bdea3d527d3a7565b2efd94998864f05cd072",
+    "verification/graph_core/tests/dynamic_binding_test.c": "2e9c61d6e77a7a3d7a04ceb4c93e9f0bf05e3072705af9eea4e90a3c51243fb5",
+    "verification/graph_core/tests/wamr_budget_test.c": "e09b0a87f943eff688de7ae9480511682936dd88da24fc96f5ffb759e53ec298",
+    "verification/graph_core/tests/runtime_phase_barrier_test.c": "0b9860bb1dc46b937f9662f6e870083bb7ce2158bf9e736e217a3f44f19968a3",
+    "verification/graph_core/tests/admission_reuse_test.c": "d885ae6a8464ef63cc56d60f20507c16cf3bc6bcdc69a8f9044c60e6be133ff5",
+    "verification/graph_core/tests/workload_stalls_test.c": "7364486942843f76f166693e4759a83e44e851ff28b738e366897a18fd11a12e",
+    "verification/graph_core/tests/edge_test.c": "cfbf4084cf01464fd44a168aaa41468418e8a8707e4b490254b03cbeb07eaa16",
+    "verification/graph_core/tests/host_crash_test.py": "9985b6e04459be2922c286223fed3c2bbe73ddbef4f68a84578eb4a11cdbc132",
+    "verification/graph_core/tests/p2_host_test.c": "05b81f8ab06cc042593d21f54e08c46a65ec37b26925222f2c0c15bc4d4e61e6",
+    "verification/graph_core/tests/optional_expiry_test.py": "0902823f2bb344b4806545dd73664e7414d5a138b2566e88f08f9c6a6caf22d1",
+    "verification/graph_core/tests/p7_lifecycle_test.c": "46abe52b42c6736ec540773411add094ceb2596393aaf7211e0c1b0f658293c6",
+    "verification/graph_core/tests/coap_test.c": "12c5b3a3da9c01f69fad2e10511ddd410b1c1ea7c4cf6cf2d1a8685642657a92",
+    "verification/graph_core/tests/host_scheduling_test.c": "f2068280723e5b3edf5fbcc39e9e061f3a83230f9e2d8c9d02e3385c4db54341",
+    "verification/graph_core/tests/p7_test.c": "ad76aeec524996b1c3290b6a1e2841dcf6178fc457be6673a0987cd759fdef99",
+    "verification/graph_core/tests/p5_process_test.py": "3600c542bb0970a3472eba857812c413c1f7e136d3090ba110452065bbe169eb",
+    "verification/graph_core/tests/p6_test.c": "8af78d82f83cd17f266c985fb04bb0758ebbb75964d50288559a5f3dd59a2f80",
+    "verification/graph_core/tests/lifecycle_barrier_test.c": "8cbf00c34966b3acf69cb7ee16a2938eb676b7114824525e292414d0c71d51a1",
+    "verification/graph_core/tests/core_test.c": "9fd73b5b7b853f88344205d7dc067f0bbddbd6544f20092f37805d39458e1788",
+    "verification/graph_core/tests/wamr_phase_barrier_test.c": "a26f51812a4c0ad724bb666bc693a18f2861a3718e057944f6fd89715bb85f9f",
+    "verification/graph_core/tests/wamr_entry_test.c": "f7e2da1cc96d3dc85debe8612badf8c34c12a2469036b857a594215937c35495",
+    "verification/graph_core/tests/p4_process_test.py": "386ee2f970505f8afa893b1a3c01e228f0ead4a651023a91dc244b2592ac364c",
+    "verification/graph_core/tests/host_test.c": "364af571b9ba6f6073f2de03d6ac56b395359b7b084638aa646134fee76fed24",
+    "verification/graph_core/tests/wamr_channel_test.c": "0792e7de9a342e180e258cd43635854c4ab1fcd97cc6088c8750f4eb320537b8",
+    "verification/graph_core/tests/artifact_test.c": "221a6286321e6f1b73dea05ea6dbf2aab9632876295f7c2bb2a23b65f514c48e",
+    "verification/graph_core/tests/runtime_guest.c": "42a6be5c16eeb6cfd37f1ef52926eac3f7daf05596f888fc5945f9d29715aade",
+    "verification/graph_core/tests/host_udp_test.c": "2460106ee481d47cea19e8fb63196194ff32a192ccec50e156f1c4e56a9c2152",
+    "verification/graph_core/tests/control_test.c": "e162aae95b7e8982a138cb194b8afea3f1b7427d1c6cd45b4be203892f93f188",
+    "verification/graph_core/tests/native_removal_test.c": "830980c61dbffc89970e63dca2381f0d4e3103a79cd7fc708a1da7c37a42d151",
+    "verification/graph_core/tests/p6_admission_test.c": "474da1c99edd2f9eb9f3da4cd6aa2d8d3f42bf9587beb1e673df26e91f6c2e69",
+    "verification/graph_core/tests/relay_overflow_test.py": "8fc633ab7eb38660223237943ceb8d42fc197c27de7dae5c4106a058c0c2a8a3",
+    "verification/graph_core/tests/admission_fixture.h": "fbaf1626fc63be3f18e8238f71959e73c567400a30cca3a8758438da3ea3ed87",
+    "verification/graph_core/tests/host_control_test.c": "e95f6eb84215e9fbd8de78e47033510031db4c5e6890f342391aa2db9b8f2744",
+    "verification/graph_core/tests/endpoint_test.c": "421daa9e41eb86f8eaeac6ac36bd04290a259062897580a408a64265ab0a12d8",
+    "verification/graph_core/tests/collector_crash_test.py": "8ef9a2bbd2955135e692c758b1d3fcfb9fce9567ce63a48e75379c073f0699e6",
+    "verification/graph_core/tests/p6_process_test.py": "26c61e23e4c33a2a342add9fd5e4a606752d80690ba89f312450ea46e1e46ec2",
+    "verification/graph_core/tests/channel_admission_test.c": "32aa1511c1dc4d159ecefca1f471ce13e4f2d4f3ea8488b8ad94e50374b314ae",
+    "verification/graph_core/tests/p6_control_test.c": "a955394832e4b49a5756c7669ab00e9a0e0ebe6323dd2b9f664fd906b61d8962",
+    "verification/graph_core/tests/native_request_test.c": "2399e9214823472cf9eb93262db672a70edb26dab104f947d06b481d7b1d557a",
+    "verification/graph_core/tests/object_facts_test.c": "d511e48e77cec6e4b8776db65f07cd15c12ea7a9772c66e3f74f5c16bf69aee0",
+    "verification/graph_core/tests/report_test.c": "56b76751e40234a7df9e36f096eb6c48b6a1a14b50d5f0fb6bdd52668f100e74",
+    "verification/graph_core/tests/coap_server_test.c": "4abb9467491d301a86c9c383c92eb09530bc9df5cc3043e10636fec62329f7a7",
+    "verification/graph_core/tests/p7_process_test.py": "be2cb34470e0b7e6caa1818a7941639ebca275f2dc19636aa0e664558cde9960",
+    "verification/graph_core/tests/native_runtime_test.c": "a7aa1ce5c1b3582452a44b7958f1840bc9bd93556e4c54d97c8e084a24270869",
+    "verification/graph_core/tests/admission_test.c": "792f69136a04c41b2fbac1910ce696889b11a996514d24f54cabd7828a9d326b",
+    "verification/graph_core/tests/observation_loss_test.py": "4b6acbe99826ea85b7473978c43b2f17378639ea92a665314bb6998af2a04093",
+    "verification/graph_core/tests/node_test.c": "ebec8d4731540896a33ea91af19d05f15abdc8f362f1c0cd54af504ef91f7263",
+    "verification/graph_core/capacity/probe.c": "c15dc456d670b5443e0cf211852d09b2effb402155d856a6c8aa8d16845a8bc0",
+    "verification/graph_core/capacity/stage.py": "33a7576622f91c54979fdbea64c0e17f192257250dee4305150ad8c8b81cd5cc",
+    "verification/graph_core/espidf_p5/CMakeLists.txt": "5064d938fbab0193405b9e541016b1a4fd3bafc8e15ac948c050c725e872dff8",
+    "verification/graph_core/four/CMakeLists.txt": "31dcb19794122c50ebf81b85ee3d10d5d7fe394157fc93d4a3bfa7afe5363faa",
+    "verification/graph_core/espidf_p3/CMakeLists.txt": "a3fce55d82024e93535b92c83de67394bb00b44c6d75c6afd656797570227669",
+    "verification/graph_core/espidf_p6/CMakeLists.txt": "f5325d8d3a7e4a36765c8f442c666fde6a3148395ce216b7d7d8e8f3b3781466",
+    "verification/graph_core/espidf_p4/CMakeLists.txt": "0fdd5652d99908dff6daff38c329e26d31ca0b604820db4e1fffc38e003e2466",
+    "verification/graph_core/guests/stalls.c": "1a0effa196b1cd23a158cb3d3ed96a818d128f71440f203aac2a59342a606817",
+    "verification/graph_core/guests/pipeline.c": "7e641a69bdc9fbe640db19202114638c03afaf5ed942279ca9ee52f4cc33805f",
+    "verification/graph_core/guests/traffic.c": "46f141c4d6d14e0cc77d6a15a2fee8fb140744014f80ba9bcbcddf75ec2abc64",
+    "verification/graph_core/guests/workload.h": "28f1e4d04a116673461301c913612eb2d7ae0885e23abcccb8ee84c018d312b2",
+    "verification/graph_core/guests/node.c": "de8c848986dbe1cc78568a1b5f7ad87b0f93dd301ec8f3cea8462feaf1c01f78",
+    "verification/graph_core/guests/capacity.c": "c14b625930ef1ec8185596c0de08a2d798cf54e4f8406236bec4f5fc96162872",
+    "verification/graph_core/guests/feedback.c": "d4d8363031448b8a22f5a55f34f4fa9e60ef918925d8c19ec0dceaca36ed3d4c",
+    "verification/graph_core/guests/alternatives.c": "303724fc8d9f403a9c6a9659ca81f4fa361758af7f59f34af1725a31cd5347ca",
+    "verification/graph_core/guests/channel.c": "8589c8fa41cfd9b5ddf157cda73a74a0afd572e84f0cfb1f90cf7718ab696d13",
+    "verification/graph_core/guests/native_sensor.c": "335efbbcfc80d189f2d41138571fd45f6612a9eeff06c3848b50d3d71aae3951",
+    "verification/graph_core/guests/mixed.c": "5aa81fdc562b672a0a60a4f55dcfa5066df88fb7c9f0128fe59f8cbde2e55134",
+    "verification/graph_core/espidf/CMakeLists.txt": "9f119b4e4443b2259632660682166d1d37208f26ba9ebb103adbf26cfaf895f0",
+    "verification/graph_core/espidf_p7/CMakeLists.txt": "ef2766a1c4c41a97b3d763d4ed7fdaa317ba4f3584c499ed7c484d08561d38d4",
+    "verification/graph_core/espidf_p5/main/main.c": "fd9cf471348c7446e0c340b030491e7f1ebce622d0acd92772ebbb76402f93d1",
+    "verification/graph_core/espidf_p5/main/CMakeLists.txt": "3c02f43c4b6d251ce40b9f5703eac3bb3616a7e4da9c4aa2fae0bc2d4c638b26",
+    "verification/graph_core/espidf_p3/main/main.c": "ffae4629d7fdcd1e684cbda013de07230436b36de43b4b4b7f6c2e78e30fdacf",
+    "verification/graph_core/espidf_p3/main/CMakeLists.txt": "81e43d1d48c2f4e5b6fcb461ab7c620da4788c5b61f2c2175908621dd418cc6c",
+    "verification/graph_core/espidf_p3/main/node_lifecycle.c": "da99e7799a7e08f0424c66acd4b6e7246bc292ebc7c5f3921a3ce195d89be791",
+    "verification/graph_core/espidf_p6/main/main.c": "c80d0bd5a1e7630ba03acd3c6bf4566cc2c80d4b9352bfa9f38a620a34c321d9",
+    "verification/graph_core/espidf_p6/main/CMakeLists.txt": "3b27dc46fce8c65c8dae5573ab5a5d848467b21574350cca9e5bbcb1e376172e",
+    "verification/graph_core/espidf_p4/main/main.c": "e02529b9e53eca898613a0c47514b68d6ae2ceaa3023361e10ce13286955e897",
+    "verification/graph_core/espidf_p4/main/CMakeLists.txt": "3edfc5f551f0e19c98fa29beda955f8098dfa4df6e1f10013fea3f1b6bcf9252",
+    "verification/graph_core/espidf/main/main.c": "08c2cd3e342115adf380c35b99eec45964108228a374705518fe2e7dbad3a382",
+    "verification/graph_core/espidf/main/CMakeLists.txt": "b39ad4a9184606511a5665e8814dd765b18e25d3e3c2f8652a38e90939ed9a5d",
+    "verification/graph_core/espidf_p7/main/main.c": "14ae37b3db4713eb9cb099a408e0a3e6a2de25afcf78059886150208f1121739",
+    "verification/graph_core/espidf_p7/main/CMakeLists.txt": "6ef0e57b2d950c58f16ed11857b2e10053cb3aa1ff1b43076a598b464972553f",
+    "/home/karolina/Research/Code/sim_env/sim_env/__main__.py": "391409d64e737b5e70514d12a8c56fbd4f5b5dd64f904e5e179716379374a50b",
+    "/home/karolina/Research/Code/sim_env/sim_env/graph_relay.py": "80f5eac637cb97b7461ce464125e24ebbe30b81940925f04fe1257062f573bdf",
+    "/home/karolina/Research/Code/sim_env/sim_env/graph_workloads.py": "2db93aaf807670b1ec793b9b7cc44a9168b6de0649898a392361df6b98518faf",
+    "/home/karolina/Research/Code/sim_env/sim_env/graph_run.py": "9cfd699a3ba6613846de56a9266975b4418f654a9b911bc95ce10401ddab8440",
+    "/home/karolina/Research/Code/sim_env/sim_env/relay.py": "3a411fffe0e0a277c561c383e2930dc92d60790d76286aa4d1270760729f306c",
+    "/home/karolina/Research/Code/sim_env/sim_env/graph_mixed.py": "64aa72e0597817ec3bff027e1b5b021eeda6aa59380ab261c117191ecf34a44e",
+    "/home/karolina/Research/Code/sim_env/sim_env/graph_alternatives.py": "ec71fb8096cf348adbe465136dc9cb7b3570615e9e94cb8d10c25caeae0f6b36",
+    "/home/karolina/Research/Code/sim_env/sim_env/graph_collector.py": "e1a4d9cd017441aa4f75aae7b85bfc1f56f30c0b0ea25776d621615b16298054",
+    "/home/karolina/Research/Code/sim_env/sim_env/protocol.py": "24d436dabf07ca5eea2be4ecd586fa191456e3c9c21a02b2c7a1889cf1904159",
+    "/home/karolina/Research/Code/sim_env/sim_env/config.py": "48ead2ed7e904e97163aea5ec87d2989e2696891c1315d7a805e639061331754",
+    "/home/karolina/Research/Code/sim_env/sim_env/metrics.py": "3acfa97e198270f3fad93b6061dd0792a5b8ff8ddac86a2e4fc8d8415830bdb7",
+    "/home/karolina/Research/Code/sim_env/sim_env/orchestrator.py": "acedd46802cee90eac12f30f7ac87c51a1b6c8c4032ef2a3c297262dc7a16563",
+    "/home/karolina/Research/Code/sim_env/sim_env/__init__.py": "d8d8424e48c9fe10632ef31a629cbf5c3d1078528cd6d63baf00d627ee160c47",
+    "/home/karolina/Research/Code/sim_env/sim_env/graph_transport.py": "ed0625dd9ed7158b7c07290320f0900befe626fbf801b11a7ba7b5eb79a575ea",
+    "/home/karolina/Research/Code/sim_env/sim_env/runner.py": "2e87305f63838484f8e5282c65c9fc81f4f90aa983a1b757544ad85416f6c720",
+    "/home/karolina/Research/Code/sim_env/sim_env/models.py": "c0d09d6d126a42ad4e4f7f3ee63b15b1a90fafe085940417eef5c5132ab2e14f",
+    "/home/karolina/Research/Code/sim_env/sim_env/observer.py": "6f5c13ae323de17e1cc4b1b20cf47ff9aca54a5c5d342b73ceb75a376c829e0a",
+    "/home/karolina/Research/Code/sim_env/sim_env/deployment.py": "431cbead993e481a6c969f30745d27947f0f565b0286d1a8b13249b481f01d7d",
+    "/home/karolina/Research/Code/sim_env/sim_env/graph_evidence.py": "0eb34d1ef10dd4d44e47f258b4365cb5b0950aaf6ccf10d4cdfa145504f71614",
+    "/home/karolina/Research/Code/sim_env/sim_env/simulator.py": "d962e355bd4f84affffa4ecd3f1d7de58316bda347f8efe848b01909c6f2185b",
+    "/home/karolina/Research/Code/sim_env/sim_env/modules.py": "ab6cad11063742133bd41a45c520bc449a88879b0cc66104bba908f9fa3cfa22",
+    "/home/karolina/Research/Code/sim_env/sim_env/graph_protocol.py": "950320ab8b8d87078eb0ba259470e0e89036440b62a7a2b9a923126def13de1c",
+    "/home/karolina/Research/Code/sim_env/sim_env/graph_workload_timing.py": "5c635157521925a4e77a8b65e5965b442dbe15f9531eb91e125b5a467035b6e5",
+    "/home/karolina/Research/Code/sim_env/tests/test_graph_workloads.py": "84b39a88ff8b02c3d267973e958167a97786cfba65d2da48e17521de80640250",
+    "/home/karolina/Research/Code/sim_env/tests/test_graph_native_protocol.py": "7686e1e810c53b585380853b4180b2f6e3d9619eec1fb038185a3378476b7c1b",
+    "/home/karolina/Research/Code/sim_env/tests/test_graph_mixed.py": "ad0d0f333678f762f422882fe34160c0daf0bb3d1f06906824796d3c4823c502",
+    "/home/karolina/Research/Code/sim_env/tests/test_graph_orchestrator.py": "c97388bd83c8a1571d77708c29a59bfbf946ef34560b27e6b611681125830a27",
+    "/home/karolina/Research/Code/sim_env/tests/port_test.c": "274733bac7740199850b147aebdc297c68e0f615c750b0cbb008f21cae5b9d30",
+    "/home/karolina/Research/Code/sim_env/tests/test_graph_core_process.py": "09d50043a7a84c4feb5d5931281cfb5b64edf36eda4f4459ac055670e31a97db",
+    "/home/karolina/Research/Code/sim_env/tests/test_graph_alternatives.py": "8f01972906ad3b4ec776778807b677c4d35d52cfd9d261921058f5708c3a3bd4",
+    "/home/karolina/Research/Code/sim_env/tests/test_integration.py": "bf6c0905168f0925ed03985f775de5a91ce7c69966275c918930887556a19fd5",
+    "/home/karolina/Research/Code/sim_env/tests/test_relay.py": "fa8aa18ae5dab9195e75d85bca53500186791c83bc318af90c9304d0f9beaab3",
+    "/home/karolina/Research/Code/sim_env/tests/test_operations.py": "53a904dfac737f4e1ee5d73f04244b71b1fb04df01606cfd784744aca081d644",
+    "/home/karolina/Research/Code/sim_env/tests/test_observer_metrics.py": "7f9508653bee703445badd2e09810703a2fb57ce0450e08870e5f34af87469ed",
+    "/home/karolina/Research/Code/sim_env/tests/test_graph_run.py": "f9398fecacb65f884d0fe50486ff324b103b6903ca8c8ec33bed66a27d4a908f",
+    "/home/karolina/Research/Code/sim_env/tests/test_models.py": "ed8699980f8f77d7e8136cbc58aa55e6c5a2b60dbe217abf6a90e0cf9ba61ebc",
+    "/home/karolina/Research/Code/sim_env/tests/test_graph_collector.py": "bf1ed8b2abe08c429a316c8b84b626da9172ba9258075e72e030f4f1f54b9254",
+    "/home/karolina/Research/Code/sim_env/tests/test_graph_workload_timing.py": "a32f5813d8dc8b10a9945efc16d2ad850e50c14e197ac4cec99084e5ed21e5c6",
+    "/home/karolina/Research/Code/sim_env/tests/test_graph_transport.py": "cea90bae79803ebe4e34205a61b5408eaa63096d409fe8a215e5ff699a02f72d",
+    "/home/karolina/Research/Code/sim_env/tests/test_graph_relay.py": "b7b42fca118059a87e66e5a2c16e846b4e53688aa08420ebefac6d6302a8f8a8",
+    "/home/karolina/Research/Code/sim_env/tests/test_graph_runtime_process.py": "dc8d51a33bb5f0235710fb0b96be56e0bfa02ab1df203a541b6fdb553a711547",
+    "/home/karolina/Research/Code/sim_env/tests/fixtures/manifest_probe.c": "8eca2deecb5cbaf5a2c224dd4f206b901e54c04addc3d9b50870c1bec357511c",
+    "/home/karolina/Research/Code/sim_env/scripts/prepare_core.py": "c0388657001d65e0252fc0e90dd9b36566260c6e4de4929ec01b226c6a8df7c0",
+    "verification/graph_core/tests/host_transport_scheduling_test.c": "aa99a9856201abf14e0f1c82710f5f9bea77e1cc25d5004b173468524263211a",
+    "verification/graph_core/transport_scheduling.cmake": "34b83d0620f36c8955212171aec92387c866304af75876827612133a0eed7ccb",
+    "verification/graph_core/transport_contention.py": "ce1b4b388a90444af6562cb920748722906b03a40d15283ee84f03b7fbdee636",
+    "verification/graph_core/transport_checksum_probe.c": "1d6308c54070ab0fb846056772b127f1021144546b58a040576783727942ef8e",
+    "guide/README.md": "658d04ce37c6fc5c8acb04c1370d54e19f593e849bc8533ffa873a04e6fd3190",
+    "guide/architecture.md": "cca933f049d2cef804cf7bfb57f9fc1d310d105dca3d68ee1b19023c8c18730e",
+    "guide/usage.md": "30a0abd3df51ecf44ea736ad74c238938811a93aeaa41a9d8df0b76c8c0b8b28",
+    "guide/verification.md": "918f647112183a51a5c1dc8a60f507d3d578cd18ce260b8fe2d621f9be68a943",
+    "guide/open-work.md": "2cec9688f6380a3b4e78ca59e91b95923661dd0e681b2114069665906fa66d30",
+    "implementation_rails/graph_operation_implementation_plan.md": "79e9266752c191c6368f081bb31d936a3314368f89ccf567cf70d7253d17db3d",
+    "/home/karolina/Research/Code/sim_env/README.md": "cc19ad8c8113f82f49c5350a8e17b304c36ddcd71bd6a4e9eff07ee2bd3f5c3d"
+  },
+  "retained_sha256": {
+    "verification/graph_core/results/transport_scheduling/baseline.json": "7d7da3727e4a63127c592fad11b053ebd6bf3d403eb85a3e00b9f1b5d43363ec",
+    "verification/graph_core/results/transport_scheduling/checksum.json": "4b804165ca34106d1b0f86e24c1ebdd6a2c70eb82b3824f8910e87ccd0ca0a06",
+    "verification/graph_core/results/transport_scheduling/core-source.diff": "da03206106ad39bd04dc65e4a67d0bbd001a2a4de6c0885dc36c115947a145d6",
+    "verification/graph_core/results/transport_scheduling/default-CMakeCache.txt": "7d39f058ffce0179d7318bda1e6f75e12633c2f976a853c25726f037f25f0262",
+    "verification/graph_core/results/transport_scheduling/default-LastTest.log": "8f6bf73f20cce4d5ccaec42555da3fbdcda719242f87d5e489c360381c2cf397",
+    "verification/graph_core/results/transport_scheduling/default-after/events.jsonl": "cb83a07d337c9c0a9d7ea3a69e446eaacf3e0a9260740b3cc032054eab272f7d",
+    "verification/graph_core/results/transport_scheduling/default-after/host-1.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/transport_scheduling/default-after/host-2.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/transport_scheduling/default-after/padded-node.wasm": "9d8984de87e727f1638f39bec54f38ec21bc047f331b4bbcf0abf57d1a2e0560",
+    "verification/graph_core/results/transport_scheduling/default-after/provenance.json": "716a0b6115eede6b08b31b63f1a7c56a384ee5d0cfce70db685c05c0f893c6c2",
+    "verification/graph_core/results/transport_scheduling/default-after/result.json": "ea99117c555fef42757c54d54db1e382d04cb111ad2e9a358e1cb872ebfd422c",
+    "verification/graph_core/results/transport_scheduling/default-after.log": "ea99117c555fef42757c54d54db1e382d04cb111ad2e9a358e1cb872ebfd422c",
+    "verification/graph_core/results/transport_scheduling/default-baseline-CMakeCache.txt": "7d39f058ffce0179d7318bda1e6f75e12633c2f976a853c25726f037f25f0262",
+    "verification/graph_core/results/transport_scheduling/default-before/events.jsonl": "b5442d45e078e2924c1da8214844a4ccb20e028023bcbca9cbc921b62be22029",
+    "verification/graph_core/results/transport_scheduling/default-before/host-1.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/transport_scheduling/default-before/host-2.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/transport_scheduling/default-before/padded-node.wasm": "9d8984de87e727f1638f39bec54f38ec21bc047f331b4bbcf0abf57d1a2e0560",
+    "verification/graph_core/results/transport_scheduling/default-before/provenance.json": "43b27a5d70b5e3e031477b51ec0707ae86e302cd3e3995250dbc8160c54e7b55",
+    "verification/graph_core/results/transport_scheduling/default-before/result.json": "059363cf00cfcf122002fd3bc123a30c36ceaf21b5df7f5512734238f3bd081c",
+    "verification/graph_core/results/transport_scheduling/default-before.log": "059363cf00cfcf122002fd3bc123a30c36ceaf21b5df7f5512734238f3bd081c",
+    "verification/graph_core/results/transport_scheduling/default-ctest.log": "1f32079a18499cef12bf636525a386f148529f22f3dc95a222499653d6bc36e5",
+    "verification/graph_core/results/transport_scheduling/default-initial-ctest.log": "b208ebae0a79c8da38750df1f2318488c19a8f90c2d8402d39e924f184d4a6fb",
+    "verification/graph_core/results/transport_scheduling/esp32-build.log": "979e1a471b7b435b69355fc2f12aa415eb3c9693df6e0dddb95de576f669a8e8",
+    "verification/graph_core/results/transport_scheduling/esp32-host-stack.su": "a7bd3488027dc80b4accf0467cc624b90e117ec19d0e88e08a5d59ba002fd855",
+    "verification/graph_core/results/transport_scheduling/esp32-sdkconfig-record.json": "143dd35f2655196d0a99aaf78cb03143bab2f145ac7b6288cc0f9a42ffb72136",
+    "verification/graph_core/results/transport_scheduling/esp32-sdkconfig.txt": "56ce5bd333bee553c74a1917dfdc98bfc58f5c8cb46440d208d55736956c04b9",
+    "verification/graph_core/results/transport_scheduling/esp32-stack-compile.json": "c0bd611bd31255746c4eccf6f0fa64eb76fe4734321dd3ed6c230a8818e6cc96",
+    "verification/graph_core/results/transport_scheduling/four-CMakeCache.txt": "f55fc2e6e626501a8ffbebc34958ece587e54e2505f36673076aebbe17578d37",
+    "verification/graph_core/results/transport_scheduling/four-LastTest.log": "96545eb85aff615dc1739db3a453a7e6651c65d987192ad1282eb4165faec3f2",
+    "verification/graph_core/results/transport_scheduling/four-after/events.jsonl": "26b80f77f35c809e8d7a3ce14051c563e5e6b0aa015d6c4124ed580e644b15b3",
+    "verification/graph_core/results/transport_scheduling/four-after/host-1.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/transport_scheduling/four-after/host-2.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/transport_scheduling/four-after/padded-node.wasm": "9d8984de87e727f1638f39bec54f38ec21bc047f331b4bbcf0abf57d1a2e0560",
+    "verification/graph_core/results/transport_scheduling/four-after/provenance.json": "bd10af6eff9902af072945195dd757b245c728d79a145d2eb14ba44026878671",
+    "verification/graph_core/results/transport_scheduling/four-after/result.json": "eda0441cd1f461a9a68cde0338c10e3b209d2992391a5347026da30db6ac5768",
+    "verification/graph_core/results/transport_scheduling/four-after.log": "eda0441cd1f461a9a68cde0338c10e3b209d2992391a5347026da30db6ac5768",
+    "verification/graph_core/results/transport_scheduling/four-baseline-CMakeCache.txt": "f55fc2e6e626501a8ffbebc34958ece587e54e2505f36673076aebbe17578d37",
+    "verification/graph_core/results/transport_scheduling/four-before/events.jsonl": "21c8ed908d94c0274d78fa7deaf80ad6f32b04e621529eb927d6128a7c539e03",
+    "verification/graph_core/results/transport_scheduling/four-before/host-1.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/transport_scheduling/four-before/host-2.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/transport_scheduling/four-before/padded-node.wasm": "9d8984de87e727f1638f39bec54f38ec21bc047f331b4bbcf0abf57d1a2e0560",
+    "verification/graph_core/results/transport_scheduling/four-before/provenance.json": "d9e5ae85e9542c218bc6b76ffe7e74d3358194d9e16e8ecf70254b1e1ab00d76",
+    "verification/graph_core/results/transport_scheduling/four-before/result.json": "6373f2dc7c3594d597c5ffd6c1077ce139354a1b9b697480a61d96a2fbb0b8d8",
+    "verification/graph_core/results/transport_scheduling/four-before.log": "6373f2dc7c3594d597c5ffd6c1077ce139354a1b9b697480a61d96a2fbb0b8d8",
+    "verification/graph_core/results/transport_scheduling/four-ctest.log": "954df7836975d845ba2df6732bb341cf1def4785f01c9a2aa8237fd35d5888c1",
+    "verification/graph_core/results/transport_scheduling/runtime-process.log": "95676c5863b872090f90c4b8732508239c6eb4db91cbfb24abb7e6f48012726e",
+    "verification/graph_core/results/transport_scheduling/simulator-install.json": "b2387e2c4cdaf6dc4145c4971853e20b7542cb6bdaad3910478a23777f45cb5e",
+    "verification/graph_core/results/transport_scheduling/simulator-readme-baseline.json": "a20a54a031b27d80b7aecb25e263047af38805d011b90be90cdccd5bdbde3458",
+    "verification/graph_core/results/transport_scheduling/simulator-readme.diff": "64cccdc93ea387e8f08d6473963171290540c248f4e241185a8a582bbe184763",
+    "verification/graph_core/results/transport_scheduling/simulator.diff": "20d14ca4331f672d7881dca47e2406a9c523d2dee28ae8ccff8206cd449610b8"
+  }
+}

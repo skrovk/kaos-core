@@ -1,0 +1,24 @@
+[OUTPUT] 
+Internal ctest changing into directory: /tmp/kaos-p4-session/four
+
+[HANDLER_OUTPUT] 
+Test project /tmp/kaos-p4-session/four
+
+    Start 1: graph_p4_capacity
+1/7 Test #1: graph_p4_capacity ................   Passed    3.10 sec
+    Start 2: graph_p5_capacity
+2/7 Test #2: graph_p5_capacity ................   Passed    3.11 sec
+    Start 3: graph_p5
+3/7 Test #3: graph_p5 .........................   Passed    0.04 sec
+    Start 4: graph_p6
+4/7 Test #4: graph_p6 .........................   Passed    0.03 sec
+    Start 5: graph_p6_admission
+5/7 Test #5: graph_p6_admission ...............   Passed    0.02 sec
+    Start 6: graph_p6_control
+6/7 Test #6: graph_p6_control .................   Passed    0.02 sec
+    Start 7: graph_p6_capacity
+7/7 Test #7: graph_p6_capacity ................   Passed    0.14 sec
+
+100% tests passed, 0 tests failed out of 7
+
+Total Test time (real) =   6.48 sec

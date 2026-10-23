@@ -1,0 +1,54 @@
+{
+  "completed": "2026-10-23",
+  "scope": "Retire root legacy implementation and unused unicoap; remove generated clutter and P3/P4 executable aliases; retain P2 regression fixture.",
+  "default": {
+    "tests_passed": 60,
+    "tests_failed": 0,
+    "sanitizers": "ASan/UBSan",
+    "log": "results/cleanup/default-tests.log"
+  },
+  "four_node": {
+    "tests_passed": 34,
+    "tests_failed": 0,
+    "sanitizers": "ASan/UBSan",
+    "log": "results/cleanup/four-tests.log"
+  },
+  "standalone_core_build": "passed without WAMR",
+  "simulator_retirement_checks": {
+    "legacy-cli": {
+      "returncode": 2,
+      "retirement_message": true
+    },
+    "legacy-cmake": {
+      "returncode": 1,
+      "retirement_message": true
+    }
+  },
+  "simulator_python_ruff_check_and_format": "passed",
+  "preexisting_verification_files": 758,
+  "changed_preexisting_verification_files": [
+    "verification/graph_core/CMakeLists.txt",
+    "verification/graph_core/four/CMakeLists.txt"
+  ],
+  "preexisting_test_sources_and_evidence": "byte-for-byte preserved; hashes in results/cleanup/verification-before.json",
+  "graph_production_c_and_headers": "unchanged",
+  "historical_records": "Retained at original paths and indexed in implementation_rails/README.md.",
+  "limits": [
+    "No ESP-IDF rebuild or hardware qualification performed for this cleanup.",
+    "Legacy simulator features were retired for the current core, not ported to the graph API."
+  ],
+  "logs_sha256": {
+    "results/cleanup/core-build.log": "181866c97468b8ebc0ae82eee0d9a04a1ead2dc44001648768420b61cf949c16",
+    "results/cleanup/core-configure.log": "42f97436931b9e22bf6b1d3cf3662b4f58e31b2ad830b61b57619c72a3986f50",
+    "results/cleanup/default-build.log": "afd90ad226b1d2fcbad92390de953bd2a18942133f042ac7a83a991f65fb7301",
+    "results/cleanup/default-configure.log": "efddf97d6fecb81ee9e14dd0522ed9734bee5fcb7d73eb35336b8c00cc226d35",
+    "results/cleanup/default-tests.log": "37b9bf2e033d717bdc45aff9038a0a9afab2aa39f8e47676897d82b4fa66c559",
+    "results/cleanup/four-build.log": "fb720eb464b205396e16da5ba4ee224def77a058aa2d446b17b6509c0f3df945",
+    "results/cleanup/four-configure.log": "fa5933120bb0ed71192abf3602362b7350ee937ee7f17e0acbd5c134fa8997e1",
+    "results/cleanup/four-tests.log": "7935514be9a0c4dc7c89168146daf1c382cf5ca625b4e72320f858a4dd734364",
+    "results/cleanup/legacy-cli.log": "1909c6f7000037caf31d602b21f64273b46cb7ace448020dddfc17e9b7024477",
+    "results/cleanup/legacy-cmake.log": "17160992a368b76948948469ee9288f18c2574ff9cc0c62816a5a39d184e1faf",
+    "results/cleanup/retirement-checks.json": "75accd3ac1620c61432b66e1531ab2271e758258277f59dd8fdeb91f2b2d10e0",
+    "results/cleanup/verification-before.json": "fd418a2aeddb2ba1afa5d1d253a930235f9b8e9cd8efa06b053bdeb98ccea891"
+  }
+}

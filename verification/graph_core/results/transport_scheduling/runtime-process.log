@@ -1,0 +1,14 @@
+test_configuration_failure_and_missing_marker_cleanup (test_graph_runtime_process.GraphRuntimeProcessTests.test_configuration_failure_and_missing_marker_cleanup) ... ok
+test_invalid_artifact_reclaims_before_next_admission (test_graph_runtime_process.GraphRuntimeProcessTests.test_invalid_artifact_reclaims_before_next_admission) ... ok
+test_post_success_exit_reclaims_without_removal (test_graph_runtime_process.GraphRuntimeProcessTests.test_post_success_exit_reclaims_without_removal) ... ok
+test_remove_during_configuration_loop (test_graph_runtime_process.GraphRuntimeProcessTests.test_remove_during_configuration_loop) ... ok
+test_remove_noncooperative_main (test_graph_runtime_process.GraphRuntimeProcessTests.test_remove_noncooperative_main) ... ok
+test_setup_marker_and_error_overflow_do_not_forge_startup (test_graph_runtime_process.GraphRuntimeProcessTests.test_setup_marker_and_error_overflow_do_not_forge_startup) ... ok
+test_start_remove_and_reuse (test_graph_runtime_process.GraphRuntimeProcessTests.test_start_remove_and_reuse) ... ok
+test_tight_loop_deadline_and_other_node_progress (test_graph_runtime_process.GraphRuntimeProcessTests.test_tight_loop_deadline_and_other_node_progress) ... ok
+test_whole_node_removal_preserves_runtime_slot_ownership (test_graph_runtime_process.GraphRuntimeProcessTests.test_whole_node_removal_preserves_runtime_slot_ownership) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 1.063s
+
+OK

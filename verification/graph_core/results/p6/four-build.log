@@ -1,0 +1,14 @@
+[  1%] Built target capacity_guest
+[ 20%] Built target kaos_graph_core
+[ 21%] Building C object CMakeFiles/graph_p6_admission_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/p6_admission_test.c.o
+[ 27%] Built target graph_p6_test
+[ 27%] Built target graph_p5_test
+[ 80%] Built target kaos_wamr_engine
+[ 82%] Built target graph_p6_control_test
+[ 87%] Built target kaos_wamr
+[ 92%] Built target graph_p6_capacity
+[ 92%] Built target graph_p4_capacity
+[ 95%] Built target graph_p5_capacity
+[ 98%] Built target kaos_p3_host
+[100%] Linking C executable graph_p6_admission_test
+[100%] Built target graph_p6_admission_test

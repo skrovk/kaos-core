@@ -1,0 +1,82 @@
+{
+  "date": "2026-10-09",
+  "scope": "Remove the per-node dynamic-binding option in C, Python and the current contract; schema 3 node bodies have 9 or 11 fields.",
+  "status": "Production changes and user-approved schema-3 existing-test migration checked; full host C/Python suites passed.",
+  "source_sha256": {
+    "graph_core/include/kaos_admission.h": "3f6071d6780331524b1a03354c2798efdc557be3bdc33e1c20b944d7a1ef400b",
+    "graph_core/include/kaos_graph.h": "d063484e3124b2e45423072e46cb8ac913d98c36d932d0a1844509be8c831f12",
+    "graph_core/include/kaos_control.h": "123a9f15c4159a738cec7f0f9440f3d186da6d765e0ef958150f9de2ba6bcffd",
+    "graph_core/include/kaos_report.h": "b5e12c94d9cd2e3a93da157b156081eeab0d5e6fcbe96f413b02a31e3e6fdd5b",
+    "graph_core/kaos_admission.c": "8581a85508a42b82161633867f9728379a1bd544fac87d045f38105cea03b7ca",
+    "graph_core/kaos_request.c": "82a5d0bd8bb1b2436fbb18c559719c9e0d71c5b7445aa40100bbcb0d10e6450e",
+    "docs/graph_p2_contract.md": "b2e7c3bbbf5a0ff6c9dee2c3d9c1a16c7798965019506652c34d646bec83d341",
+    "docs/graph_operation_glossary.md": "ad3ecf28d4069ddfb73093428480dade7f889faa4a6269cfc5dcbc8c438bac2f",
+    "docs/graph_operation_implementation_plan.md": "bf8355de4f13139dcd9944debe08bb6e15f47329d18e8554b3017319df2d9423",
+    "docs/graph_operation_design_questions.md": "549e48fa21a6cca17dccc2d18c523197d92367aebb94854b436d024ffea9c641",
+    "verification/graph_core/tests/dynamic_binding_test.c": "2e9c61d6e77a7a3d7a04ceb4c93e9f0bf05e3072705af9eea4e90a3c51243fb5",
+    "verification/graph_core/CMakeLists.txt": "0f97347831ab1d052ae259decef8808a13f750065e4b2b51c5ff24ecfe361dec",
+    "../sim_env/sim_env/graph_protocol.py": "012237b35430852b56e41bb40069b7c100d1820de0cc51cfbb868d5bac674de7",
+    "../sim_env/sim_env/orchestrator.py": "1388aa51d1e55c00b09928ab79392ff37573354e5082c16b8a8adee3d647aa0a"
+  },
+  "checks": [
+    {
+      "command": "cmake --build /tmp/kaos-object-facts-core",
+      "result": "Production core and host build passed."
+    },
+    {
+      "command": "ctest --test-dir /tmp/kaos-object-facts-build -R '^graph_dynamic_binding$' --output-on-failure",
+      "result": "1/1 new regression passed with ASan/UBSan/LeakSanitizer; legacy shape/version rejection, unconditional binding support, establishment, port and closing guards."
+    },
+    {
+      "command": "Python smoke using the installed sim_env environment",
+      "result": "Two nodes configured without a dynamic flag established; edge admitted; node removal retained incidence and blocked further bindings."
+    },
+    {
+      "command": "ruff check and ruff format --check for graph_protocol.py and orchestrator.py",
+      "result": "Passed."
+    },
+    {
+      "command": "git diff --check",
+      "result": "Passed."
+    }
+  ],
+  "pending": [],
+  "limits": "Host-only verification; no hardware qualification. The original source_sha256 and checks remain the historical production-change snapshot. The migration below records the approved existing-test changes and complete suite results separately.",
+  "approved_test_migration": {
+    "date": "2026-10-09",
+    "authorization": "User explicitly allowed schema-3 test updates as part of P3.",
+    "scope": "Remove the deleted node flag from fixtures/constructors, use schema 3 and 9/11-field bodies in golden expectations, and update REQ12 for universal binding support with existing endpoint guards. Existing assertion semantics and old-schema/old-shape rejection cases preserved.",
+    "source_sha256": {
+      "verification/graph_core/tests/admission_fixture.h": "fbaf1626fc63be3f18e8238f71959e73c567400a30cca3a8758438da3ea3ed87",
+      "verification/graph_core/tests/object_facts_test.c": "1eb26306c43e3abd19302744ad6a6eed71d75012f31d5a4ea9596c32cd7a8a11",
+      "docs/graph_operation_test_plan.md": "0e3f22a7df7d6c4ec1c83eadd03430a067b12308c224f4be7f73f30c22989024",
+      "../sim_env/tests/test_graph_orchestrator.py": "045e994128e15e703e9964b7c167574cc0dd2bad23895cae4cb7b2b536bb51a9",
+      "../sim_env/tests/test_graph_core_process.py": "d1db245e5df95053263445d6bcc10417886f02cdee1df3ba5dba33d987a5345e",
+      "../sim_env/tests/test_graph_transport.py": "b84d62541dd93d474614ee66cdf0bbc09ced76e75c742876a9b39bcf57fd1a6c"
+    },
+    "checks": [
+      {
+        "command": "cmake --build /tmp/kaos-object-facts-build",
+        "result": "Passed."
+      },
+      {
+        "command": "ctest --test-dir /tmp/kaos-object-facts-build --output-on-failure",
+        "result": "11/11 passed with ASan/UBSan/LeakSanitizer; 0.28 seconds."
+      },
+      {
+        "command": "env UV_CACHE_DIR=/tmp/kaos-object-facts-uv-cache PYTHONDONTWRITEBYTECODE=1 KAOS_P2_HOST=/tmp/kaos-object-facts-build/core/kaos_p2_host uv --directory /home/karolina/Research/Code/sim_env run --offline python -m unittest discover -s tests",
+        "result": "77 run in 6.356 seconds: 57 passed, 20 existing opt-in SIM_INTEGRATION cases skipped. Real C-host UDP cases enabled."
+      },
+      {
+        "command": "ruff check and ruff format --check tests/test_graph_orchestrator.py tests/test_graph_core_process.py tests/test_graph_transport.py (sim_env workspace)",
+        "result": "Passed; all three files already formatted."
+      },
+      {
+        "command": "git diff --check",
+        "result": "Passed."
+      }
+    ],
+    "sandbox": "C sanitizer and Python UDP suite ran with approved escalation for process inspection and local sockets.",
+    "limits": "These results precede the P3 runtime engine changes and do not qualify that new implementation."
+  }
+}

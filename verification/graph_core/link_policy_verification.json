@@ -1,0 +1,72 @@
+{
+  "date": "2026-10-15",
+  "scope": "One policy and shared packet-indexed random streams per directed link for all packet types; independent reverse direction. Packet-type labels are diagnostic only.",
+  "user_approval": {
+    "scope": "Update existing P8 tests that assumed traffic-class policies and adjust set_link call sites",
+    "answer": "Yes, update those tests"
+  },
+  "interface": "set_link(source, destination, *, loss=0.0, delay_ms=0.0, duplicate=0.0)",
+  "source_sha256": {
+    "../sim_env/sim_env/graph_relay.py": "76cbcb90c1a91a18b6702567c90605a20b0f334ff448619ee77b27d3edc2ef8b",
+    "../sim_env/tests/test_graph_relay.py": "c4128dd55884e96000566412766d1b71e0919f5b9f9471710336c2e4cf4a185c",
+    "../sim_env/tests/test_graph_run.py": "69205ea548ce3aad619440a626dc971b07f7878349303d2fd9cde80541e3b0fb",
+    "guide/README.md": "a619f00d8d31217d330dadaa4894749d3d46921f221ee736588065501ef8d8d5",
+    "guide/architecture.md": "d4dfecee005562a2580586e87d34b780f25a957160ef9c54553462bbcf80c14d",
+    "guide/usage.md": "7b06c13051aaabeaba05a3453ac4a65d9a6e4c4dbcb90a4061a7a4f5e6ae9681",
+    "guide/verification.md": "ce0b08c9bc22cfc6558557fbe3e4c718de1feb1dcd54565a0297fdff9fc1b226",
+    "implementation_rails/graph_operation_implementation_plan.md": "ae16c43ffc6cf74562f0eb04ab786cb08391f0eee68e3a563a74a58fad709a17",
+    "verification/graph_core/evidence.csv": "0fec6ee6170d7c8880ab33e6bd0af58703780242cc3cb691cb68426196c8ff65"
+  },
+  "previous_simulator_sha256": {
+    "sim_env/graph_relay.py": "f00aaeafca628f087d8d17788def56677d297cc3215e61e4e584b6169eab4dd1",
+    "tests/test_graph_relay.py": "b18e22731652db1c461ac31873f8b262bfe73eb7649910800219df7578e8487e",
+    "tests/test_graph_run.py": "232f183243b7174af91f8bcbfc3df598f751e270665f0752a66121b2dd24f245"
+  },
+  "checks": {
+    "full_host": {
+      "passed": 38,
+      "total": 38
+    },
+    "relay": {
+      "passed": 12,
+      "total": 12
+    },
+    "process": {
+      "passed": 7,
+      "total": 7
+    },
+    "ruff": "lint and format check passed",
+    "new_independent_staged_checks": "3 additional mixed-packet checks passed before updating the approved existing tests; their cases are covered by the revised permanent relay tests",
+    "older_test_sources": {
+      "unchanged": 54,
+      "note": "Original pre-P8 test/fixture hashes; the two P8 test files were changed under explicit approval."
+    }
+  },
+  "test_changes": [
+    "Control and data now share loss with an independently usable reverse direction.",
+    "Delay and duplication checks now cover both packet types under the same policy.",
+    "A full outage drops queued control and data packets at delivery.",
+    "Seed independence is per directed link; changing packet types preserves the same seeded decisions.",
+    "Traffic-class argument removed from affected process-test calls.",
+    "Replaced data-only-loss process case with all-traffic outage: data and cleanup are dropped; removal remains Pending; restoring before the original cutoff allows the original removal to complete.",
+    "Existing partitioned-removal case still observes Unresolved at cutoff and retains that evidence through teardown."
+  ],
+  "exploratory_checks": [
+    "A draft recovery test assumed restoring connectivity would restart an expired removal. It remained Unresolved, consistent with the fixed-cutoff contract.",
+    "A fresh-removal draft completed edge cleanup but a fifth original admission to one host received CoAP 5.03; the configured response-cache bound is four.",
+    "A variant creating the binding with the receiver and using a one-second fresh-removal allowance observed Unresolved. No progress bound was established for that schedule; this policy change does not alter core retry scheduling.",
+    "The final test isolates directed-link behavior by restoring connectivity within the existing five-second cleanup allowance and keeping the original exchange and operation ID."
+  ],
+  "historical_record": "p8_verification.json and its original logs remain unchanged; its class-specific-policy results describe the earlier implementation.",
+  "commands": [
+    "ctest --test-dir /tmp/kaos-refactor-host --output-on-failure --output-log /tmp/kaos-link-policy/final-host.log",
+    "../sim_env/.venv/bin/ruff check --no-cache --config ../sim_env/pyproject.toml <three changed Python files>",
+    "../sim_env/.venv/bin/ruff format --check --config ../sim_env/pyproject.toml <three changed Python files>"
+  ],
+  "limits": "Host UDP/sanitizer checks only; no C changes, hardware run, new timing guarantees, or formal qualification. Stochastic packets share a policy, not necessarily the same individual outcome.",
+  "logs": {
+    "summary": "results/link_policy/final-host.log",
+    "details": "results/link_policy/final-ctest-detail.log",
+    "review": "results/link_policy/review.diff"
+  }
+}

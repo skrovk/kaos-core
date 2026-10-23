@@ -1,0 +1,252 @@
+{
+  "date": "2026-10-20",
+  "scope": "P8 offline synthetic publication-to-GET budgets for existing pipeline/feedback traces. Partial APP01 and OBS05; no acquisition schedule/freshness, device-clock, ventilation or final P9 acceptance.",
+  "paths": "Source and retained-file keys are relative to kaos_core; artifact keys are executed build paths. Log paths are relative to verification/graph_core.",
+  "head": "00de8fe2029e0e1e2025aa6389d199cc43b93ef0",
+  "working_tree": "Dirty before and after; no commit created. Existing unrelated changes preserved.",
+  "changes": {
+    "new": [
+      "../sim_env/sim_env/graph_workload_timing.py",
+      "../sim_env/tests/test_graph_workload_timing.py"
+    ],
+    "test_registration": "workloads.cmake registers graph_p8_workload_timing alongside the unchanged graph_p8_workloads command.",
+    "production_c_or_guest_changes": false,
+    "existing_test_cases_changed": false,
+    "new_test_count": 13,
+    "new_test_composition": {
+      "deterministic": 11,
+      "actual_host": 2
+    }
+  },
+  "design_comparison": {
+    "selected": "Standalone evaluator over existing complete traces; one explicit budget_us parameter; ordinary Python records/functions.",
+    "new_guest_clock": "Rejected for this slice: Q19 explicitly says no new guest API; adding a clock would require runtime/port semantics and still would not prove cross-device acquisition age.",
+    "relative_event_wait": "Cannot establish periodic acquisition or elapsed periods because wakeups may return early and processing adds drift.",
+    "external_pacing": "Requires additional peripheral/source plumbing; larger than this measurement increment.",
+    "alternative_channels": "APP03 is an independent conforming next slice, retained as next implementation work.",
+    "embedded_guidance": "No classes/polymorphism framework, new embedded allocation, resource bound or guest ABI introduced. Generic refactoring heuristics did not justify these additions."
+  },
+  "semantics": {
+    "clock": "Common POSIX host monotonic microseconds from CHANNEL records. Reader-thread arrival order is not event order. Not applicable to unrelated physical clocks.",
+    "origin": "First successful source10 PUT over the complete trace, keyed by concrete source instance and 32-bit sequence. Retries do not reset origin; short fixtures must not wrap sequence.",
+    "correlation": "Validate values/padding and phase identities using existing evaluate(); require source PUT <= expected transform/responder GET <= its PUT <= final GET. Reject missing or impossible earliest copy history.",
+    "cohort": "First origin in [begin,end) and origin + budget_us < end. Uniformly exclude/count tail publications even if already delivered; prewindow publications cannot enter by retrying.",
+    "pass": "At least one eligible publication in every phase; each has an in-window first final GET with elapsed <= budget_us.",
+    "miss": "Late final GET or no final GET by window end. Does not diagnose cause or count scheduled acquisition misses. GETs outside the window do not change its outcome.",
+    "inconclusive": "Incomplete channel trace; or no eligible publications in a phase, unless another complete phase already demonstrates a budget failure.",
+    "statistics": "Min/max elapsed include delivered eligible publications only; missing publications contribute no elapsed value.",
+    "separation": "Timing status and original sample_status are distinct; original reports/result.json are never overwritten. Timing pass does not imply eight-sample throughput or protocol success.",
+    "cli": "python -m sim_env.graph_workload_timing RUN --budget-us N [--output NEW_FILE]. Exclusive-create output. Exit 0 timing pass; 1 failed/inconclusive; 2 input/output validation error."
+  },
+  "checks": {
+    "default": {
+      "passed": 41,
+      "total": 41,
+      "duration_seconds": 28.03,
+      "timing_tests_passed": 13,
+      "timing_tests_skipped": 0,
+      "summary": "results/p8_timing/host-ctest.log",
+      "details": "results/p8_timing/host-test-details.log",
+      "cache": "results/p8_timing/host-CMakeCache.txt"
+    },
+    "four_node": {
+      "passed": 15,
+      "total": 15,
+      "duration_seconds": 11.38,
+      "timing_tests_passed": 13,
+      "timing_tests_skipped": 0,
+      "summary": "results/p8_timing/four-ctest.log",
+      "details": "results/p8_timing/four-test-details.log",
+      "cache": "results/p8_timing/four-CMakeCache.txt"
+    },
+    "sanitizers": "ASan and fail-fast UBSan. Existing WAMR checks disable fake stacks; no new target timing claim.",
+    "existing_sources": {
+      "unchanged": 81,
+      "manifest": "results/p8_timing/test_source_baseline.json",
+      "scope": "All C/H/Python tests and fixtures in verification and sibling tests before this increment."
+    },
+    "ruff": {
+      "status": "passed",
+      "commands": [
+        "../sim_env/.venv/bin/ruff check --no-cache --config ../sim_env/pyproject.toml ../sim_env/sim_env/graph_workload_timing.py ../sim_env/tests/test_graph_workload_timing.py",
+        "../sim_env/.venv/bin/ruff format --check --config ../sim_env/pyproject.toml ../sim_env/sim_env/graph_workload_timing.py ../sim_env/tests/test_graph_workload_timing.py"
+      ],
+      "log": "results/p8_timing/ruff.log"
+    },
+    "replay": {
+      "status": "expected budget failure",
+      "sample_status": "passed",
+      "budget_us": 50000,
+      "phases": [
+        {
+          "name": "initial",
+          "status": "failed",
+          "eligible_publications": 177,
+          "excluded_tail_publications": 44,
+          "within_budget": 174,
+          "late": 0,
+          "not_observed_by_window_end": 3,
+          "budget_misses": 3,
+          "min_elapsed_us": 1983,
+          "max_elapsed_us": 4704
+        },
+        {
+          "name": "replacement",
+          "status": "failed",
+          "eligible_publications": 177,
+          "excluded_tail_publications": 35,
+          "within_budget": 173,
+          "late": 0,
+          "not_observed_by_window_end": 4,
+          "budget_misses": 4,
+          "min_elapsed_us": 2172,
+          "max_elapsed_us": 4739
+        }
+      ],
+      "repeated_identical_bytes": true,
+      "exit_codes": [
+        1,
+        1
+      ],
+      "report": "results/p8_timing/pipeline-timing.json",
+      "commands_and_comparison": "results/p8_timing/replay-check.json",
+      "original_run": "results/p8_workloads/pipeline-example",
+      "original_graph_operations": "All eight succeeded; no remaining instances reported."
+    }
+  },
+  "new_test_coverage": [
+    "Exact budget equality; late and unobserved samples; full denominator accounting.",
+    "First origin survives retries and duplicate final GETs count once.",
+    "Prewindow retry exclusion; deadline equality at exclusive window end; early-delivered tail remains excluded.",
+    "Empty cohort and incomplete trace cannot pass.",
+    "Missing or future source origin rejected; replacement cannot borrow old transform evidence.",
+    "Impossible transform PUT/GET order and missing intermediate GET rejected.",
+    "Positive integer budget and per-host monotonic timestamp validation.",
+    "Cross-host reader order does not override timestamps; timing and sample-count statuses remain separate.",
+    "Two CLI evaluations produce identical reports; input/evaluator hashes recorded; original result unchanged; overwrite refused.",
+    "Real delayed pipeline has successful graph operations but misses synthetic budget; all nodes explicitly removed.",
+    "Real local feedback yields correlated elapsed observations with no relay data packets."
+  ],
+  "review": {
+    "method": "Two independent design comparisons followed by read-only implementation reviews; supplied plan and AGENTS.md are the relevant spec/standards.",
+    "found_and_fixed": "Draft checked source and transform PUT independently against final GET, allowing impossible ordering. Added ordered copy-boundary check and regression with three invalid histories; regression failed before fix and passed after.",
+    "replay_gap_fixed": "Added second completed CLI evaluation and byte-equivalent JSON comparison rather than only checking overwrite refusal.",
+    "disposition": "Reviewer confirmed attribution fix; no remaining substantive findings. Reviews were scoped to the new slice, not all pre-existing dirty changes."
+  },
+  "commands": [
+    "cmake -S verification/graph_core -B /tmp/kaos-timing-host -G Ninja -DCORE_BUILD_HOST=ON -DCORE_BUILD_P2_HOST=ON -DCORE_SANITIZE=ON",
+    "cmake --build /tmp/kaos-timing-host -j4",
+    "ctest --test-dir /tmp/kaos-timing-host --output-on-failure --output-log /home/karolina/Research/Code/kaos_core/verification/graph_core/results/p8_timing/host-ctest.log",
+    "cmake -S verification/graph_core/four -B /tmp/kaos-refactor-four -G Ninja -DCORE_SANITIZE=ON -DCMAKE_C_FLAGS=-fstack-usage",
+    "cmake --build /tmp/kaos-refactor-four -j4",
+    "ctest --test-dir /tmp/kaos-refactor-four --output-on-failure --output-log /home/karolina/Research/Code/kaos_core/verification/graph_core/results/p8_timing/four-ctest.log"
+  ],
+  "tools": {
+    "compiler": "GCC 13.3.0",
+    "cmake": "3.28.3",
+    "python": "3.12.3",
+    "ruff": "0.16.6",
+    "wasi_clang": "14.0.4",
+    "wamr_commit": "b124f70345d712bead5c0c2393acb2dc583511de"
+  },
+  "environment_notes": [
+    "Initial staged process tests were blocked by sandbox UDP permissions; rerun with approval passed. Full suites used approved UDP/subprocess/LeakSanitizer access.",
+    "New sibling files were staged, reviewed and tested before approved exclusive-create installation; no existing sibling file overwritten.",
+    "results/p8_timing/retained-pipeline-timing.json is an exploratory replay before the causal-order review fix. pipeline-timing.json is the final installed evaluator result; its evaluator hashes identify the corrected implementation."
+  ],
+  "remaining": [
+    "APP01 periodic acquisition, scheduled-miss counting and acquisition freshness remain open; no mandatory guest time API or field added.",
+    "OBS09 clock offset/drift qualification remains open. Replay determinism does not establish deterministic host reruns under different schedules.",
+    "Alternative-channel APP03/APP04 fixtures, named lifecycle fault barriers, broader observation coverage and crash/freeze/collector cases remain P8 work.",
+    "R07/R08 ventilation policy, QoC, plant parameters and measurement qualification remain gated; physical target and composed formal P9 qualification remain open.",
+    "Best-effort delivery, trusted fixture computation, GET copy-out scope, tracing overhead and local pipeline response-cache teardown limits are unchanged."
+  ],
+  "source_sha256": {
+    "graph_core/CMakeLists.txt": "331852e8be1c0cc4457609d86e0ad76cbaccb01cd829518379eab6242ee18083",
+    "graph_core/include/kaos_admission.h": "6b6abaf8fc562aecc483b13a9587b9751bf77a2353051ffeada9702bea1a286f",
+    "graph_core/include/kaos_artifact.h": "b7c881a2c5d4bfe4863140c5f07adca6e531cb438484bbd647d131ef9805af66",
+    "graph_core/include/kaos_coap.h": "d325494043daa939025e6c76ad259496f7cd9f1ee8ffbe8ace64013f44701881",
+    "graph_core/include/kaos_control.h": "c8117f29956a34acb7da956993f185842c65ba60dd16afbd0f7c9848595bc540",
+    "graph_core/include/kaos_edge.h": "fbed64cb1c6321f02c6df40870a855b7370e4e9f0e47588f75f5c40b17e8960f",
+    "graph_core/include/kaos_endpoint.h": "4352573e910b43c1945b98903080d78c39ab80ec554a60549d082974530a661e",
+    "graph_core/include/kaos_graph.h": "8cedf2bf6a76987f6e4935d726c7740833a7cadefa66e9004cba6523233a9d2e",
+    "graph_core/include/kaos_host.h": "cf22ce62c7bd34e483d5bd02d0e59092ee35ec3c0d068ee30ecbccce9337d181",
+    "graph_core/include/kaos_host_platform.h": "38ebd53c8fb48f4e9d6350944cfd1d8a864488b2d4c42327d416e0fa687e0335",
+    "graph_core/include/kaos_limits.h": "cf78da6da9a38b7d967232401a3fbf4e2eef1c1acea1653b8d895d495ada3bbd",
+    "graph_core/include/kaos_node.h": "b4cefbdf42bfb2da7162b9f99ad2dcf40d217d193a0add90ea8351155b8a9d6a",
+    "graph_core/include/kaos_predicate.h": "da0a6b6e1281f32d604a0347daa556f0729f32e17e7bb8ca3bfa04be98d06221",
+    "graph_core/include/kaos_report.h": "f99c818857ae483e25a7e5878daa29a4b06717e68f2a1a52063610b74130a8d6",
+    "graph_core/include/kaos_runtime.h": "06a4c64e5e2c5575ac50d5b7c67dac96278e955fe416ea929f7d7ed549ba0edd",
+    "graph_core/include/kaos_wamr.h": "6abe1e110a8e7b60fa0821de8a7c23baf215145daf6a1dfccdd6cbd4b2c1ed4d",
+    "graph_core/kaos_admission.c": "e6c3b4399c222a98828d0b1ad4e5d751a4e7818c4b90d4c467e0213edd9d6ab4",
+    "graph_core/kaos_admission_internal.h": "3bd06ffee9208051364e4f89079533ce9fec1043407f417e1df62644631c6e7d",
+    "graph_core/kaos_artifact.c": "b82adb947e9b76f6706d13450cc67a7f2e59303b180be5f8a363e9e4afbfbfa1",
+    "graph_core/kaos_cbor.h": "31ef5d10a7914ab48d03356f1133d1c40452a93c9ddc57384956d46848fee131",
+    "graph_core/kaos_coap.c": "904ec321886c49dc39a70ed8661e1269551371dae9dab35387dcf0fc000424eb",
+    "graph_core/kaos_control.c": "ffc947c80ef9bbbbd93e0aded20e683d6db9d440464ef1964d5aebeb6b220980",
+    "graph_core/kaos_edge.c": "e935e7ad4e5195f5d768bb921d57141077d63d26f88a5aea6337583dd93b0501",
+    "graph_core/kaos_endpoint.c": "e57e108bafc22fc91d317b6c61a0b68f3f08ff14f511dff5e0cb987b2881a25f",
+    "graph_core/kaos_graph.c": "fc3e63bff1d5fa615fddd9e2b931274a0f610e19caa608dceffea6f256ceecac",
+    "graph_core/kaos_host.c": "119a80854e181391b99883104100fc4f3757a9ed7c8b750a76c5de502e0c288a",
+    "graph_core/kaos_node.c": "0e86538b31c9ff244d7b4cd90532dd1f540664838bc29307a4c5d44b8215ad94",
+    "graph_core/kaos_predicate.c": "f578bfd625987922f8dca4eeec43ee329e129eec12ea98f8c4412d27f27e9d2e",
+    "graph_core/kaos_report.c": "efcc3473b5657053aaba1e4c85ddccf22031d6fd740d131ca6d680ebdbd224d8",
+    "graph_core/kaos_request.c": "e450be5228b2ab2ca6218915dd81b21638e4ade8bb86a3b42d99feb0b60ddff9",
+    "graph_core/ports/clock_espidf.c": "d78583e5eb356cb200b84fde8536bb597c85cc887e66fe2117f2532b1577488c",
+    "graph_core/ports/clock_posix.c": "d6b83af5f0088cdb02d264a7c270e8311bd5df5b9d264f5baaa6ea45d148e458",
+    "graph_core/ports/espidf/CMakeLists.txt": "488d1ba8e3bca726178ae51faa144b0d02f63020d94c32419fc4927bb91dae87",
+    "graph_core/ports/espidf/app_main.c": "75663542324e4fd34e0942df9168ad19c226c5455a59b15d8ac9a5dd2c9fba02",
+    "graph_core/ports/espidf/main/CMakeLists.txt": "5c7c28ba47a48954c6c6604a5fdf313dc20d1238386ff41172e9d2fe8268c541",
+    "graph_core/ports/host_udp.c": "140d4c2f9a2ec14f24a5507eea50c63f5d56491511fd729b040604c73f0fbc02",
+    "graph_core/ports/host_udp.h": "1cada54040a3b7eb340a48ff77a29282bbade237db37716f4578cc8ef43ae7c5",
+    "graph_core/ports/posix/main.c": "0993959ade9220f6d94a2d7dd819b47d323c1fc3298a9729e463968ff0210c23",
+    "graph_core/runtime/CMakeLists.txt": "6d58e3919db5335c0d99499c83772d364f58dddf5b3314d916d26463533d4d5d",
+    "graph_core/runtime/kaos_wamr.c": "a48ae6b55b0061745a961d0474e14c75cbff16169940fa5594adb2a6f8066433",
+    "graph_core/runtime/profile.c": "06acfe92d9d30a45cadfa2ef96b48d03e65de648bd202622639f295459e63472",
+    "graph_core/runtime/wamr.cmake": "9fdafb52d97b808e6c45f0db0f9c9b531b35600e2e773b3d8d2295d707df6740",
+    "../sim_env/sim_env/graph_workload_timing.py": "5c635157521925a4e77a8b65e5965b442dbe15f9531eb91e125b5a467035b6e5",
+    "../sim_env/tests/test_graph_workload_timing.py": "a32f5813d8dc8b10a9945efc16d2ad850e50c14e197ac4cec99084e5ed21e5c6",
+    "../sim_env/sim_env/graph_workloads.py": "2db93aaf807670b1ec793b9b7cc44a9168b6de0649898a392361df6b98518faf",
+    "../sim_env/sim_env/graph_run.py": "ee2f8ac83346469fdf6f5061ed7e6fab52274075dde8274ce2f3b16e40bbd76f",
+    "../sim_env/sim_env/graph_protocol.py": "ec61153d4c7c402bc2732a801260d01d058511943e9573a7d8e158da78d9e1cd",
+    "../sim_env/sim_env/graph_relay.py": "76cbcb90c1a91a18b6702567c90605a20b0f334ff448619ee77b27d3edc2ef8b",
+    "../sim_env/sim_env/graph_transport.py": "6ce56ab3840b5e3db7a79b89d2dcdd245df61eebf761c5abcd727b734c886e37",
+    "../sim_env/sim_env/orchestrator.py": "d4fecd890f4e02b23ef6e1d7988db8eb84872a93a1f1c4428cec793263f7cd94",
+    "../sim_env/sim_env/models.py": "c0d09d6d126a42ad4e4f7f3ee63b15b1a90fafe085940417eef5c5132ab2e14f",
+    "verification/graph_core/CMakeLists.txt": "6abe92b8b2cda77ecb534e710895ea360a0af1e3d1853d6b0f38c999edf0b9e1",
+    "verification/graph_core/four/CMakeLists.txt": "5b3720cea5d0319cca1b50cf07b9c6dca3c2e398bd6d6b2aeeec59753a484ae2",
+    "verification/graph_core/workloads.cmake": "c78153d2545d2d4b7a5c582ce4fd31cc07055f1e3a3ed98be82f03d03797044a",
+    "verification/graph_core/guests/pipeline.c": "7e641a69bdc9fbe640db19202114638c03afaf5ed942279ca9ee52f4cc33805f",
+    "verification/graph_core/guests/feedback.c": "d4d8363031448b8a22f5a55f34f4fa9e60ef918925d8c19ec0dceaca36ed3d4c",
+    "verification/graph_core/guests/workload.h": "28f1e4d04a116673461301c913612eb2d7ae0885e23abcccb8ee84c018d312b2",
+    "guide/README.md": "96ef6aa9ddb3e21b38e8f28be28aea78545163a473f893213b6abf962e6bc690",
+    "guide/usage.md": "2eb0dcc7c3a18fcee91a6cf0d9379267fb9ba5ac8370ab7d9d14564a9d87e1c3",
+    "guide/verification.md": "3e4a28f7f1ec3e717ad98746d79497835403d3432a43928aa93c61a5146d5a64",
+    "guide/workload-walkthrough.md": "a378871ee64b80388acf72d1db990120fdb4790e0c63a5174c3ffed9d8a5ac56",
+    "implementation_rails/graph_operation_implementation_plan.md": "b074cd4de0cd9c6285ce68a33d868e2aac108afb232e12fc5ca2056a1e87f628",
+    "verification/graph_core/evidence.csv": "f440c055485684925313be1d7c04e81ce2b51fb614be21c7e7f37bca365d6570"
+  },
+  "artifact_sha256": {
+    "/tmp/kaos-timing-host/core/kaos_host": "8ba08dd6326d1075789f5c55f157229e97c1b2f1b90f48a63b34469961bc56e8",
+    "/tmp/kaos-timing-host/pipeline.wasm": "e6c04f05de82acc5bf4d985b31b28da000a3cf6950ee40c38cd07fa38f250181",
+    "/tmp/kaos-timing-host/feedback.wasm": "dde73c3e98dbce1a1426ececf17ad957ff6370cff8fdb64282658d2f24794f3a",
+    "/tmp/kaos-refactor-four/core/kaos_host": "77ffab9a938d6a9f52c34330520d9369bc63de3a4cfc7ae27bcb687339b9917a",
+    "/tmp/kaos-refactor-four/pipeline.wasm": "e6c04f05de82acc5bf4d985b31b28da000a3cf6950ee40c38cd07fa38f250181",
+    "/tmp/kaos-refactor-four/feedback.wasm": "dde73c3e98dbce1a1426ececf17ad957ff6370cff8fdb64282658d2f24794f3a"
+  },
+  "retained_file_sha256": {
+    "verification/graph_core/results/p8_timing/four-CMakeCache.txt": "f55fc2e6e626501a8ffbebc34958ece587e54e2505f36673076aebbe17578d37",
+    "verification/graph_core/results/p8_timing/four-build.log": "73565066bed2abbec5ffa9f4399bc5c3670e842fa811b2f66e22a9ccdaa408f4",
+    "verification/graph_core/results/p8_timing/four-ctest.log": "ba3d48831c25170600523efbc65ec8d26e476ee54a7154a3514eb209e18e70fb",
+    "verification/graph_core/results/p8_timing/four-test-details.log": "79c55379efcb6f35bafa1703f5161eaeebfa16d7417fc92982cd62e1b3645b90",
+    "verification/graph_core/results/p8_timing/host-CMakeCache.txt": "7d39f058ffce0179d7318bda1e6f75e12633c2f976a853c25726f037f25f0262",
+    "verification/graph_core/results/p8_timing/host-build.log": "983ec47473fabd5f63b2d1de1ec9a924d2940f548820ed99478e175fe162dc0b",
+    "verification/graph_core/results/p8_timing/host-ctest.log": "80ecff930ab7b82bb0240c90d78aec9bd62e66ba5497a51717ab272ac6a1c461",
+    "verification/graph_core/results/p8_timing/host-test-details.log": "2bd8270f00f0042ba3c6251f8b7f649892026112526e1ae8f6e86a66111ba9cc",
+    "verification/graph_core/results/p8_timing/pipeline-timing.json": "64a46b4aff602571049aa86e413621eaadaa86889bb87f53d1c9771b0e398ecb",
+    "verification/graph_core/results/p8_timing/replay-check.json": "c496a682629a5d5f092eacdfe59e5828a9bd4bcc2cd65a2dda7500c0ea89ca5f",
+    "verification/graph_core/results/p8_timing/retained-pipeline-timing.json": "6b9d1ec317f677f8cfd4f964d524c0f69c135a10a39c10ff025e5e7c664c473c",
+    "verification/graph_core/results/p8_timing/ruff.log": "f3e8170c00d68223a7abcb93a115acfb95bbe6af3e8e1adbd3c327386fe20fab",
+    "verification/graph_core/results/p8_timing/test_source_baseline.json": "6164720dc719433c8b7b2813080341ab2f9546170af90f1179fe37c6bbb887c1"
+  }
+}

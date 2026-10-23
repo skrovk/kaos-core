@@ -1,0 +1,439 @@
+{
+  "date": "2026-10-20",
+  "scope": "P8 APP03 alternative outgoing channels: A-first/B-first startup, late optional joining, explicit initial-branch removal with continued other-branch copies and full explicit node cleanup. Does not claim optional expiry-before-join, APP04, full P8 or P9 acceptance.",
+  "paths": "Source and retained-file keys are relative to kaos_core; artifact keys identify executed paths. Other log paths are relative to verification/graph_core.",
+  "head": "00de8fe2029e0e1e2025aa6389d199cc43b93ef0",
+  "working_tree": "Dirty before and after; unrelated work preserved, no commit created.",
+  "implementation": {
+    "guest": "alternatives.c: source/sink-A/sink-B roles, one sample buffer, two per-branch sequence counters, existing init/put/get/event_get/event_wait imports. Each branch advances only on its successful PUT; FULL/DISABLED does not suppress the other attempt.",
+    "source_predicate": "A OR B encoded with existing predicate tokens 02 00 02 01 04 00.",
+    "channels": {
+      "A": [
+        10,
+        20,
+        1
+      ],
+      "B": [
+        10,
+        30,
+        1
+      ]
+    },
+    "owners": {
+      "source10": 1,
+      "sink20": 2,
+      "sink30": 3,
+      "authority": 99
+    },
+    "sample": "64 bytes: uint32 sequence/value equal, then 56 bytes (sequence+i) modulo 256. Independent branch sequences; not atomic broadcast.",
+    "runner": "run_alternatives(host, guest, output, *, first=\"A\", seed=0); existing GraphRun and descriptors, no new scenario language.",
+    "phases": [
+      "single selected branch",
+      "both branches after fresh ACTIVE evidence",
+      "other branch after successful removal of first edge"
+    ],
+    "operation_count": 7,
+    "join_evidence": "Source report outcome Succeeded, history commit/dispatch/start/success, node READY without closure, and both endpoint pairs READY|ACTIVE. Missing reports after ACK and query timeouts do not satisfy the condition.",
+    "oracle": "Complete per-host traces, valid sample values/padding, exact concrete caller, preceding matching source PUT for every GET. Each active branch >=8 distinct sequences per 250ms window; inactive branch has zero successful PUT/GET. Incomplete trace is inconclusive.",
+    "bounds": {
+      "payload_bytes": 64,
+      "queue_messages_per_endpoint": 2,
+      "guest_linear_memory_bytes": 65536,
+      "guest_stack_bytes": 4096,
+      "node_peak_request_bytes": 131072,
+      "node_addition_allowance_us": 5000000,
+      "channel_addition_allowance_us": 5000000,
+      "cleanup_allowance_us": 3000000
+    },
+    "production_core_changed": false,
+    "guest_abi_changed": false,
+    "pool_cache_bounds_changed": false
+  },
+  "checks": {
+    "default_profile": {
+      "passed": 42,
+      "total": 42,
+      "seconds": 34.98,
+      "new_tests_passed": 10,
+      "new_tests_skipped": 0,
+      "summary": "results/p8_alternatives/host-ctest.log",
+      "details": "results/p8_alternatives/host-test-details.log",
+      "cache": "results/p8_alternatives/host-CMakeCache.txt"
+    },
+    "four_node_profile": {
+      "passed": 16,
+      "total": 16,
+      "seconds": 18.1,
+      "new_tests_passed": 10,
+      "new_tests_skipped": 0,
+      "summary": "results/p8_alternatives/four-ctest.log",
+      "details": "results/p8_alternatives/four-test-details.log",
+      "cache": "results/p8_alternatives/four-CMakeCache.txt"
+    },
+    "sanitizers": "ASan and fail-fast UBSan. Existing WAMR fake-stack exception unchanged; no target timing qualification.",
+    "new_tests": {
+      "oracle": 8,
+      "actual_host": 2
+    },
+    "existing_verification_sources": {
+      "unchanged": 82,
+      "manifest": "results/p8_alternatives/test_source_baseline.json",
+      "scope": "Pre-increment C/H/Python tests and fixtures in verification and sibling tests."
+    },
+    "existing_core_sources": {
+      "unchanged": 42,
+      "comparison": "graph_core source hashes in timing_verification.json"
+    },
+    "ruff": {
+      "status": "passed",
+      "commands": [
+        "../sim_env/.venv/bin/ruff check --no-cache --config ../sim_env/pyproject.toml ../sim_env/sim_env/graph_alternatives.py ../sim_env/tests/test_graph_alternatives.py",
+        "../sim_env/.venv/bin/ruff format --check --config ../sim_env/pyproject.toml ../sim_env/sim_env/graph_alternatives.py ../sim_env/tests/test_graph_alternatives.py"
+      ],
+      "log": "results/p8_alternatives/ruff.log"
+    }
+  },
+  "retained_examples": {
+    "a-first": {
+      "result": "results/p8_alternatives/a-first/result.json",
+      "events": "results/p8_alternatives/a-first/events.jsonl",
+      "provenance": "results/p8_alternatives/a-first/provenance.json",
+      "status": "passed",
+      "trace_complete": true,
+      "seed": 42,
+      "observations": 4759,
+      "phases": [
+        {
+          "name": "single",
+          "status": "passed",
+          "branches": {
+            "A": {
+              "received": 185,
+              "unique_sequences": 185
+            },
+            "B": {
+              "received": 0,
+              "unique_sequences": 0
+            }
+          },
+          "unexpected_copies": 0
+        },
+        {
+          "name": "both",
+          "status": "passed",
+          "branches": {
+            "A": {
+              "received": 196,
+              "unique_sequences": 196
+            },
+            "B": {
+              "received": 197,
+              "unique_sequences": 197
+            }
+          },
+          "unexpected_copies": 0
+        },
+        {
+          "name": "remaining",
+          "status": "passed",
+          "branches": {
+            "A": {
+              "received": 0,
+              "unique_sequences": 0
+            },
+            "B": {
+              "received": 203,
+              "unique_sequences": 203
+            }
+          },
+          "unexpected_copies": 0
+        }
+      ],
+      "startup_report": [
+        4,
+        8,
+        2,
+        1,
+        9,
+        1,
+        39,
+        [
+          1,
+          3,
+          3,
+          1,
+          0
+        ]
+      ],
+      "joined_report": [
+        4,
+        8,
+        2,
+        1,
+        12,
+        1,
+        39,
+        [
+          1,
+          3,
+          3,
+          3,
+          3
+        ]
+      ],
+      "instances": {
+        "10": 2,
+        "20": 0,
+        "30": 1
+      },
+      "successful_graph_operations": 7,
+      "remaining_instances_at_teardown": [],
+      "acknowledged_history_missing_queries": 168,
+      "fault": "100% loss on directed link 1 to 3 before source authorization; restored after single-branch window; reverse link unchanged."
+    },
+    "b-first": {
+      "result": "results/p8_alternatives/b-first/result.json",
+      "events": "results/p8_alternatives/b-first/events.jsonl",
+      "provenance": "results/p8_alternatives/b-first/provenance.json",
+      "status": "passed",
+      "trace_complete": true,
+      "seed": 42,
+      "observations": 4644,
+      "phases": [
+        {
+          "name": "single",
+          "status": "passed",
+          "branches": {
+            "A": {
+              "received": 0,
+              "unique_sequences": 0
+            },
+            "B": {
+              "received": 199,
+              "unique_sequences": 199
+            }
+          },
+          "unexpected_copies": 0
+        },
+        {
+          "name": "both",
+          "status": "passed",
+          "branches": {
+            "A": {
+              "received": 205,
+              "unique_sequences": 205
+            },
+            "B": {
+              "received": 205,
+              "unique_sequences": 205
+            }
+          },
+          "unexpected_copies": 0
+        },
+        {
+          "name": "remaining",
+          "status": "passed",
+          "branches": {
+            "A": {
+              "received": 206,
+              "unique_sequences": 206
+            },
+            "B": {
+              "received": 0,
+              "unique_sequences": 0
+            }
+          },
+          "unexpected_copies": 0
+        }
+      ],
+      "startup_report": [
+        4,
+        8,
+        2,
+        1,
+        9,
+        1,
+        39,
+        [
+          1,
+          1,
+          0,
+          3,
+          3
+        ]
+      ],
+      "joined_report": [
+        4,
+        8,
+        2,
+        1,
+        12,
+        1,
+        39,
+        [
+          1,
+          3,
+          3,
+          3,
+          3
+        ]
+      ],
+      "instances": {
+        "10": 2,
+        "20": 0,
+        "30": 1
+      },
+      "successful_graph_operations": 7,
+      "remaining_instances_at_teardown": [],
+      "acknowledged_history_missing_queries": 151,
+      "fault": "100% loss on directed link 1 to 2 before source authorization; restored after single-branch window; reverse link unchanged."
+    }
+  },
+  "review": {
+    "standards": {
+      "hard_violations": 0,
+      "blocking_findings": 0,
+      "judgment_calls": [
+        "Added comments explaining history mask, endpoint order and OR token encoding.",
+        "Kept short setup helpers local; a shared runner framework was not justified."
+      ],
+      "disposition": "Both addressed without changing behavior or expanding interfaces."
+    },
+    "specification": {
+      "blocking_findings": 0,
+      "coverage_limit": "APP03 late joining and explicit removal are covered; optional expiry/cleanup before joining remains outside this application fixture."
+    },
+    "scope": "Read-only reviews of new guest, runner, tests and CMake changes. Earlier dirty changes are not included. review.diff is the reviewed snapshot; subsequent source edits only added explanatory comments."
+  },
+  "diagnosis_history": {
+    "initial_failure": "Both new process cases failed at the first post-restoration query because the draft runner required an already acknowledged snapshot to remain available.",
+    "cause": "core_admission_report_retained returns false when the exact evidence revision is acknowledged; query yields NOT_FOUND even while live records remain. Later facts create a new queryable revision.",
+    "correction": "Poll past missing snapshots/timeouts, retain startup evidence, and require a freshly observed report with both endpoint pairs ACTIVE within the original operation lifetime.",
+    "regression": "Both same process cases passed after the runner correction; no existing tests or production core changed. Initial console failure was observed but no raw failing run trace was retained."
+  },
+  "commands": [
+    "cmake -S verification/graph_core -B /tmp/kaos-timing-host -G Ninja -DCORE_BUILD_HOST=ON -DCORE_BUILD_P2_HOST=ON -DCORE_SANITIZE=ON",
+    "cmake --build /tmp/kaos-timing-host -j4",
+    "ctest --test-dir /tmp/kaos-timing-host --output-on-failure --output-log /home/karolina/Research/Code/kaos_core/verification/graph_core/results/p8_alternatives/host-ctest.log",
+    "cmake -S verification/graph_core/four -B /tmp/kaos-refactor-four -G Ninja -DCORE_SANITIZE=ON -DCMAKE_C_FLAGS=-fstack-usage",
+    "cmake --build /tmp/kaos-refactor-four -j4",
+    "ctest --test-dir /tmp/kaos-refactor-four --output-on-failure --output-log /home/karolina/Research/Code/kaos_core/verification/graph_core/results/p8_alternatives/four-ctest.log",
+    "uv --directory /home/karolina/Research/Code/sim_env run --offline python -m sim_env.graph_alternatives --host /tmp/kaos-timing-host/core/kaos_host --guest /tmp/kaos-timing-host/alternatives.wasm --first A --seed 42 --output /home/karolina/Research/Code/kaos_core/verification/graph_core/results/p8_alternatives/a-first",
+    "uv --directory /home/karolina/Research/Code/sim_env run --offline python -m sim_env.graph_alternatives --host /tmp/kaos-timing-host/core/kaos_host --guest /tmp/kaos-timing-host/alternatives.wasm --first B --seed 42 --output /home/karolina/Research/Code/kaos_core/verification/graph_core/results/p8_alternatives/b-first"
+  ],
+  "tools": {
+    "compiler": "GCC 13.3.0",
+    "cmake": "3.28.3",
+    "python": "3.12.3",
+    "ruff": "0.16.6",
+    "wasi_clang": "14.0.4",
+    "wamr_commit": "b124f70345d712bead5c0c2393acb2dc583511de"
+  },
+  "limits": [
+    "Q19 unchanged: no guest clock, acquisition timestamp, periodic schedule, scheduled acquisition misses or acquisition-age claim.",
+    "GET proves host copy-out only. Trusted fixture computation and guest progress are not physical action or ventilation service acceptance.",
+    "Late join occurs before original channel allowance expires. Optional expiry/cleanup before joining is not covered by this workload; existing P5 protocol checks remain separate.",
+    "Restoring a directed link does not restart expired operations. Explicit removal closes an authorized binding; packets lost on a link do not automatically remove graph state.",
+    "Host scheduling is real, not deterministic replay. Seed fixes relay randomness conditional on arrival order; tracing adds overhead.",
+    "Channel trace completeness is checked. Ordinary diagnostic stdout and kernel receive loss remain outside full accounting; no target memory/timing qualification added.",
+    "Future APP04 mixed alternatives/required output, broader fault barriers and observation coverage, R07/R08 criteria and final P9 physical/formal qualification remain open."
+  ],
+  "source_sha256": {
+    "graph_core/CMakeLists.txt": "331852e8be1c0cc4457609d86e0ad76cbaccb01cd829518379eab6242ee18083",
+    "graph_core/include/kaos_admission.h": "6b6abaf8fc562aecc483b13a9587b9751bf77a2353051ffeada9702bea1a286f",
+    "graph_core/include/kaos_artifact.h": "b7c881a2c5d4bfe4863140c5f07adca6e531cb438484bbd647d131ef9805af66",
+    "graph_core/include/kaos_coap.h": "d325494043daa939025e6c76ad259496f7cd9f1ee8ffbe8ace64013f44701881",
+    "graph_core/include/kaos_control.h": "c8117f29956a34acb7da956993f185842c65ba60dd16afbd0f7c9848595bc540",
+    "graph_core/include/kaos_edge.h": "fbed64cb1c6321f02c6df40870a855b7370e4e9f0e47588f75f5c40b17e8960f",
+    "graph_core/include/kaos_endpoint.h": "4352573e910b43c1945b98903080d78c39ab80ec554a60549d082974530a661e",
+    "graph_core/include/kaos_graph.h": "8cedf2bf6a76987f6e4935d726c7740833a7cadefa66e9004cba6523233a9d2e",
+    "graph_core/include/kaos_host.h": "cf22ce62c7bd34e483d5bd02d0e59092ee35ec3c0d068ee30ecbccce9337d181",
+    "graph_core/include/kaos_host_platform.h": "38ebd53c8fb48f4e9d6350944cfd1d8a864488b2d4c42327d416e0fa687e0335",
+    "graph_core/include/kaos_limits.h": "cf78da6da9a38b7d967232401a3fbf4e2eef1c1acea1653b8d895d495ada3bbd",
+    "graph_core/include/kaos_node.h": "b4cefbdf42bfb2da7162b9f99ad2dcf40d217d193a0add90ea8351155b8a9d6a",
+    "graph_core/include/kaos_predicate.h": "da0a6b6e1281f32d604a0347daa556f0729f32e17e7bb8ca3bfa04be98d06221",
+    "graph_core/include/kaos_report.h": "f99c818857ae483e25a7e5878daa29a4b06717e68f2a1a52063610b74130a8d6",
+    "graph_core/include/kaos_runtime.h": "06a4c64e5e2c5575ac50d5b7c67dac96278e955fe416ea929f7d7ed549ba0edd",
+    "graph_core/include/kaos_wamr.h": "6abe1e110a8e7b60fa0821de8a7c23baf215145daf6a1dfccdd6cbd4b2c1ed4d",
+    "graph_core/kaos_admission.c": "e6c3b4399c222a98828d0b1ad4e5d751a4e7818c4b90d4c467e0213edd9d6ab4",
+    "graph_core/kaos_admission_internal.h": "3bd06ffee9208051364e4f89079533ce9fec1043407f417e1df62644631c6e7d",
+    "graph_core/kaos_artifact.c": "b82adb947e9b76f6706d13450cc67a7f2e59303b180be5f8a363e9e4afbfbfa1",
+    "graph_core/kaos_cbor.h": "31ef5d10a7914ab48d03356f1133d1c40452a93c9ddc57384956d46848fee131",
+    "graph_core/kaos_coap.c": "904ec321886c49dc39a70ed8661e1269551371dae9dab35387dcf0fc000424eb",
+    "graph_core/kaos_control.c": "ffc947c80ef9bbbbd93e0aded20e683d6db9d440464ef1964d5aebeb6b220980",
+    "graph_core/kaos_edge.c": "e935e7ad4e5195f5d768bb921d57141077d63d26f88a5aea6337583dd93b0501",
+    "graph_core/kaos_endpoint.c": "e57e108bafc22fc91d317b6c61a0b68f3f08ff14f511dff5e0cb987b2881a25f",
+    "graph_core/kaos_graph.c": "fc3e63bff1d5fa615fddd9e2b931274a0f610e19caa608dceffea6f256ceecac",
+    "graph_core/kaos_host.c": "119a80854e181391b99883104100fc4f3757a9ed7c8b750a76c5de502e0c288a",
+    "graph_core/kaos_node.c": "0e86538b31c9ff244d7b4cd90532dd1f540664838bc29307a4c5d44b8215ad94",
+    "graph_core/kaos_predicate.c": "f578bfd625987922f8dca4eeec43ee329e129eec12ea98f8c4412d27f27e9d2e",
+    "graph_core/kaos_report.c": "efcc3473b5657053aaba1e4c85ddccf22031d6fd740d131ca6d680ebdbd224d8",
+    "graph_core/kaos_request.c": "e450be5228b2ab2ca6218915dd81b21638e4ade8bb86a3b42d99feb0b60ddff9",
+    "graph_core/ports/clock_espidf.c": "d78583e5eb356cb200b84fde8536bb597c85cc887e66fe2117f2532b1577488c",
+    "graph_core/ports/clock_posix.c": "d6b83af5f0088cdb02d264a7c270e8311bd5df5b9d264f5baaa6ea45d148e458",
+    "graph_core/ports/espidf/CMakeLists.txt": "488d1ba8e3bca726178ae51faa144b0d02f63020d94c32419fc4927bb91dae87",
+    "graph_core/ports/espidf/app_main.c": "75663542324e4fd34e0942df9168ad19c226c5455a59b15d8ac9a5dd2c9fba02",
+    "graph_core/ports/espidf/main/CMakeLists.txt": "5c7c28ba47a48954c6c6604a5fdf313dc20d1238386ff41172e9d2fe8268c541",
+    "graph_core/ports/host_udp.c": "140d4c2f9a2ec14f24a5507eea50c63f5d56491511fd729b040604c73f0fbc02",
+    "graph_core/ports/host_udp.h": "1cada54040a3b7eb340a48ff77a29282bbade237db37716f4578cc8ef43ae7c5",
+    "graph_core/ports/posix/main.c": "0993959ade9220f6d94a2d7dd819b47d323c1fc3298a9729e463968ff0210c23",
+    "graph_core/runtime/CMakeLists.txt": "6d58e3919db5335c0d99499c83772d364f58dddf5b3314d916d26463533d4d5d",
+    "graph_core/runtime/kaos_wamr.c": "a48ae6b55b0061745a961d0474e14c75cbff16169940fa5594adb2a6f8066433",
+    "graph_core/runtime/profile.c": "06acfe92d9d30a45cadfa2ef96b48d03e65de648bd202622639f295459e63472",
+    "graph_core/runtime/wamr.cmake": "9fdafb52d97b808e6c45f0db0f9c9b531b35600e2e773b3d8d2295d707df6740",
+    "../sim_env/sim_env/graph_alternatives.py": "ec71fb8096cf348adbe465136dc9cb7b3570615e9e94cb8d10c25caeae0f6b36",
+    "../sim_env/tests/test_graph_alternatives.py": "8f01972906ad3b4ec776778807b677c4d35d52cfd9d261921058f5708c3a3bd4",
+    "../sim_env/sim_env/graph_workloads.py": "2db93aaf807670b1ec793b9b7cc44a9168b6de0649898a392361df6b98518faf",
+    "../sim_env/sim_env/graph_run.py": "ee2f8ac83346469fdf6f5061ed7e6fab52274075dde8274ce2f3b16e40bbd76f",
+    "../sim_env/sim_env/graph_protocol.py": "ec61153d4c7c402bc2732a801260d01d058511943e9573a7d8e158da78d9e1cd",
+    "../sim_env/sim_env/graph_relay.py": "76cbcb90c1a91a18b6702567c90605a20b0f334ff448619ee77b27d3edc2ef8b",
+    "../sim_env/sim_env/graph_transport.py": "6ce56ab3840b5e3db7a79b89d2dcdd245df61eebf761c5abcd727b734c886e37",
+    "../sim_env/sim_env/orchestrator.py": "d4fecd890f4e02b23ef6e1d7988db8eb84872a93a1f1c4428cec793263f7cd94",
+    "../sim_env/sim_env/models.py": "c0d09d6d126a42ad4e4f7f3ee63b15b1a90fafe085940417eef5c5132ab2e14f",
+    "verification/graph_core/guests/alternatives.c": "303724fc8d9f403a9c6a9659ca81f4fa361758af7f59f34af1725a31cd5347ca",
+    "verification/graph_core/guests/workload.h": "28f1e4d04a116673461301c913612eb2d7ae0885e23abcccb8ee84c018d312b2",
+    "verification/graph_core/CMakeLists.txt": "6abe92b8b2cda77ecb534e710895ea360a0af1e3d1853d6b0f38c999edf0b9e1",
+    "verification/graph_core/four/CMakeLists.txt": "5b3720cea5d0319cca1b50cf07b9c6dca3c2e398bd6d6b2aeeec59753a484ae2",
+    "verification/graph_core/workloads.cmake": "a404ddefad273b14972689fddbf0a44f5875a3dd9ecf9cc108276c89b37d77c2",
+    "guide/README.md": "87390e8c3e80aed61d21774a0e88a95a558229df3b0676b9e5e916beb280e823",
+    "guide/usage.md": "06f92dcd718a65252056dd3f684eefa437529a721053c6bff3323cf0c9f5d180",
+    "guide/verification.md": "8a41f3aa101bf10ee3987a50008e19b972355f86459f893e6ebc2f5fc475a6be",
+    "guide/workload-walkthrough.md": "c8feedd4b1f112b97363e4b591ad958431febc3561a635ac334ebb531a4bedc6",
+    "implementation_rails/graph_operation_implementation_plan.md": "ed8be13fbbf23df7ce494320ef59f3ef0f007bd470f4287dba215e3e48fc33b4",
+    "verification/graph_core/evidence.csv": "901d2150a1a2d37a69273847a0d9ba8fd27224c7b05ee7fc22907f89085365f4"
+  },
+  "artifact_sha256": {
+    "/tmp/kaos-timing-host/core/kaos_host": "8ba08dd6326d1075789f5c55f157229e97c1b2f1b90f48a63b34469961bc56e8",
+    "/tmp/kaos-timing-host/alternatives.wasm": "ef1e4b011a5d7180359d9f252e6b3bd05b9f5b6296d200d3656fc63f75d45f67",
+    "/tmp/kaos-refactor-four/core/kaos_host": "77ffab9a938d6a9f52c34330520d9369bc63de3a4cfc7ae27bcb687339b9917a",
+    "/tmp/kaos-refactor-four/alternatives.wasm": "ef1e4b011a5d7180359d9f252e6b3bd05b9f5b6296d200d3656fc63f75d45f67"
+  },
+  "retained_file_sha256": {
+    "verification/graph_core/results/p8_alternatives/a-first/events.jsonl": "d9298a0995e9f34f2d6f08b33628a8dda2afb97a8f55cda1960b151d1f01bc99",
+    "verification/graph_core/results/p8_alternatives/a-first/host-1.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/p8_alternatives/a-first/host-2.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/p8_alternatives/a-first/host-3.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/p8_alternatives/a-first/provenance.json": "d04185cfcb08ae8e75eb20c8717d0b071769e38eeb151802a021fcbae668350c",
+    "verification/graph_core/results/p8_alternatives/a-first/result.json": "39ab07bcf4f225a64ed15f153e1c36a161753e4388606d804b13995aa7d4c1ad",
+    "verification/graph_core/results/p8_alternatives/a-first-cli.log": "39ab07bcf4f225a64ed15f153e1c36a161753e4388606d804b13995aa7d4c1ad",
+    "verification/graph_core/results/p8_alternatives/b-first/events.jsonl": "bba5d765b86a581397fa910c608a0dbd218add3c392f243a71b12b05f39c2e72",
+    "verification/graph_core/results/p8_alternatives/b-first/host-1.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/p8_alternatives/b-first/host-2.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/p8_alternatives/b-first/host-3.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/p8_alternatives/b-first/provenance.json": "8918dbc1c85221cc0b1742b34fbce241194bfb88000df7244f11da7f84532dc4",
+    "verification/graph_core/results/p8_alternatives/b-first/result.json": "fbce42a6564d9acb6af5db59e758e63736421f215c3a4f0b2a3492b9c49d4812",
+    "verification/graph_core/results/p8_alternatives/b-first-cli.log": "fbce42a6564d9acb6af5db59e758e63736421f215c3a4f0b2a3492b9c49d4812",
+    "verification/graph_core/results/p8_alternatives/four-CMakeCache.txt": "f55fc2e6e626501a8ffbebc34958ece587e54e2505f36673076aebbe17578d37",
+    "verification/graph_core/results/p8_alternatives/four-build.log": "6235a2e0f3418aa342114efda00c3eacb7d55c023c8734bb2c0ab45718ab68db",
+    "verification/graph_core/results/p8_alternatives/four-ctest.log": "d478c382f19443cb07cd8f2834e3f44f2f40b3cde265c78f2f3efd135f66e702",
+    "verification/graph_core/results/p8_alternatives/four-test-details.log": "6787dbce2bfa15b60229b1cd1c7ffd78aa3639c80f72f9728b64a6960f9bc458",
+    "verification/graph_core/results/p8_alternatives/host-CMakeCache.txt": "7d39f058ffce0179d7318bda1e6f75e12633c2f976a853c25726f037f25f0262",
+    "verification/graph_core/results/p8_alternatives/host-build.log": "f191951838378986fdb707f31459c78abf3549754721ed0316ec99dfe6d04b04",
+    "verification/graph_core/results/p8_alternatives/host-ctest.log": "6e17ac76337fbfe7e9776fe4776adb3057fdc805793448607d539f287c02cfc5",
+    "verification/graph_core/results/p8_alternatives/host-test-details.log": "e13f086d2c1205d0b4894b073137bcf2990c8202fc74058e65f9305d222790cd",
+    "verification/graph_core/results/p8_alternatives/review-disposition.json": "fe2bd9e0932065870bfec8281641e7c95cd72306fb29fd6a657fb9cbf797519f",
+    "verification/graph_core/results/p8_alternatives/review.diff": "ba0d46ee3d4a3003865ee0ba2901c7bbbb2f439a2bcc682bd7e6c13061b04500",
+    "verification/graph_core/results/p8_alternatives/ruff.log": "16a028b480f8a4c623bccfacf3a61ee1a351cd1193d5614ab921e68e209af2e7",
+    "verification/graph_core/results/p8_alternatives/test_source_baseline.json": "3ea93a76b6cf355013fe31de97b2656ebb5a7a97be3313c11d061f743c388ad9"
+  }
+}

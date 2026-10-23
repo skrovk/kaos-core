@@ -1,0 +1,110 @@
+{
+  "date": "2026-10-09",
+  "question": "Can the original no-PSRAM ESP32 support at least four nodes, targeting eight endpoints per node, with workloads informed by Beacon examples?",
+  "verdict": "Four compact runtime guests plus memory reservations for 32 endpoints fit in the physical experiment. Functional 32-endpoint/Wi-Fi capacity remains unqualified; production slot/profile limits unchanged.",
+  "source_sha256": {
+    "verification/graph_core/capacity/probe.c": "c15dc456d670b5443e0cf211852d09b2effb402155d856a6c8aa8d16845a8bc0",
+    "verification/graph_core/capacity/stage.py": "33a7576622f91c54979fdbea64c0e17f192257250dee4305150ad8c8b81cd5cc",
+    "graph_core/runtime/wamr.cmake": "80af1a2227c5b7ead526126704a83e83990056a9ba6464c84c79982e59ed3794",
+    "graph_core/runtime/kaos_wamr.c": "edbd36681bb407b213724b41604597d5ffac58f6184ef98fc5dfef810161bc09",
+    "graph_core/runtime/profile.c": "8d5d5ca4540714e72df6bd3b214d1a3ca9569075829f373aa4fa70693676f36f",
+    "verification/graph_core/CMakeLists.txt": "38c0fa81a7114f7a146d07754ab202c4404d18dba657dcca40c8f7eb2ee75e4d",
+    "docs/graph_p3_contract.md": "81ea93de41d22e64287820a703065410a52e77a0c016930bbd361042093dd010",
+    "docs/graph_operation_implementation_plan.md": "b70fb140d7a78a1d205212794ca4d46766b822a623b2bfa804cd17b328400aba",
+    "docs/graph_operation_design_principles.md": "062911125d076b0b1f1cfd6673338e4453d52631fd9d6f62018eb1f940b06022"
+  },
+  "beacon_artifacts": [
+    {
+      "path": "beacon/modules/evaluation_A.wasm",
+      "bytes": 593,
+      "heap_base": 5168,
+      "sha256": "994ab9d938a914e245dfeb0e8ba8ae76df8d98a7211fd4f0830b80d6b9a667de"
+    },
+    {
+      "path": "beacon/modules/evaluation_B.wasm",
+      "bytes": 460,
+      "heap_base": 5136,
+      "sha256": "846e1b1a5d21a7dfeeee809779f01d25cfa78eeb6c4a8df63e93b533310abf33"
+    },
+    {
+      "path": "beacon/modules/button_module.wasm",
+      "bytes": 568,
+      "heap_base": 5232,
+      "sha256": "dd39f721d69ee39b1ee01bb0e9c9f259be8a2897651644e1813d1e153bd0a39b"
+    },
+    {
+      "path": "beacon/modules/press_light_demo/button_module.wasm",
+      "bytes": 3371,
+      "heap_base": 5488,
+      "sha256": "f00eec77affd7130e3f65f66c209aaac2250373ccb267c20c364cda296c53e06"
+    },
+    {
+      "path": "beacon/modules/press_light_demo/led_module.wasm",
+      "bytes": 3557,
+      "heap_base": 5424,
+      "sha256": "f25230ff67b00b457bd7c2a71d3384282091176addf35725722fa0e2c51738d6"
+    }
+  ],
+  "beacon_notes": "Inspected existing working-tree artifacts only. Legacy env ABI/imports, setup/func or main_app exports, min1 page without explicit max. Current P3 cannot execute them unchanged. Heap-base metadata includes guest data/C stack, not runtime/native/application heap cost. Artifact size is not peak RAM.",
+  "host": {
+    "normal_guest_minimum_arena_bytes": 86080,
+    "compact_guest_minimum_arena_bytes": 28976,
+    "search_granularity_bytes": 8,
+    "normal_artifact_bytes": 626,
+    "compact_artifact_bytes": 665,
+    "slots": 2,
+    "experiment_sanitizers": "ASan and UBSan; direct comparison disabled leak checking due to sandbox. Subsequently all 15 registered suites passed with address, fail-fast undefined-behavior and leak checking outside sandbox, including new compact capacity test. WAMR fake-stack exception retained.",
+    "test_command": "ctest --test-dir /tmp/kaos-p3-session/host --output-on-failure",
+    "suites_passed": 15,
+    "failed": 0
+  },
+  "esp32": {
+    "board": "Original ESP32 v3.0, no PSRAM, 160 MHz, IDF v5.5, serial /dev/ttyUSB0",
+    "guest": "Existing runtime_guest.c recompiled with __heap_base/__data_end exports; original source unchanged",
+    "minimum_fixture_arena_bytes": 25184,
+    "candidate_arena_bytes": 25600,
+    "guest_bytes": 665,
+    "concurrent_nodes": 4,
+    "modes": "two compute-only mode4 and two cancellable event-wait mode0",
+    "native_stack_bytes_per_node": 16384,
+    "global_arena_bytes": 32768,
+    "reserved_endpoint_records": 32,
+    "reserved_operation_records": 8,
+    "candidate_registry_bytes": 16936,
+    "allocated_endpoint_buffers": 32,
+    "endpoint_buffer_bytes_each": 1024,
+    "total_endpoint_buffer_bytes": 32768,
+    "resident_free_internal_8bit_heap_bytes": 41448,
+    "resident_largest_free_block_bytes": 15872,
+    "reclamation_cycles": 20,
+    "heap_baseline_restored_each_cycle": true,
+    "result": "PASS",
+    "firmware_bytes": 271056,
+    "firmware_sha256": "f4158f0843805a2d9fe1fdabf0f7935457e192c36bc458679cc857248898b899",
+    "sdkconfig_sha256": "c3e2001bd9a8d4915e83e288ac04ac2e7407927d0eebe30314a656996436780a",
+    "generated_thread_manager_sha256": "ffa7a2a766069ceb53c17a6024a2899743d3ab3dc4c3db8c312dfd617b78f135",
+    "guest_sha256": "b9f82bcfef8042836ae0a819d1807f8844bcce6ce45f27317283fe2ddf19f7f8"
+  },
+  "reproduction": [
+    "python3 verification/graph_core/capacity/stage.py /tmp/kaos-capacity-run",
+    "source /home/karolina/esp/esp-idf/export.sh",
+    "idf.py -C /tmp/kaos-capacity-run/project -B /tmp/kaos-capacity-run/build -p /dev/ttyUSB0 flash monitor"
+  ],
+  "production_correction": "Initialize pinned thread-manager temporary Vector to zero in exact-match build copy. OOM could otherwise destroy an uninitialized lock. Observed physical panic in pthread_mutex_destroy via bh_vector_destroy / safe_traverse_exec_env_list / wasm_exec_env_destroy; same sweep passed after correction. Guest-thread support remains disabled.",
+  "limits": [
+    "Endpoint buffers are touched memory reservations, not active channels or traffic.",
+    "No Wi-Fi, CoAP service, artifact transfer concurrency or full deployment observer costs measured in this experiment.",
+    "Four is demonstrated residency, not maximum capacity. No universal minimum arena inferred from one guest.",
+    "Compact backing requires linker-managed layout and absence of memory.size/grow; arbitrary access to unused declared memory is not promised.",
+    "Candidate port/incidence/report layout is only statically reserved; larger wire requests/reports and revision capacity still require protocol qualification.",
+    "Beacon workloads must be adapted/rebuilt and measured with full queues and real endpoint operations before claiming the requested viability target.",
+    "The board is left running the capacity experiment."
+  ],
+  "logs_sha256": {
+    "verification/graph_core/capacity/logs/host-compact.log": "ff77f1709bc3bb73c62f2afaefcdb8f9508597231a47065a74d5ca0f1c7a99e1",
+    "verification/graph_core/capacity/logs/host-original.log": "85e78110a34a90165186bdb0d346604791c9c7517673907ca9212c6e402a46da",
+    "verification/graph_core/capacity/logs/ctest.log": "8b879374b098a8ecffe8f93a7895c95e18dce9d2edc66a7dcec07d71471c0cb7",
+    "verification/graph_core/capacity/logs/board-oom-before.log": "595b640a060c057e1da1cd6587108a2ce2d011d3a3a3735b56064fa06f11abe5",
+    "verification/graph_core/capacity/logs/board.log": "7ddb93d5174d19c1155f5cd1f1172b3c703d4d74c95be203ead685f8bf289524"
+  }
+}

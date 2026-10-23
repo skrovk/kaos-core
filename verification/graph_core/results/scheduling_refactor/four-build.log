@@ -1,0 +1,49 @@
+[  1%] Built target capacity_guest
+[  2%] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_node.c.o
+[ 45%] Built target kaos_wamr_engine
+[ 49%] Built target kaos_wamr
+[ 50%] Linking C static library libkaos_graph_core.a
+[ 63%] Built target kaos_graph_core
+[ 65%] Building C object CMakeFiles/graph_p5_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/p5_test.c.o
+[ 65%] Linking C executable graph_host_control_test
+[ 67%] Building C object CMakeFiles/graph_p4_capacity.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/p4_capacity.c.o
+[ 68%] Building C object CMakeFiles/graph_p5_capacity.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/p5_capacity.c.o
+[ 69%] Built target graph_host_control_test
+[ 70%] Building C object CMakeFiles/graph_p6_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/p6_test.c.o
+[ 71%] Linking C executable graph_p4_capacity
+[ 72%] Linking C executable graph_p5_capacity
+[ 74%] Linking C executable graph_p5_test
+[ 74%] Built target graph_p4_capacity
+[ 75%] Linking C executable graph_p6_admission_test
+[ 75%] Built target graph_p5_capacity
+[ 75%] Built target graph_p5_test
+[ 76%] Linking C executable graph_p6_control_test
+[ 77%] Linking C executable graph_p6_test
+[ 78%] Building C object CMakeFiles/graph_p7_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/p7_test.c.o
+[ 80%] Built target graph_p6_admission_test
+[ 81%] Building C object CMakeFiles/graph_p7_control_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/p7_control_test.c.o
+[ 81%] Built target graph_p6_test
+[ 82%] Built target graph_p6_control_test
+[ 83%] Building C object CMakeFiles/graph_p7_lifecycle_test.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/p7_lifecycle_test.c.o
+[ 84%] Building C object CMakeFiles/graph_p6_capacity.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/p6_capacity.c.o
+[ 85%] Linking C executable graph_p7_test
+[ 87%] Linking C executable graph_p7_control_test
+[ 87%] Built target graph_p7_test
+[ 88%] Building C object CMakeFiles/graph_p7_capacity.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/p7_capacity.c.o
+[ 88%] Built target graph_p7_control_test
+[ 89%] Building C object core/CMakeFiles/kaos_graph_host.dir/kaos_host.c.o
+[ 90%] Linking C executable graph_p6_capacity
+[ 91%] Building C object core/CMakeFiles/kaos_graph_host.dir/ports/host_udp.c.o
+[ 92%] Linking C executable graph_p7_capacity
+[ 92%] Built target graph_p6_capacity
+[ 94%] Linking C executable graph_p7_lifecycle_test
+[ 95%] Linking C static library libkaos_graph_host.a
+[ 95%] Built target graph_p7_lifecycle_test
+[ 95%] Built target graph_p7_capacity
+[ 95%] Built target kaos_graph_host
+[ 96%] Building C object core/CMakeFiles/kaos_p3_host.dir/ports/posix/main.c.o
+[ 97%] Building C object core/CMakeFiles/kaos_host.dir/ports/posix/main.c.o
+[ 98%] Linking C executable kaos_p3_host
+[100%] Linking C executable kaos_host
+[100%] Built target kaos_p3_host
+[100%] Built target kaos_host

@@ -1,0 +1,157 @@
+P4 runtime memory accounting — instrumented build, no budget changes
+
+Configuration remains four nodes, 26 KiB (26624 bytes) per arena and 8 KiB
+(8192 bytes) per native worker stack. Node arena backing is dynamically allocated;
+the process-wide 32 KiB global arena is a static object.
+
+Diagnostics are enabled only by CORE_WAMR_TRACE_PREPARE. The pinned WAMR allocator
+has exactly two provenance tags: Alloc_For_Runtime and Alloc_For_LinearMemory.
+The additional requested-byte/allocation-count counters occupy four size_t values
+per arena: 16 bytes on ESP32, or 80 bytes for four node arenas and the global arena.
+These counters are in static arena records, not inside their allocated storage.
+The allocator header and allocation alignment are unchanged by instrumentation.
+The trace prints sizeof(service), sizeof(arena), header size, and alignment.
+
+Accounting identities for each printed arena:
+  runtime_payload + linear_payload + headers + padding = used
+  used + unused = capacity
+  headers = allocations * sizeof(allocation)
+
+Per-node preparation snapshots separate Runtime-tag payload by execution phase:
+  thread_payload + loader_payload + instance_payload + exec_payload = runtime_payload
+Linear-tag payload is reported separately and is allocated during instantiation.
+The loader subtotal includes both live module metadata and loader temporaries:
+the bump allocator intentionally retains individual frees until whole-node disposal.
+The allocator tag cannot accurately distinguish those subcategories.
+
+The exec stage requests an 8192-byte interpreter stack. Subtracting 8192 from the
+successful exec_payload gives that stage's execution-environment and cluster metadata
+payload; allocator header/padding remain in the separate arena totals. This stack is
+inside the arena and must not be added again to total node arena storage.
+
+The 4096-byte WAMR-managed application heap is requested during instantiation and
+is part of linear_payload, not another allocation outside the arena. For this
+qualified fixture there are no guest malloc/free exports that disable that heap.
+The fixture guest's linker stack is 4096 bytes and is also inside linear_payload.
+heap_base and data_end are read from exported immutable guest globals. Under this
+pinned one-page, no-memory-growth fixture, WAMR shrinks the guest region to aligned
+heap_base, appends the 4096-byte application heap, then rounds the backing allocation
+to the platform page size. Consequently page slack must not be counted a second time.
+data_end includes the linker's leading-address gap and static guest objects; it is
+not the size of initialized data alone.
+
+The separate artifact=<bytes> field is the node's retained WASM bytecode copy outside
+the arena. Its platform malloc overhead is not part of the arena header counters.
+
+owner=node prints after preparation, before configuration/main. owner=node-dispose
+prints after WAMR unload and before freeing the backing arena. Because bump usage is
+monotonic, the latter is the whole-lifecycle peak, including post-prepare allocations
+and logically freed WAMR storage. The prepared snapshot alone is not a peak proof.
+
+The global trace occurs after wasm_runtime_full_init on its owning thread before
+worker creation. It therefore measures actual initialization payload/header/padding
+against the fixed 32768-byte global capacity. It excludes pthread stack/TCB/libc
+allocations made directly by ESP-IDF outside WAMR's allocator.
+The global-before-destroy and global-after-destroy snapshots run on the control
+owner thread after every worker has joined; they check total lifecycle growth.
+Source inspection finds no allocation in the selected control termination path:
+wasm_runtime_terminate -> wasm_set_exception -> wasm_cluster_set_exception uses
+the plain list traversal with call-stack dumping disabled. The allocating Vector
+traversal runs during exec-env destruction on the node worker and is therefore
+included in the node-dispose peak, not automatically charged to the global arena.
+The measured final global snapshots, rather than this inference alone, are needed
+before recommending any reduction of the 32768-byte global reserve.
+
+These counters measure reserved/consumed arena bytes, not live application data or
+the interpreter-stack/application-heap high-water marks. Current tracing does not
+enable WAMR memory-profiling structures or alter the allocator layout to measure those.
+The 24-byte fixture configuration is copied into the application heap, whose internal
+allocator metadata/rounding must also fit there. Native stack high-water marks come
+from the existing FreeRTOS fixture measurements, separately from this arena trace.
+
+Measured ESP32 trace (board.log, 26 KiB arenas / 8 KiB workers)
+
+All four nodes prepared with identical figures:
+  Arena capacity                         26624
+    Guest linear allocation              12288
+      Guest region up to data_end         1792
+      Guest linker/C stack                4096
+      WAMR application heap               4096
+      Linear-allocation page padding      2304
+    Runtime payload                      12419
+      Thread-init payload                    0
+      Loader/module/temp payload          1646
+      Instance metadata payload            908
+      Explicit interpreter stack          8192
+      Exec-env/cluster metadata payload   1673
+    Allocation headers (43 * 16)           688
+    Allocation alignment padding            53
+    Unused arena capacity                 1176
+  Separately retained artifact            1124
+  Separately allocated native stack       8192
+
+The linear split is validated by runtime exports heap_base=5888 and data_end=1792:
+5888 - 1792 = 4096 guest stack, and 12288 - 5888 - 4096 = 2304 page padding.
+The data_end prefix contains the linker's leading gap plus static data/alignment;
+it is not all useful application data. The distinct 2304 linear page padding and
+53 bump-allocation padding must not be conflated.
+
+Across four nodes, the arena capacity is 106496 bytes; prepared consumption is
+101792 and prepared slack is 4704. Artifacts add 4496 and native stacks add 32768
+before ESP-IDF heap allocator overhead or pthread/TCB/libc records. Interpreter
+stacks and application heaps are already counted inside the arena figure.
+
+Global arena initialization:
+  capacity=32768, used=40, unused=32728
+  runtime_payload=20, linear_payload=0, headers=16, padding=4, allocations=1
+Final traces after three complete cycles confirm identical values before and
+after wasm_runtime_destroy. No global-arena growth was observed across any node
+preparation, execution, cancellation, disposal, or runtime shutdown in this run.
+
+Runtime static records in this instrumented ESP32 build:
+  sizeof(service)=1088, sizeof(arena)=28
+  allocation_header=16, allocation_alignment=8
+  trace counters=16 per arena, 80 total including the global arena
+
+Observed overall fixture heap/task values (not all attributable to WAMR):
+  before_runtime: total=212072 free=188016 largest=110592
+  workers_ready: free=152628 (35388 fewer free bytes for four persistent workers)
+  all_queues_full: free=39588 largest=18432, 32 full queues of 4*256 bytes
+  main task stack free=6908
+  worker minimum free bytes after cleanup=5888,6004,6008,6012 (8 KiB each)
+  all four guests validated received traffic in all three complete cycles
+
+The initial measurement run stalled because the P4 fixture left control at its
+default priority1 below priority2 workers. Unread notifications intentionally make
+event_wait return immediately, exposing control starvation by busy guests. The
+root agent corrected control to priority3, matching P3. The final unchanged-memory
+run passes all three cycles with 32 full queues, copied traffic, endpoint reclamation
+despite unread notifications, and complete node reclamation.
+
+Whole-lifecycle node arena peaks (all 12 disposals, identical):
+  capacity=26624, used=25472, unused=1152
+  runtime_payload=12423, linear_payload=12288
+  headers=704, padding=57, allocations=44
+The 24-byte increase over preparation consists of a 4-byte runtime allocation,
+16-byte header, and 4-byte alignment padding. The source inspection above identifies
+the exec-env destruction traversal as the additional small allocation.
+Across four simultaneously allocated arenas, measured peak usage is 101888 bytes
+and remaining capacity is 4608 bytes. This is fixture-specific, not a universal
+minimum viable node budget.
+
+All three cycles reclaim to heap_free=152516 and largest_block=110592. Global arena
+usage remains 40 bytes at initialization, before destroy, and after destroy.
+
+Recommended next memory experiment, not implemented or qualified:
+  Reduce the global arena from 32768 to 1024 bytes in the qualification profile.
+  Potential static RAM saving: 31744 bytes (31 KiB) per device.
+  The candidate retains 984 bytes above the observed 40-byte use (25.6x the measured
+  consumption) while preserving the existing allocator and public interfaces.
+  Re-run the complete fixture and failure/cancellation paths before accepting it;
+  the three-cycle measurement does not prove every supported workload path.
+
+This candidate has substantially more benefit than shrinking the four node arenas:
+their measured aggregate spare capacity is only 4608 bytes, and removing most of it
+would leave little room for a different module, imports, or loader shape. Retain
+the current 26 KiB node arenas and 8 KiB native worker stacks while evaluating the
+global reservation first. No memory settings were changed by this analysis.

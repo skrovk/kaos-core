@@ -1,0 +1,43 @@
+Start testing: Oct 09 20:11 CEST
+----------------------------------------------------------
+1/1 Testing: graph_p4_capacity
+1/1 Test: graph_p4_capacity
+Command: "/tmp/kaos-p4-session/four/graph_p4_capacity" "/tmp/kaos-p4-session/four/capacity.wasm"
+Directory: /tmp/kaos-p4-session/four
+"graph_p4_capacity" start time: Oct 09 20:11 CEST
+Output:
+----------------------------------------------------------
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=39864 endpoints=33248 edges=600 nodes=808 arena=49152 artifact=1124 native_stack=262144
+capacity node=0 puts=2431 gets=2295 full=49 guest_validated=2295
+capacity node=1 puts=2436 gets=2392 full=44 guest_validated=2392
+capacity node=2 puts=2406 gets=2374 full=48 guest_validated=2374
+capacity node=3 puts=2325 gets=2294 full=48 guest_validated=2294
+capacity deliveries=9395
+capacity endpoints_reclaimed unread_notifications=32
+capacity cycle=0 reservations=0
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=39864 endpoints=33248 edges=600 nodes=808 arena=49152 artifact=1124 native_stack=262144
+capacity node=0 puts=2462 gets=2429 full=43 guest_validated=2429
+capacity node=1 puts=2464 gets=2432 full=48 guest_validated=2430
+capacity node=2 puts=2466 gets=2430 full=48 guest_validated=2429
+capacity node=3 puts=2468 gets=2436 full=48 guest_validated=2436
+capacity deliveries=9760
+capacity endpoints_reclaimed unread_notifications=32
+capacity cycle=1 reservations=0
+capacity queues_full=32 payload=256 messages_per_queue=4 reserved=233872 registry=39864 endpoints=33248 edges=600 nodes=808 arena=49152 artifact=1124 native_stack=262144
+capacity node=0 puts=2320 gets=2280 full=44 guest_validated=2280
+capacity node=1 puts=2336 gets=2288 full=44 guest_validated=2288
+capacity node=2 puts=2340 gets=2305 full=44 guest_validated=2305
+capacity node=3 puts=2320 gets=2288 full=48 guest_validated=2288
+capacity deliveries=9192
+capacity endpoints_reclaimed unread_notifications=32
+capacity cycle=2 reservations=0
+P4 capacity PASS: four WAMR nodes, eight endpoints each, 32 full queues, copied traffic and full reclamation
+<end of output>
+Test time =   3.10 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p4_capacity" end time: Oct 09 20:11 CEST
+"graph_p4_capacity" time elapsed: 00:00:03
+----------------------------------------------------------
+
+End testing: Oct 09 20:11 CEST

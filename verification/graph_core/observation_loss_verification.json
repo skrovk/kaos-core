@@ -1,0 +1,102 @@
+{
+  "date": "2026-10-20",
+  "head": "b8372d8c61fe9ff4531048a7bfcdaf825d439c57",
+  "scope": "Partial OBS03; post-capture corruption of actual feedback trace and synthetic collector adapter snapshot truncation",
+  "production_changes": false,
+  "existing_test_sources_unchanged": 89,
+  "baseline": "results/observation_loss/test_source_baseline.json",
+  "design": "Reuse existing run_workload/evaluate/evaluate_timing/GraphCollector APIs. Keep original evidence separate from damaged copies; unique retained invocation directory.",
+  "oracle": "Healthy sample pass and complete timing assessment; all16 damaged copies inconclusive for samples/timing; original unchanged and still passes;11 proper snapshot prefixes rejected with no retention; exact full snapshot stored/ACKed and preserved after malformed duplicate.",
+  "reviews": {
+    "spec": "No blockers; explicitly partial OBS03.",
+    "standards": "Fixed output directory made reruns fail. Changed to unique per-invocation directory; focused rerun passed; review confirmed no remaining blockers."
+  },
+  "limitations": [
+    "No live network fault or kernel receive-loss accounting",
+    "Altered reported-drop counter does not test overflow or counter production",
+    "Synthetic collector snapshot uses trusted direct adapter; not network truncation",
+    "No relay overflow/injector lateness/collector crash/full execution replay",
+    "No physical target timing or closure inference from missing observations"
+  ],
+  "runs": [
+    {
+      "profile": "default",
+      "passed": 53,
+      "failed": 0,
+      "duration_seconds": 58.71,
+      "command": "ctest --test-dir /tmp/kaos-timing-host --output-on-failure -j1 --output-log /home/karolina/Research/Code/kaos_core/verification/graph_core/results/observation_loss/default-ctest.log",
+      "sanitizers": [
+        "address",
+        "undefined"
+      ],
+      "host_sha256": "4a514bd1ea73f4ca6a2fda8125013e4e268066e7db99b00b9f98dbcdc61fb2cb",
+      "guest_sha256": "dde73c3e98dbce1a1426ececf17ad957ff6370cff8fdb64282658d2f24794f3a",
+      "observation_faults_inconclusive": 16,
+      "truncated_snapshot_prefixes_rejected": 11
+    },
+    {
+      "profile": "four",
+      "passed": 27,
+      "failed": 0,
+      "duration_seconds": 44.42,
+      "command": "ctest --test-dir /tmp/kaos-refactor-four --output-on-failure -j1 --output-log /home/karolina/Research/Code/kaos_core/verification/graph_core/results/observation_loss/four-ctest.log",
+      "sanitizers": [
+        "address",
+        "undefined"
+      ],
+      "host_sha256": "dafec34c4284e04cf6ddf268346b38858ba9253e31fc05d092812522cc1f1ffa",
+      "guest_sha256": "dde73c3e98dbce1a1426ececf17ad957ff6370cff8fdb64282658d2f24794f3a",
+      "observation_faults_inconclusive": 16,
+      "truncated_snapshot_prefixes_rejected": 11
+    }
+  ],
+  "source_sha256": {
+    "verification/graph_core/tests/observation_loss_test.py": "4b6acbe99826ea85b7473978c43b2f17378639ea92a665314bb6998af2a04093",
+    "verification/graph_core/observation_loss.cmake": "20e734fbd62753d0e19a4ab92eccd505678b88597d304f44a554b6cb8971fdba",
+    "verification/graph_core/workloads.cmake": "d9d138bacc92cdeb77f86877d70575571b22da84dd3fa5dd00ae5e335416afb7",
+    "../sim_env/sim_env/__init__.py": "d8d8424e48c9fe10632ef31a629cbf5c3d1078528cd6d63baf00d627ee160c47",
+    "../sim_env/sim_env/__main__.py": "391409d64e737b5e70514d12a8c56fbd4f5b5dd64f904e5e179716379374a50b",
+    "../sim_env/sim_env/config.py": "48ead2ed7e904e97163aea5ec87d2989e2696891c1315d7a805e639061331754",
+    "../sim_env/sim_env/deployment.py": "431cbead993e481a6c969f30745d27947f0f565b0286d1a8b13249b481f01d7d",
+    "../sim_env/sim_env/graph_alternatives.py": "ec71fb8096cf348adbe465136dc9cb7b3570615e9e94cb8d10c25caeae0f6b36",
+    "../sim_env/sim_env/graph_collector.py": "e1a4d9cd017441aa4f75aae7b85bfc1f56f30c0b0ea25776d621615b16298054",
+    "../sim_env/sim_env/graph_evidence.py": "0eb34d1ef10dd4d44e47f258b4365cb5b0950aaf6ccf10d4cdfa145504f71614",
+    "../sim_env/sim_env/graph_mixed.py": "64aa72e0597817ec3bff027e1b5b021eeda6aa59380ab261c117191ecf34a44e",
+    "../sim_env/sim_env/graph_protocol.py": "950320ab8b8d87078eb0ba259470e0e89036440b62a7a2b9a923126def13de1c",
+    "../sim_env/sim_env/graph_relay.py": "76cbcb90c1a91a18b6702567c90605a20b0f334ff448619ee77b27d3edc2ef8b",
+    "../sim_env/sim_env/graph_run.py": "ee2f8ac83346469fdf6f5061ed7e6fab52274075dde8274ce2f3b16e40bbd76f",
+    "../sim_env/sim_env/graph_transport.py": "6ce56ab3840b5e3db7a79b89d2dcdd245df61eebf761c5abcd727b734c886e37",
+    "../sim_env/sim_env/graph_workload_timing.py": "5c635157521925a4e77a8b65e5965b442dbe15f9531eb91e125b5a467035b6e5",
+    "../sim_env/sim_env/graph_workloads.py": "2db93aaf807670b1ec793b9b7cc44a9168b6de0649898a392361df6b98518faf",
+    "../sim_env/sim_env/metrics.py": "3acfa97e198270f3fad93b6061dd0792a5b8ff8ddac86a2e4fc8d8415830bdb7",
+    "../sim_env/sim_env/models.py": "c0d09d6d126a42ad4e4f7f3ee63b15b1a90fafe085940417eef5c5132ab2e14f",
+    "../sim_env/sim_env/modules.py": "ab6cad11063742133bd41a45c520bc449a88879b0cc66104bba908f9fa3cfa22",
+    "../sim_env/sim_env/observer.py": "6f5c13ae323de17e1cc4b1b20cf47ff9aca54a5c5d342b73ceb75a376c829e0a",
+    "../sim_env/sim_env/orchestrator.py": "acedd46802cee90eac12f30f7ac87c51a1b6c8c4032ef2a3c297262dc7a16563",
+    "../sim_env/sim_env/protocol.py": "24d436dabf07ca5eea2be4ecd586fa191456e3c9c21a02b2c7a1889cf1904159",
+    "../sim_env/sim_env/relay.py": "3a411fffe0e0a277c561c383e2930dc92d60790d76286aa4d1270760729f306c",
+    "../sim_env/sim_env/runner.py": "2e87305f63838484f8e5282c65c9fc81f4f90aa983a1b757544ad85416f6c720",
+    "../sim_env/sim_env/simulator.py": "d962e355bd4f84affffa4ecd3f1d7de58316bda347f8efe848b01909c6f2185b"
+  },
+  "retained_sha256": {
+    "verification/graph_core/results/observation_loss/default/assessment.json": "dd677457307eaff14f35b13fbb647d2da0e1412af484df9dbac0db16c9efe324",
+    "verification/graph_core/results/observation_loss/default/healthy/events.jsonl": "a97cd780109a234ffeb27a6cde36d24fdc0b870904266d832e74c17f7fc68550",
+    "verification/graph_core/results/observation_loss/default/healthy/host-1.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/observation_loss/default/healthy/host-2.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/observation_loss/default/healthy/provenance.json": "a34fa56dbff096e2a62f55039431841f3a14be57a36d49f4a3ce94cec6119b99",
+    "verification/graph_core/results/observation_loss/default/healthy/result.json": "e43d14ae16e0455f09729aa34d92e50b0e9c7e23c415003ec90f1182e58d5bac",
+    "verification/graph_core/results/observation_loss/default-CMakeCache.txt": "7d39f058ffce0179d7318bda1e6f75e12633c2f976a853c25726f037f25f0262",
+    "verification/graph_core/results/observation_loss/default-LastTest.log": "17e52f7e08515b4e73e2768d196a2a90719418752210eb2b2f4a1ce311aa479b",
+    "verification/graph_core/results/observation_loss/default-ctest.log": "754c976ef603297cc8d1bf9c29a709800ad62e560be4a1df2747cc69c63a3231",
+    "verification/graph_core/results/observation_loss/four/assessment.json": "56e7539f51462435290c6129c89c8d126c1e3ac086f715b89d68ee6a1fff361b",
+    "verification/graph_core/results/observation_loss/four/healthy/events.jsonl": "52f8e6e4e48655b9cf74be5306ac56e27b6a78bb53c0d6c1ddbec1d14ceb67b4",
+    "verification/graph_core/results/observation_loss/four/healthy/host-1.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/observation_loss/four/healthy/host-2.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/observation_loss/four/healthy/provenance.json": "5b134217ac08abb8ed6c50d3520381fac2f9085dd1c711778863ab5caeced890",
+    "verification/graph_core/results/observation_loss/four/healthy/result.json": "dfe5f044ee8c61d4ed11554667a89693807b9b1a8b9666e582120aa01e47b1eb",
+    "verification/graph_core/results/observation_loss/four-CMakeCache.txt": "f55fc2e6e626501a8ffbebc34958ece587e54e2505f36673076aebbe17578d37",
+    "verification/graph_core/results/observation_loss/four-LastTest.log": "426c8aef817dced8c8d2ea4e830c6efa8da23fed1dd2105fe9f4bca06d644307",
+    "verification/graph_core/results/observation_loss/four-ctest.log": "a9e9dcbc8171f39260745e5e66bc24dd418ea080b656eb18bcd4c9e490720b65",
+    "verification/graph_core/results/observation_loss/test_source_baseline.json": "57e7f27ec2f41f4c5f911e9eadc4d1a088f54a169e2f90dd9eb683d1d0494c14"
+  }
+}

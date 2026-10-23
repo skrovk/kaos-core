@@ -1,0 +1,133 @@
+{
+  "date": "2026-10-21",
+  "head": "b8372d8c61fe9ff4531048a7bfcdaf825d439c57",
+  "scope": "OBS03 partial live finite-relay-queue overflow invalidates GraphRun completion; requested link loss remains permitted.",
+  "implementation_changes": [
+    "../sim_env/sim_env/graph_run.py"
+  ],
+  "graph_core_changes": false,
+  "existing_test_sources_unchanged": 91,
+  "baseline": "results/relay_overflow/test_source_baseline.json",
+  "design": "Counter in existing synchronized emit path, sampled after relay joins; normal context exit raises on overflow; teardown retains count/error/raw observations. No added public API or embedded state.",
+  "red_green": "Before fix actual UDP duplicate overflow produced normal GraphRun exit, errors=[] and no count. New test failed (missing RuntimeError and counter). After fix both focused cases and full suites passed. Preserved before_fix events and original file/diff.",
+  "case_configuration": {
+    "host_devices": [
+      1
+    ],
+    "authority": 99,
+    "queue_limit": 1,
+    "overflow_policy": {
+      "source": 99,
+      "destination": 1,
+      "delay_ms": 10000,
+      "duplicate": 1
+    },
+    "loss_control": {
+      "source": 99,
+      "destination": 1,
+      "loss": 1
+    },
+    "query_allowance_us": 50000,
+    "expected_overflow_copy": 1,
+    "queued_original_copy": 0
+  },
+  "oracle": "Healthy UDP roundtrip; query timeout caught inside successful body; positively observed packet_dropped reason relay_overflow causes independent teardown rejection; counter1 despite decision+drop events; queued original run_ended not overflow; requested loss one drop and normal exit counter0.",
+  "reviews": {
+    "spec": "No blockers; all existing built-in result writers follow the GraphRun context. Offline trace assessments remain independent.",
+    "standards": "No blockers; log lock serializes counter; relay shutdown precedes read; unique outputs and bounded waits."
+  },
+  "lint": "Ruff format applied to both changed Python files; Ruff check --no-cache passed.",
+  "limitations": [
+    "One-slot queue mechanism not default256 throughput qualification",
+    "Real host query transport without active graph workload",
+    "No kernel receive loss measurement or full observation-loss guarantee",
+    "No injector-lateness tolerance or full execution replay",
+    "Standalone offline sample/timing assessments do not themselves qualify injector validity",
+    "No embedded hardware qualification"
+  ],
+  "runs": [
+    {
+      "profile": "default",
+      "passed": 55,
+      "failed": 0,
+      "duration_seconds": 61.45,
+      "command": "ctest --test-dir /tmp/kaos-timing-host --output-on-failure -j1 --output-log /home/karolina/Research/Code/kaos_core/verification/graph_core/results/relay_overflow/default-ctest.log",
+      "host_sanitizers": [
+        "address",
+        "undefined"
+      ],
+      "host_sha256": "4a514bd1ea73f4ca6a2fda8125013e4e268066e7db99b00b9f98dbcdc61fb2cb",
+      "new_cases": 2
+    },
+    {
+      "profile": "four",
+      "passed": 29,
+      "failed": 0,
+      "duration_seconds": 45.45,
+      "command": "ctest --test-dir /tmp/kaos-refactor-four --output-on-failure -j1 --output-log /home/karolina/Research/Code/kaos_core/verification/graph_core/results/relay_overflow/four-ctest.log",
+      "host_sanitizers": [
+        "address",
+        "undefined"
+      ],
+      "host_sha256": "dafec34c4284e04cf6ddf268346b38858ba9253e31fc05d092812522cc1f1ffa",
+      "new_cases": 2
+    }
+  ],
+  "source_sha256": {
+    "verification/graph_core/tests/relay_overflow_test.py": "8fc633ab7eb38660223237943ceb8d42fc197c27de7dae5c4106a058c0c2a8a3",
+    "verification/graph_core/relay_overflow.cmake": "b032af9932baa551dbc4334470ce650c20e47f949cca47ebed1db45c8df128a0",
+    "verification/graph_core/workloads.cmake": "7ea07def817a8007350a68b96ba72aee492d33a5c03be09ea1ef3351936e97e5",
+    "../sim_env/sim_env/__init__.py": "d8d8424e48c9fe10632ef31a629cbf5c3d1078528cd6d63baf00d627ee160c47",
+    "../sim_env/sim_env/__main__.py": "391409d64e737b5e70514d12a8c56fbd4f5b5dd64f904e5e179716379374a50b",
+    "../sim_env/sim_env/config.py": "48ead2ed7e904e97163aea5ec87d2989e2696891c1315d7a805e639061331754",
+    "../sim_env/sim_env/deployment.py": "431cbead993e481a6c969f30745d27947f0f565b0286d1a8b13249b481f01d7d",
+    "../sim_env/sim_env/graph_alternatives.py": "ec71fb8096cf348adbe465136dc9cb7b3570615e9e94cb8d10c25caeae0f6b36",
+    "../sim_env/sim_env/graph_collector.py": "e1a4d9cd017441aa4f75aae7b85bfc1f56f30c0b0ea25776d621615b16298054",
+    "../sim_env/sim_env/graph_evidence.py": "0eb34d1ef10dd4d44e47f258b4365cb5b0950aaf6ccf10d4cdfa145504f71614",
+    "../sim_env/sim_env/graph_mixed.py": "64aa72e0597817ec3bff027e1b5b021eeda6aa59380ab261c117191ecf34a44e",
+    "../sim_env/sim_env/graph_protocol.py": "950320ab8b8d87078eb0ba259470e0e89036440b62a7a2b9a923126def13de1c",
+    "../sim_env/sim_env/graph_relay.py": "76cbcb90c1a91a18b6702567c90605a20b0f334ff448619ee77b27d3edc2ef8b",
+    "../sim_env/sim_env/graph_run.py": "3150e103f940bdfe3c464962383ff6636bbf3d84df323d27edc39f4a5a190e0f",
+    "../sim_env/sim_env/graph_transport.py": "6ce56ab3840b5e3db7a79b89d2dcdd245df61eebf761c5abcd727b734c886e37",
+    "../sim_env/sim_env/graph_workload_timing.py": "5c635157521925a4e77a8b65e5965b442dbe15f9531eb91e125b5a467035b6e5",
+    "../sim_env/sim_env/graph_workloads.py": "2db93aaf807670b1ec793b9b7cc44a9168b6de0649898a392361df6b98518faf",
+    "../sim_env/sim_env/metrics.py": "3acfa97e198270f3fad93b6061dd0792a5b8ff8ddac86a2e4fc8d8415830bdb7",
+    "../sim_env/sim_env/models.py": "c0d09d6d126a42ad4e4f7f3ee63b15b1a90fafe085940417eef5c5132ab2e14f",
+    "../sim_env/sim_env/modules.py": "ab6cad11063742133bd41a45c520bc449a88879b0cc66104bba908f9fa3cfa22",
+    "../sim_env/sim_env/observer.py": "6f5c13ae323de17e1cc4b1b20cf47ff9aca54a5c5d342b73ceb75a376c829e0a",
+    "../sim_env/sim_env/orchestrator.py": "acedd46802cee90eac12f30f7ac87c51a1b6c8c4032ef2a3c297262dc7a16563",
+    "../sim_env/sim_env/protocol.py": "24d436dabf07ca5eea2be4ecd586fa191456e3c9c21a02b2c7a1889cf1904159",
+    "../sim_env/sim_env/relay.py": "3a411fffe0e0a277c561c383e2930dc92d60790d76286aa4d1270760729f306c",
+    "../sim_env/sim_env/runner.py": "2e87305f63838484f8e5282c65c9fc81f4f90aa983a1b757544ad85416f6c720",
+    "../sim_env/sim_env/simulator.py": "d962e355bd4f84affffa4ecd3f1d7de58316bda347f8efe848b01909c6f2185b"
+  },
+  "retained_sha256": {
+    "verification/graph_core/results/relay_overflow/before_fix/loss/events.jsonl": "81ee56405c275e456158af06d7a236fe1440cb8b253bf2949257e4987c4f4d43",
+    "verification/graph_core/results/relay_overflow/before_fix/loss/host-1.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/relay_overflow/before_fix/loss/provenance.json": "863fc72ec102e6d49378c84d95fdd2142ad09dc8dcb3771caa7fd57612bb57dc",
+    "verification/graph_core/results/relay_overflow/before_fix/relay_overflow/events.jsonl": "567075c7f96073b4856bfa6c2e9186dea0ce28fd5ccd811b13af18037a86a248",
+    "verification/graph_core/results/relay_overflow/before_fix/relay_overflow/host-1.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/relay_overflow/before_fix/relay_overflow/provenance.json": "8337a48447d5016414e8d745b0ca1bbf389e9c42a8bbc69cdc4b305b9addae86",
+    "verification/graph_core/results/relay_overflow/default/loss/events.jsonl": "8b1fc4fc87df89503694d746a4f5f6887f13986af7e52f74685b48f0dde85bd7",
+    "verification/graph_core/results/relay_overflow/default/loss/host-1.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/relay_overflow/default/loss/provenance.json": "fdc998f4c196b7c47241229aae3c0809216080d8e119fda5fdb58666a2a86e1d",
+    "verification/graph_core/results/relay_overflow/default/relay_overflow/events.jsonl": "24abd2a60f33640e19f59e19d58c06410f03c6d1f304bdcc6243fa76221f9743",
+    "verification/graph_core/results/relay_overflow/default/relay_overflow/host-1.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/relay_overflow/default/relay_overflow/provenance.json": "456fa354b727ce0de7ac6e92efd21c336010aa7106ad2671ac8b58a3083c227d",
+    "verification/graph_core/results/relay_overflow/default-CMakeCache.txt": "7d39f058ffce0179d7318bda1e6f75e12633c2f976a853c25726f037f25f0262",
+    "verification/graph_core/results/relay_overflow/default-LastTest.log": "d314970e76daa2467a4a08724b01e3b3bd78bdd78485e07d361d6e2c142cf0c3",
+    "verification/graph_core/results/relay_overflow/default-ctest.log": "4cb7379456fe5db537cc0d9c98067be3bf8fc66af98ccab4914403d441853529",
+    "verification/graph_core/results/relay_overflow/four/loss/events.jsonl": "b1d8799d1fa5e0e68019d44b16f23027f2731a5bae31a1408390ae33572d0cce",
+    "verification/graph_core/results/relay_overflow/four/loss/host-1.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/relay_overflow/four/loss/provenance.json": "6d6c5b0483e314b784e9abc11bf66ec840c00249aa8f3acc05d097329c51e7f7",
+    "verification/graph_core/results/relay_overflow/four/relay_overflow/events.jsonl": "e521acfb99e7af20c2a5105e0f9fb749b89f5611129ee68ab8b228c3ddd1c608",
+    "verification/graph_core/results/relay_overflow/four/relay_overflow/host-1.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/relay_overflow/four/relay_overflow/provenance.json": "228c327d2a0637183f656052f4d953330b9daf8e1b23e1aa81eae448b6c230da",
+    "verification/graph_core/results/relay_overflow/four-CMakeCache.txt": "f55fc2e6e626501a8ffbebc34958ece587e54e2505f36673076aebbe17578d37",
+    "verification/graph_core/results/relay_overflow/four-LastTest.log": "b03b49a16e3758b123e06d5cfa0f0bc3eea449745d2b1f4a72b98aa3e0006b54",
+    "verification/graph_core/results/relay_overflow/four-ctest.log": "76e9c26b3f3fc6075b062e325a43ab422ec2e36cdfa64362baccb004823735a8",
+    "verification/graph_core/results/relay_overflow/graph_run.diff": "deb5acc21f793bb54abcec728b9125cb883512ac97cb83ab2e7456d6cecf2c4c",
+    "verification/graph_core/results/relay_overflow/graph_run_before.py.txt": "ee2f8ac83346469fdf6f5061ed7e6fab52274075dde8274ce2f3b16e40bbd76f",
+    "verification/graph_core/results/relay_overflow/test_source_baseline.json": "44f9ba25b5d317908989c3e1aef932102b20829560f6c7af904c706d1ad038ee"
+  }
+}

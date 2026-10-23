@@ -1,0 +1,33 @@
+Executing action: all (aliases: build)
+Running ninja in directory /tmp/kaos-host-refactor/esp32
+Executing "ninja all"...
+[1/13] Performing build step for 'bootloader'
+[1/1] cd /tmp/kaos-host-refactor/esp32/bootloader/esp-idf/esptool_py && /home/karolina/.espressif/python_env/idf5.5_py3.12_env/bin/python /home/karolina/esp/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 bootloader 0x1000 /tmp/kaos-host-refactor/esp32/bootloader/bootloader.bin
+Bootloader binary size 0x6680 bytes. 0x980 bytes (8%) free.
+[2/13] No install step for 'bootloader'
+[3/13] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/__/app_main.c.obj
+[4/13] Building C object esp-idf/graph_core/CMakeFiles/__idf_graph_core.dir/ports/host_udp.c.obj
+[5/13] Completed 'bootloader'
+[6/13] Building C object esp-idf/graph_core/CMakeFiles/__idf_graph_core.dir/kaos_node.c.obj
+[7/13] Building C object esp-idf/graph_core/CMakeFiles/__idf_graph_core.dir/kaos_host.c.obj
+[8/13] Linking C static library esp-idf/graph_core/libgraph_core.a
+[9/13] Linking C static library esp-idf/main/libmain.a
+[10/13] Generating esp-idf/esp_system/ld/sections.ld
+[11/13] Linking CXX executable kaos_graph_host.elf
+[12/13] Generating binary image from built executable
+esptool.py v4.10.dev2
+Creating esp32 image...
+Merged 2 ELF sections
+Successfully created esp32 image.
+Generated /tmp/kaos-host-refactor/esp32/kaos_graph_host.bin
+[13/13] cd /tmp/kaos-host-refactor/esp32/esp-idf/esptool_py && /home/karolina/.espressif/python_env/idf5.5_py3.12_env/bin/python /home/karolina/esp/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 partition --type app /tmp/kaos-host-refactor/esp32/partition_table/partition-table.bin /tmp/kaos-host-refactor/esp32/kaos_graph_host.bin
+kaos_graph_host.bin binary size 0xdecb0 bytes. Smallest app partition is 0x100000 bytes. 0x21350 bytes (13%) free.
+
+Project build complete. To flash, run:
+ idf.py flash
+or
+ idf.py -p PORT flash
+or
+ python -m esptool --chip esp32 -b 460800 --before default_reset --after hard_reset write_flash --flash_mode dio --flash_size 4MB --flash_freq 40m 0x1000 ../../../../../tmp/kaos-host-refactor/esp32/bootloader/bootloader.bin 0x8000 ../../../../../tmp/kaos-host-refactor/esp32/partition_table/partition-table.bin 0x10000 ../../../../../tmp/kaos-host-refactor/esp32/kaos_graph_host.bin
+or from the "/tmp/kaos-host-refactor/esp32" directory
+ python -m esptool --chip esp32 -b 460800 --before default_reset --after hard_reset write_flash "@flash_args"

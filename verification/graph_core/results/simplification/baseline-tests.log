@@ -1,0 +1,87 @@
+Internal ctest changing into directory: /tmp/kaos-timing-host
+Test project /tmp/kaos-timing-host
+      Start 26: graph_host
+ 1/11 Test #26: graph_host .......................***Failed    0.02 sec
+==4==LeakSanitizer has encountered a fatal error.
+==4==HINT: For debugging, try setting environment variable LSAN_OPTIONS=verbosity=1:log_threads=1
+==4==HINT: LeakSanitizer does not work under ptrace (strace, gdb, etc)
+
+      Start 27: graph_host_udp
+ 2/11 Test #27: graph_host_udp ...................***Failed    0.01 sec
+/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/host_udp_test.c:17: sender >= 0
+==12==LeakSanitizer has encountered a fatal error.
+==12==HINT: For debugging, try setting environment variable LSAN_OPTIONS=verbosity=1:log_threads=1
+==12==HINT: LeakSanitizer does not work under ptrace (strace, gdb, etc)
+
+      Start 36: graph_admission
+ 3/11 Test #36: graph_admission ..................***Failed    0.01 sec
+==14==LeakSanitizer has encountered a fatal error.
+==14==HINT: For debugging, try setting environment variable LSAN_OPTIONS=verbosity=1:log_threads=1
+==14==HINT: LeakSanitizer does not work under ptrace (strace, gdb, etc)
+
+      Start 38: graph_request
+ 4/11 Test #38: graph_request ....................***Failed    0.01 sec
+==16==LeakSanitizer has encountered a fatal error.
+==16==HINT: For debugging, try setting environment variable LSAN_OPTIONS=verbosity=1:log_threads=1
+==16==HINT: LeakSanitizer does not work under ptrace (strace, gdb, etc)
+
+      Start 42: graph_coap
+ 5/11 Test #42: graph_coap .......................***Failed    0.05 sec
+==18==LeakSanitizer has encountered a fatal error.
+==18==HINT: For debugging, try setting environment variable LSAN_OPTIONS=verbosity=1:log_threads=1
+==18==HINT: LeakSanitizer does not work under ptrace (strace, gdb, etc)
+
+      Start 43: graph_coap_server
+ 6/11 Test #43: graph_coap_server ................***Failed    0.01 sec
+==20==LeakSanitizer has encountered a fatal error.
+==20==HINT: For debugging, try setting environment variable LSAN_OPTIONS=verbosity=1:log_threads=1
+==20==HINT: LeakSanitizer does not work under ptrace (strace, gdb, etc)
+
+      Start 44: graph_artifact
+ 7/11 Test #44: graph_artifact ...................***Failed    0.03 sec
+==22==LeakSanitizer has encountered a fatal error.
+==22==HINT: For debugging, try setting environment variable LSAN_OPTIONS=verbosity=1:log_threads=1
+==22==HINT: LeakSanitizer does not work under ptrace (strace, gdb, etc)
+
+      Start 45: graph_control
+ 8/11 Test #45: graph_control ....................***Failed    0.01 sec
+==24==LeakSanitizer has encountered a fatal error.
+==24==HINT: For debugging, try setting environment variable LSAN_OPTIONS=verbosity=1:log_threads=1
+==24==HINT: LeakSanitizer does not work under ptrace (strace, gdb, etc)
+
+      Start 48: graph_node
+ 9/11 Test #48: graph_node .......................***Failed    0.01 sec
+==26==LeakSanitizer has encountered a fatal error.
+==26==HINT: For debugging, try setting environment variable LSAN_OPTIONS=verbosity=1:log_threads=1
+==26==HINT: LeakSanitizer does not work under ptrace (strace, gdb, etc)
+
+      Start 49: graph_endpoint
+10/11 Test #49: graph_endpoint ...................***Failed    0.01 sec
+==28==LeakSanitizer has encountered a fatal error.
+==28==HINT: For debugging, try setting environment variable LSAN_OPTIONS=verbosity=1:log_threads=1
+==28==HINT: LeakSanitizer does not work under ptrace (strace, gdb, etc)
+
+      Start 50: graph_edge
+11/11 Test #50: graph_edge .......................***Failed    0.02 sec
+==30==LeakSanitizer has encountered a fatal error.
+==30==HINT: For debugging, try setting environment variable LSAN_OPTIONS=verbosity=1:log_threads=1
+==30==HINT: LeakSanitizer does not work under ptrace (strace, gdb, etc)
+
+
+0% tests passed, 11 tests failed out of 11
+
+Total Test time (real) =   0.22 sec
+
+The following tests FAILED:
+	 26 - graph_host (Failed)
+	 27 - graph_host_udp (Failed)
+	 36 - graph_admission (Failed)
+	 38 - graph_request (Failed)
+	 42 - graph_coap (Failed)
+	 43 - graph_coap_server (Failed)
+	 44 - graph_artifact (Failed)
+	 45 - graph_control (Failed)
+	 48 - graph_node (Failed)
+	 49 - graph_endpoint (Failed)
+	 50 - graph_edge (Failed)
+Errors while running CTest

@@ -1,0 +1,104 @@
+‹é  2 factoòets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:6380
+ho 0 tail 12 room 4
+load:0x40078000,len:15916
+load:0x40080400,len:3860
+entry 0x40080638
+I (29) boot: ESP-IDF v5.5 2nd stage bootloader
+I (29) boot: compile time Oct  9 2026 20:04:23
+I (29) boot: Multicore bootloader
+I (30) boot: chip revision: v3.0
+I (33) boot.esp32: SPI Speed      : 40MHz
+I (37) boot.esp32: SPI Mode       : DIO
+I (40) boot.esp32: SPI Flash Size : 4MB
+I (44) boot: Enabling RNG early entropy source...
+I (49) boot: Partition Table:
+I (51) boot: ## Label            Usage          Type ST Offset   Length
+I (57) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (64) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (71) boot:  2 factory          factory app      00 00 00010000 00100000
+I (77) boot: End of partition table
+I (80) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0c7ech ( 51180) map
+I (105) esp_image: segment 1: paddr=0001c814 vaddr=3ff80000 size=00020h (    32) load
+I (106) esp_image: segment 2: paddr=0001c83c vaddr=3ffb0000 size=02478h (  9336) load
+I (113) esp_image: segment 3: paddr=0001ecbc vaddr=40080000 size=0135ch (  4956) load
+I (119) esp_image: segment 4: paddr=00020020 vaddr=400d0020 size=2eec8h (192200) map
+I (190) esp_image: segment 5: paddr=0004eef0 vaddr=4008135c size=0c2bch ( 49852) load
+I (216) boot: Loaded app from partition at offset 0x10000
+I (216) boot: Disabling RNG early entropy source...
+I (227) cpu_start: Multicore app
+I (235) cpu_start: Pro cpu start user code
+I (235) cpu_start: cpu freq: 160000000 Hz
+I (236) app_init: Application information:
+I (236) app_init: Project name:     kaos_p4_qualification
+I (241) app_init: App version:      026bc3b-dirty
+I (245) app_init: Compile time:     Oct  9 2026 20:04:16
+I (250) app_init: ELF file SHA256:  184a86f22...
+I (254) app_init: ESP-IDF:          v5.5
+I (258) efuse_init: Min chip rev:     v0.0
+I (262) efuse_init: Max chip rev:     v3.99 
+I (266) efuse_init: Chip rev:         v3.0
+I (270) heap_init: Initializing. RAM available for dynamic allocation:
+I (276) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (281) heap_init: At 3FFCD3F8 len 00012C08 (75 KiB): DRAM
+I (286) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (292) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (297) heap_init: At 4008D618 len 000129E8 (74 KiB): IRAM
+W (304) spi_flash: boya detected but related driver is not linked, please check option `SPI_FLASH_SUPPORT_BOYA_CHIP`
+I (313) spi_flash: detected chip: generic
+I (316) spi_flash: flash io: dio
+I (320) main_task: Started on CPU0
+I (330) main_task: Calling app_main()
+capacity before_node=0 free=152596 largest=110592 arena=28672 artifact=1124 native_stack=8192
+capacity before_node=1 free=151440 largest=110592 arena=28672 artifact=1124 native_stack=8192
+capacity before_node=2 free=92036 largest=55296 arena=28672 artifact=1124 native_stack=8192
+capacity before_node=3 free=90880 largest=55296 arena=28672 artifact=1124 native_stack=8192
+capacity failed op=4 kind=1 outcome=2 facts=60 history=8
+/home/karolina/Research/Code/kaos_core/verification/graph_core/p4_capacity.c:231: outcome == CORE_OUTCOME_PENDING || outcome == CORE_OUTCOME_SUCCEEDED
+
+abort() was called at PC 0x400d4243 on core 0
+
+
+Backtrace: 0x400819f1:0x3ffd0290 0x400857b9:0x3ffd02b0 0x4008b96d:0x3ffd02d0 0x400d4243:0x3ffd0340 0x400ef776:0x3ffd0360 0x400d897f:0x3ffd0380 0x400d8b42:0x3ffd03b0 0x400d94b9:0x3ffd0830 0x400d77cc:0x3ffd0880 0x400fe770:0x3ffd08a0 0x40085ff5:0x3ffd08d0
+
+
+
+
+ELF file SHA256: 184a86f22
+
+Rebooting...
+ets Jul 29 2019 12:21:46
+
+rst:0xc (SW_CPU_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:6380
+ho 0 tail 12 room 4
+load:0x40078000,len:15916
+load:0x40080400,len:3860
+entry 0x40080638
+I (29) boot: ESP-IDF v5.5 2nd stage bootloader
+I (29) boot: compile time Oct  9 2026 20:04:23
+I (29) boot: Multicore bootloader
+I (30) boot: chip revision: v3.0
+I (33) boot.esp32: SPI Speed      : 40MHz
+I (37) boot.esp32: SPI Mode       : DIO
+I (40) boot.esp32: SPI Flash Size : 4MB
+I (44) boot: Enabling RNG early entropy source...
+I (48) boot: Partition Table:
+I (51) boot: ## Label            Usage          Type ST Offset   Length
+I (57) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (64) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (70) boot:  2 factory          factory app      00 00 00010000 00100000
+I (77) boot: End of partition table
+I (80) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0c7ech ( 51180) map
+I (105) esp_image: segment 1: paddr=0001c814 vaddr=3ff80000 size=00020h (    32) load
+I (106) esp_image: segment 2: paddr=0001c83c vaddr=3ffb0000 size=02478h (  9336) load
+I (113) esp_image: segment 3: paddr=0001ecbc vaddr=40080000 size=0135ch (  4956) load
+I (119) esp_image: segment 4: paddr=00020020 vaddr=400d0020 size=2eec8h (192200) map

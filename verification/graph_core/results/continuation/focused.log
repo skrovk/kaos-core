@@ -1,0 +1,42 @@
+[OUTPUT] 
+Internal ctest changing into directory: /tmp/kaos-timing-host
+
+[HANDLER_OUTPUT] 
+Test project /tmp/kaos-timing-host
+
+    Start 1: graph_native_runtime
+1/6 Test #1: graph_native_runtime .............   Passed    0.04 sec
+    Start 2: graph_native_request
+2/6 Test #2: graph_native_request .............   Passed    0.02 sec
+    Start 3: graph_native_protocol
+3/6 Test #3: graph_native_protocol ............   Passed    0.25 sec
+    Start 4: graph_native_process
+4/6 Test #4: graph_native_process .............   Passed    1.12 sec
+    Start 5: graph_workload_stalls
+5/6 Test #5: graph_workload_stalls ............   Passed    0.10 sec
+    Start 6: graph_optional_expiry
+6/6 Test #6: graph_optional_expiry ............***Failed    0.38 sec
+Traceback (most recent call last):
+  File "/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/optional_expiry_test.py", line 172, in <module>
+    main()
+  File "/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/optional_expiry_test.py", line 168, in main
+    both(Path(temporary) / "runs")
+  File "/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/optional_expiry_test.py", line 161, in both
+    result = run_expiry(args.host, args.guest, root / first, first)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/optional_expiry_test.py", line 75, in run_expiry
+    run.o.add_node(
+  File "/home/karolina/Research/Code/sim_env/sim_env/orchestrator.py", line 178, in add_node
+    raise AuthorizationError(
+sim_env.graph_evidence.AuthorizationError: channel allowance precedes node allowance
+
+
+83% tests passed, 1 tests failed out of 6
+
+Total Test time (real) =   1.92 sec
+
+The following tests FAILED:
+	  6 - graph_optional_expiry (Failed)
+[ERROR_MESSAGE] 
+Errors while running CTest
+

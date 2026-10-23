@@ -1,0 +1,564 @@
+Start testing: Oct 12 12:23 CEST
+----------------------------------------------------------
+1/32 Testing: graph_p4_process
+1/32 Test: graph_p4_process
+Command: "/home/karolina/.local/bin/uv" "--directory" "/home/karolina/Research/Code/kaos_core/verification/graph_core/../../../sim_env" "run" "--offline" "python" "/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/p4_process_test.py" "/tmp/kaos-p3-session/host/core/kaos_p4_host" "/tmp/kaos-p3-session/host/traffic.wasm"
+Directory: /tmp/kaos-p3-session/host
+"graph_p4_process" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+test_local_edge_preserves_both_runtimes (__main__.EdgeProcessTests.test_local_edge_preserves_both_runtimes) ... ok
+test_remote_edge_preserves_both_runtimes (__main__.EdgeProcessTests.test_remote_edge_preserves_both_runtimes) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.291s
+
+OK
+<end of output>
+Test time =   0.52 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p4_process" end time: Oct 12 12:23 CEST
+"graph_p4_process" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/32 Testing: graph_p5_process
+2/32 Test: graph_p5_process
+Command: "/home/karolina/.local/bin/uv" "--directory" "/home/karolina/Research/Code/kaos_core/verification/graph_core/../../../sim_env" "run" "--offline" "python" "/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/p5_process_test.py" "/tmp/kaos-p3-session/host/core/kaos_p4_host" "/tmp/kaos-p3-session/host/traffic.wasm"
+Directory: /tmp/kaos-p3-session/host
+"graph_p5_process" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+test_or_success_retains_missing_optional_owner_after_expiry (__main__.NodeProcessTests.test_or_success_retains_missing_optional_owner_after_expiry) ... ok
+test_required_incoming_channel_carries_payload (__main__.NodeProcessTests.test_required_incoming_channel_carries_payload) ... ok
+test_required_outgoing_channel_carries_payload (__main__.NodeProcessTests.test_required_outgoing_channel_carries_payload) ... ok
+test_three_required_channels_share_remote_owner_record (__main__.NodeProcessTests.test_three_required_channels_share_remote_owner_record) ... ok
+test_true_succeeds_with_all_optional_channels_unavailable (__main__.NodeProcessTests.test_true_succeeds_with_all_optional_channels_unavailable) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 3.501s
+
+OK
+<end of output>
+Test time =   3.72 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p5_process" end time: Oct 12 12:23 CEST
+"graph_p5_process" time elapsed: 00:00:03
+----------------------------------------------------------
+
+3/32 Testing: graph_p6_process
+3/32 Test: graph_p6_process
+Command: "/home/karolina/.local/bin/uv" "--directory" "/home/karolina/Research/Code/kaos_core/verification/graph_core/../../../sim_env" "run" "--offline" "python" "/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/p6_process_test.py" "/tmp/kaos-p3-session/host/core/kaos_p4_host" "/tmp/kaos-p3-session/host/traffic.wasm"
+Directory: /tmp/kaos-p3-session/host
+"graph_p6_process" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+test_authorized_edge_in_flight_is_fenced_at_other_coordinator (__main__.RemovalProcessTests.test_authorized_edge_in_flight_is_fenced_at_other_coordinator) ... ok
+test_local_incoming_and_outgoing (__main__.RemovalProcessTests.test_local_incoming_and_outgoing) ... ok
+test_missing_owner_retains_all_remote_obligations (__main__.RemovalProcessTests.test_missing_owner_retains_all_remote_obligations) ... ok
+test_remote_incoming_and_outgoing (__main__.RemovalProcessTests.test_remote_incoming_and_outgoing) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.640s
+
+OK
+<end of output>
+Test time =   0.85 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p6_process" end time: Oct 12 12:23 CEST
+"graph_p6_process" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/32 Testing: graph_p7_process
+4/32 Test: graph_p7_process
+Command: "/home/karolina/.local/bin/uv" "--directory" "/home/karolina/Research/Code/kaos_core/verification/graph_core/../../../sim_env" "run" "--offline" "python" "/home/karolina/Research/Code/kaos_core/verification/graph_core/tests/p7_process_test.py" "/tmp/kaos-p3-session/host/core/kaos_p4_host" "/tmp/kaos-p3-session/host/traffic.wasm"
+Directory: /tmp/kaos-p3-session/host
+"graph_p7_process" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+test_archive_ack_keeps_live_runtime_and_accepts_later_evidence (__main__.ReportingProcessTests.test_archive_ack_keeps_live_runtime_and_accepts_later_evidence) ... ok
+test_collector_handoff_while_o_socket_is_unavailable (__main__.ReportingProcessTests.test_collector_handoff_while_o_socket_is_unavailable) ... ok
+test_db_full_never_acknowledges_or_blocks_removal (__main__.ReportingProcessTests.test_db_full_never_acknowledges_or_blocks_removal) ... ok
+test_db_loss_does_not_block_runtime_and_direct_handoff (__main__.ReportingProcessTests.test_db_loss_does_not_block_runtime_and_direct_handoff) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.551s
+
+OK
+<end of output>
+Test time =   0.76 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p7_process" end time: Oct 12 12:23 CEST
+"graph_p7_process" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/32 Testing: graph_python_regression
+5/32 Test: graph_python_regression
+Command: "/usr/bin/cmake" "-E" "env" "KAOS_P2_HOST=/tmp/kaos-p3-session/host/core/kaos_p2_host" "KAOS_P3_HOST=/tmp/kaos-p3-session/host/core/kaos_p3_host" "KAOS_P3_GUEST=/tmp/kaos-p3-session/host/node.wasm" "ASAN_OPTIONS=detect_stack_use_after_return=0" "/home/karolina/.local/bin/uv" "--directory" "/home/karolina/Research/Code/kaos_core/verification/graph_core/../../../sim_env" "run" "--offline" "python" "-m" "unittest" "discover" "-s" "tests"
+Directory: /tmp/kaos-p3-session/host
+"graph_python_regression" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+.......................................................sssssssssss.................sssssssss....
+----------------------------------------------------------------------
+Ran 96 tests in 7.758s
+
+OK (skipped=20)
+<end of output>
+Test time =   8.00 sec
+----------------------------------------------------------
+Test Passed.
+"graph_python_regression" end time: Oct 12 12:23 CEST
+"graph_python_regression" time elapsed: 00:00:08
+----------------------------------------------------------
+
+6/32 Testing: graph_wamr
+6/32 Test: graph_wamr
+Command: "/tmp/kaos-p3-session/host/graph_wamr_test" "/tmp/kaos-p3-session/host/runtime_guest.wasm"
+Directory: /tmp/kaos-p3-session/host
+"graph_wamr" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+WAMR restricted lifecycle: passed
+<end of output>
+Test time =   0.11 sec
+----------------------------------------------------------
+Test Passed.
+"graph_wamr" end time: Oct 12 12:23 CEST
+"graph_wamr" time elapsed: 00:00:00
+----------------------------------------------------------
+
+7/32 Testing: graph_wamr_entry
+7/32 Test: graph_wamr_entry
+Command: "/tmp/kaos-p3-session/host/graph_wamr_entry_test" "/tmp/kaos-p3-session/host/runtime_guest.wasm"
+Directory: /tmp/kaos-p3-session/host
+"graph_wamr_entry" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+WAMR entry: live permission checked before configuration/main, registry released on every path
+<end of output>
+Test time =   0.08 sec
+----------------------------------------------------------
+Test Passed.
+"graph_wamr_entry" end time: Oct 12 12:23 CEST
+"graph_wamr_entry" time elapsed: 00:00:00
+----------------------------------------------------------
+
+8/32 Testing: graph_wamr_channel
+8/32 Test: graph_wamr_channel
+Command: "/tmp/kaos-p3-session/host/graph_wamr_channel_test" "/tmp/kaos-p3-session/host/channel.wasm"
+Directory: /tmp/kaos-p3-session/host
+"graph_wamr_channel" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+WAMR channel ABI, copied FIFO and wake/cancellation checks passed
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"graph_wamr_channel" end time: Oct 12 12:23 CEST
+"graph_wamr_channel" time elapsed: 00:00:00
+----------------------------------------------------------
+
+9/32 Testing: graph_wamr_budget
+9/32 Test: graph_wamr_budget
+Command: "/tmp/kaos-p3-session/host/graph_wamr_budget_test" "/tmp/kaos-p3-session/host/runtime_guest.wasm"
+Directory: /tmp/kaos-p3-session/host
+"graph_wamr_budget" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+WAMR linear memory stays inside the node arena: passed
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"graph_wamr_budget" end time: Oct 12 12:23 CEST
+"graph_wamr_budget" time elapsed: 00:00:00
+----------------------------------------------------------
+
+10/32 Testing: graph_wamr_capacity
+10/32 Test: graph_wamr_capacity
+Command: "/tmp/kaos-p3-session/host/graph_wamr_capacity_test" "/tmp/kaos-p3-session/host/compact_guest.wasm"
+Directory: /tmp/kaos-p3-session/host
+"graph_wamr_capacity" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+[22:05:36:504 - 7E970BEE16C0]: Init vector failed: alloc memory failed.
+
+[22:05:36:510 - 7E970BEE16C0]: Init vector failed: alloc memory failed.
+
+minimum_fixture_arena=28976 artifact=665 native_stack=262144 slots=2
+concurrent=2 candidate_arena=29696
+capacity probe PASS
+<end of output>
+Test time =   0.20 sec
+----------------------------------------------------------
+Test Passed.
+"graph_wamr_capacity" end time: Oct 12 12:23 CEST
+"graph_wamr_capacity" time elapsed: 00:00:00
+----------------------------------------------------------
+
+11/32 Testing: graph_core_foundations
+11/32 Test: graph_core_foundations
+Command: "/tmp/kaos-p3-session/host/graph_core_test"
+Directory: /tmp/kaos-p3-session/host
+"graph_core_foundations" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+op=1 boundary=issue now_us=10 phase=1 closing=0 bytes=128 allocations=1 unclaimed=0
+op=1 boundary=execute now_us=20 phase=2 closing=0 bytes=128 allocations=1 unclaimed=0
+op=1 boundary=complete now_us=30 phase=3 closing=0 bytes=128 allocations=1 unclaimed=0
+op=1 boundary=accept now_us=40 phase=0 closing=0 bytes=128 allocations=1 unclaimed=1
+7 foundation groups passed; lifetime=80 action=24 access=16 bytes
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"graph_core_foundations" end time: Oct 12 12:23 CEST
+"graph_core_foundations" time elapsed: 00:00:00
+----------------------------------------------------------
+
+12/32 Testing: graph_admission
+12/32 Test: graph_admission
+Command: "/tmp/kaos-p3-session/host/graph_admission_test"
+Directory: /tmp/kaos-p3-session/host
+"graph_admission" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+admission: all six variants, atomic capacities, incidence, scoped cleanup and remote fences passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_admission" end time: Oct 12 12:23 CEST
+"graph_admission" time elapsed: 00:00:00
+----------------------------------------------------------
+
+13/32 Testing: graph_request
+13/32 Test: graph_request
+Command: "/tmp/kaos-p3-session/host/graph_request_test"
+Directory: /tmp/kaos-p3-session/host
+"graph_request" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+requests: deterministic framing, immutable copies, identity/manifest/predicate/deadline boundaries passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_request" end time: Oct 12 12:23 CEST
+"graph_request" time elapsed: 00:00:00
+----------------------------------------------------------
+
+14/32 Testing: graph_dynamic_binding
+14/32 Test: graph_dynamic_binding
+Command: "/tmp/kaos-p3-session/host/graph_dynamic_binding_test"
+Directory: /tmp/kaos-p3-session/host
+"graph_dynamic_binding" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+dynamic binding: unconditional capability, strict schema and retained lifecycle/port guards passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_dynamic_binding" end time: Oct 12 12:23 CEST
+"graph_dynamic_binding" time elapsed: 00:00:00
+----------------------------------------------------------
+
+15/32 Testing: graph_report
+15/32 Test: graph_report
+Command: "/tmp/kaos-p3-session/host/graph_report_test"
+Directory: /tmp/kaos-p3-session/host
+"graph_report" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+report: standalone snapshots, conflict isolation, late cleanup and revision bounds passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_report" end time: Oct 12 12:23 CEST
+"graph_report" time elapsed: 00:00:00
+----------------------------------------------------------
+
+16/32 Testing: graph_object_facts
+16/32 Test: graph_object_facts
+Command: "/tmp/kaos-p3-session/host/graph_object_facts_test"
+Directory: /tmp/kaos-p3-session/host
+"graph_object_facts" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+object facts: containment, unchanged rejection, aggregate ACK identity and schema 3 passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_object_facts" end time: Oct 12 12:23 CEST
+"graph_object_facts" time elapsed: 00:00:00
+----------------------------------------------------------
+
+17/32 Testing: graph_coap
+17/32 Test: graph_coap
+Command: "/tmp/kaos-p3-session/host/graph_coap_test"
+Directory: /tmp/kaos-p3-session/host
+"graph_coap" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+CoAP codec, exchange, bounded cache and Block1 tests passed
+<end of output>
+Test time =   0.05 sec
+----------------------------------------------------------
+Test Passed.
+"graph_coap" end time: Oct 12 12:23 CEST
+"graph_coap" time elapsed: 00:00:00
+----------------------------------------------------------
+
+18/32 Testing: graph_coap_server
+18/32 Test: graph_coap_server
+Command: "/tmp/kaos-p3-session/host/graph_coap_server_test"
+Directory: /tmp/kaos-p3-session/host
+"graph_coap_server" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+CoAP server helpers: option policy, reply encoding and read-only replay passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_coap_server" end time: Oct 12 12:23 CEST
+"graph_coap_server" time elapsed: 00:00:00
+----------------------------------------------------------
+
+19/32 Testing: graph_artifact
+19/32 Test: graph_artifact
+Command: "/tmp/kaos-p3-session/host/graph_artifact_test"
+Directory: /tmp/kaos-p3-session/host
+"graph_artifact" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+Artifact length/CRC, Block2, cancellation and ownership tests passed
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"graph_artifact" end time: Oct 12 12:23 CEST
+"graph_artifact" time elapsed: 00:00:00
+----------------------------------------------------------
+
+20/32 Testing: graph_control
+20/32 Test: graph_control
+Command: "/tmp/kaos-p3-session/host/graph_control_test"
+Directory: /tmp/kaos-p3-session/host
+"graph_control" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+control: admission, lost ACK, logical duplicate, cache pressure, query and Block1 passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_control" end time: Oct 12 12:23 CEST
+"graph_control" time elapsed: 00:00:00
+----------------------------------------------------------
+
+21/32 Testing: graph_p2_host
+21/32 Test: graph_p2_host
+Command: "/tmp/kaos-p3-session/host/graph_p2_host_test"
+Directory: /tmp/kaos-p3-session/host
+"graph_p2_host" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+CLEANUP 20 selected
+CLEANUP 3 scoped test removal
+host service: late cutoff history and scoped binding cleanup passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p2_host" end time: Oct 12 12:23 CEST
+"graph_p2_host" time elapsed: 00:00:00
+----------------------------------------------------------
+
+22/32 Testing: graph_node
+22/32 Test: graph_node
+Command: "/tmp/kaos-p3-session/host/graph_node_test"
+Directory: /tmp/kaos-p3-session/host
+"graph_node" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+node: startup, cancellation, exit, deadlines, owned disposal and reuse passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_node" end time: Oct 12 12:23 CEST
+"graph_node" time elapsed: 00:00:00
+----------------------------------------------------------
+
+23/32 Testing: graph_endpoint
+23/32 Test: graph_endpoint
+Command: "/tmp/kaos-p3-session/host/graph_endpoint_test"
+Directory: /tmp/kaos-p3-session/host
+"graph_endpoint" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+endpoints: permission gates, FIFO/drop-incoming, exact copied frames, cleanup and bounded events passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_endpoint" end time: Oct 12 12:23 CEST
+"graph_endpoint" time elapsed: 00:00:00
+----------------------------------------------------------
+
+24/32 Testing: graph_edge
+24/32 Test: graph_edge
+Command: "/tmp/kaos-p3-session/host/graph_edge_test"
+Directory: /tmp/kaos-p3-session/host
+"graph_edge" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+edges: receiver-first local/remote activation, scoped cleanup, cutoff and late evidence passed
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"graph_edge" end time: Oct 12 12:23 CEST
+"graph_edge" time elapsed: 00:00:00
+----------------------------------------------------------
+
+25/32 Testing: graph_p5
+25/32 Test: graph_p5
+Command: "/tmp/kaos-p3-session/host/graph_p5_test"
+Directory: /tmp/kaos-p3-session/host
+"graph_p5" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+P5: Boolean gates, independent channels, startup races, optional deadlines and cleanup passed
+<end of output>
+Test time =   0.04 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p5" end time: Oct 12 12:23 CEST
+"graph_p5" time elapsed: 00:00:00
+----------------------------------------------------------
+
+26/32 Testing: graph_channel_admission
+26/32 Test: graph_channel_admission
+Command: "/tmp/kaos-p3-session/host/graph_channel_admission_test"
+Directory: /tmp/kaos-p3-session/host
+"graph_channel_admission" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+compact channel admission passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_channel_admission" end time: Oct 12 12:23 CEST
+"graph_channel_admission" time elapsed: 00:00:00
+----------------------------------------------------------
+
+27/32 Testing: graph_p6
+27/32 Test: graph_p6
+Command: "/tmp/kaos-p3-session/host/graph_p6_test"
+Directory: /tmp/kaos-p3-session/host
+"graph_p6" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+P6 full removal and overlapping observers passed
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p6" end time: Oct 12 12:23 CEST
+"graph_p6" time elapsed: 00:00:00
+----------------------------------------------------------
+
+28/32 Testing: graph_p6_admission
+28/32 Test: graph_p6_admission
+Command: "/tmp/kaos-p3-session/host/graph_p6_admission_test"
+Directory: /tmp/kaos-p3-session/host
+"graph_p6_admission" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+P6 removal admission passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p6_admission" end time: Oct 12 12:23 CEST
+"graph_p6_admission" time elapsed: 00:00:00
+----------------------------------------------------------
+
+29/32 Testing: graph_p6_control
+29/32 Test: graph_p6_control
+Command: "/tmp/kaos-p3-session/host/graph_p6_control_test"
+Directory: /tmp/kaos-p3-session/host
+"graph_p6_control" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+P6 control checks passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p6_control" end time: Oct 12 12:23 CEST
+"graph_p6_control" time elapsed: 00:00:00
+----------------------------------------------------------
+
+30/32 Testing: graph_p7
+30/32 Test: graph_p7
+Command: "/tmp/kaos-p3-session/host/graph_p7_test"
+Directory: /tmp/kaos-p3-session/host
+"graph_p7" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+Q05 characterization: forgotten failed ADD admitted again and charged node capacity
+P7 retention: exact ACK, late closure, oldest eligible eviction, pressure and churn passed
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p7" end time: Oct 12 12:23 CEST
+"graph_p7" time elapsed: 00:00:00
+----------------------------------------------------------
+
+31/32 Testing: graph_p7_control
+31/32 Test: graph_p7_control
+Command: "/tmp/kaos-p3-session/host/graph_p7_control_test"
+Directory: /tmp/kaos-p3-session/host
+"graph_p7_control" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+P7 control: designated recipients, exact ACK and missing/history distinction passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p7_control" end time: Oct 12 12:23 CEST
+"graph_p7_control" time elapsed: 00:00:00
+----------------------------------------------------------
+
+32/32 Testing: graph_p7_lifecycle
+32/32 Test: graph_p7_lifecycle
+Command: "/tmp/kaos-p3-session/host/graph_p7_lifecycle_test"
+Directory: /tmp/kaos-p3-session/host
+"graph_p7_lifecycle" start time: Oct 12 12:23 CEST
+Output:
+----------------------------------------------------------
+Q05 characterization: retired removal command recreated its owner record; old callback rejected
+P7 lifecycle: optional ownership, closure preservation and owner delivery passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p7_lifecycle" end time: Oct 12 12:23 CEST
+"graph_p7_lifecycle" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 12 12:23 CEST

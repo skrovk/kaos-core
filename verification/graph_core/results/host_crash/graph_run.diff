@@ -1,0 +1,65 @@
+--- before/graph_run.py
++++ after/graph_run.py
+@@ -10,6 +10,7 @@
+ import json
+ import math
+ import os
++import signal
+ import socket
+ import subprocess
+ import threading
+@@ -57,6 +58,8 @@
+         self.o = Orchestrator(self.devices)
+         self._locks = {device: threading.Lock() for device in self.devices}
+         self._log_lock = threading.Lock()
++        self._process_lock = threading.Lock()
++        self._crashed = set()
+         self._events = None
+         self._relay_overflow_drops = 0
+         self._processes = {}
+@@ -214,9 +217,32 @@
+                 "host observation reader failed"
+             ) from self._reader_errors[0]
+         self.network.check()
+-        for device, process in self._processes.items():
++        with self._process_lock:
++            for device, process in self._processes.items():
++                code = process.poll()
++                if code is not None and not (
++                    device in self._crashed and code == -signal.SIGKILL
++                ):
++                    raise RuntimeError(f"host {device} exited during the experiment")
++
++    def crash(self, device):
++        """Kill one managed host and confirm its exit; no graph closure is implied."""
++        device = uint(device)
++        if device not in self._processes:
++            raise ValueError(f"device {device} is not a managed host")
++        # Serialize with management calls to this host and with process checks.
++        # No other thread may observe the exit before it is classified.
++        with self._locks[device], self._process_lock:
++            process = self._processes[device]
+             if process.poll() is not None:
+-                raise RuntimeError(f"host {device} exited during the experiment")
++                raise RuntimeError(f"host {device} already exited")
++            self.emit("device_crash_requested", device=device)
++            process.kill()
++            code = process.wait(timeout=5)
++            if code != -signal.SIGKILL:
++                raise RuntimeError(f"host {device} crash returned {code}")
++            self._crashed.add(device)
++            self.emit("device_crashed", device=device, returncode=code)
+ 
+     def add_artifact(self, reference, data):
+         """Register immutable bytes and retain their identity in the run log."""
+@@ -347,7 +373,9 @@
+                 process.kill()
+                 process.wait(timeout=5)
+                 failures.append(f"host {device} required forced termination")
+-            if process.returncode != 0:
++            if process.returncode != 0 and not (
++                device in self._crashed and process.returncode == -signal.SIGKILL
++            ):
+                 failures.append(f"host {device} exit {process.returncode}")
+             record("process_exit", device=device, returncode=process.returncode)
+         for reader in self._readers:

@@ -1,0 +1,161 @@
+[1/161] Building C object CMakeFiles/graph_host_udp_test.dir/tests/host_udp_test.c.o
+[2/161] Building C object CMakeFiles/graph_native_request_test.dir/tests/native_request_test.c.o
+[3/161] Building C object CMakeFiles/graph_host_test.dir/tests/host_test.c.o
+[4/161] Building C object CMakeFiles/graph_host_transport_scheduling_test.dir/tests/host_transport_scheduling_test.c.o
+[5/161] Building C object CMakeFiles/graph_core_test.dir/tests/core_test.c.o
+[6/161] Building C object CMakeFiles/graph_runtime_phase_barrier_test.dir/tests/runtime_phase_barrier_test.c.o
+[7/161] Building C object CMakeFiles/graph_admission_reuse_test.dir/tests/admission_reuse_test.c.o
+[8/161] Building C object CMakeFiles/graph_dynamic_binding_test.dir/tests/dynamic_binding_test.c.o
+[9/161] Building C object CMakeFiles/graph_admission_test.dir/tests/admission_test.c.o
+[10/161] Building C object CMakeFiles/graph_report_test.dir/tests/report_test.c.o
+[11/161] Building C object CMakeFiles/graph_object_facts_test.dir/tests/object_facts_test.c.o
+[12/161] Building C object CMakeFiles/graph_request_test.dir/tests/request_test.c.o
+[13/161] Building C object CMakeFiles/graph_coap_test.dir/tests/coap_test.c.o
+[14/161] Building C object CMakeFiles/graph_coap_server_test.dir/tests/coap_server_test.c.o
+[15/161] Building C object CMakeFiles/graph_artifact_test.dir/tests/artifact_test.c.o
+[16/161] Building C object CMakeFiles/graph_control_test.dir/tests/control_test.c.o
+[17/161] Building C object CMakeFiles/graph_host_control_test.dir/tests/host_control_test.c.o
+[18/161] Building C object CMakeFiles/graph_node_test.dir/tests/node_test.c.o
+[19/161] Building C object CMakeFiles/graph_p2_host_test.dir/tests/p2_host_test.c.o
+[20/161] Building C object CMakeFiles/graph_edge_test.dir/tests/edge_test.c.o
+[21/161] Building C object CMakeFiles/graph_endpoint_test.dir/tests/endpoint_test.c.o
+[22/161] Building C object CMakeFiles/graph_channel_admission_test.dir/tests/channel_admission_test.c.o
+[23/161] Building C object CMakeFiles/graph_p6_admission_test.dir/tests/p6_admission_test.c.o
+[24/161] Building C object CMakeFiles/graph_p6_control_test.dir/tests/p6_control_test.c.o
+[25/161] Building C object CMakeFiles/graph_p5_test.dir/tests/p5_test.c.o
+[26/161] Building C object CMakeFiles/graph_p7_test.dir/tests/p7_test.c.o
+[27/161] Building C object CMakeFiles/graph_p7_control_test.dir/tests/p7_control_test.c.o
+[28/161] Building C object CMakeFiles/graph_control_decoded_test.dir/tests/control_decoded_test.c.o
+[29/161] Building C object CMakeFiles/graph_wamr_startup_unwind_test.dir/tests/wamr_startup_unwind_test.c.o
+[30/161] Building C object CMakeFiles/graph_p6_test.dir/tests/p6_test.c.o
+[31/161] Generating channel.wasm
+[32/161] Generating node.wasm
+[33/161] Generating runtime_guest.wasm
+[34/161] Generating traffic.wasm
+[35/161] Generating native_sensor.wasm
+[36/161] Generating native_bad_standard.wasm
+[37/161] Building C object CMakeFiles/graph_wamr_test.dir/tests/wamr_test.c.o
+[38/161] Building C object CMakeFiles/graph_wamr_entry_test.dir/tests/wamr_entry_test.c.o
+[39/161] Building C object CMakeFiles/graph_wamr_budget_test.dir/tests/wamr_budget_test.c.o
+[40/161] Building C object CMakeFiles/graph_wamr_channel_test.dir/tests/wamr_channel_test.c.o
+[41/161] Generating native_unknown.wasm
+[42/161] Generating native_wrong_module.wasm
+[43/161] Generating native_wrong_signature.wasm
+[44/161] Generating barrier_node.wasm
+[45/161] Building C object CMakeFiles/graph_host_scheduling_test.dir/tests/host_scheduling_test.c.o
+[46/161] Building C object CMakeFiles/graph_native_runtime_test.dir/tests/native_runtime_test.c.o
+[47/161] Building C object CMakeFiles/graph_p7_lifecycle_test.dir/tests/p7_lifecycle_test.c.o
+[48/161] Building C object CMakeFiles/graph_native_removal_test.dir/tests/native_removal_test.c.o
+[49/161] Generating alternatives.wasm
+[50/161] Generating feedback.wasm
+[51/161] Building C object CMakeFiles/graph_lifecycle_barrier_test.dir/tests/lifecycle_barrier_test.c.o
+[52/161] Generating mixed.wasm
+[53/161] Generating pipeline.wasm
+[54/161] Generating stalls.wasm
+[55/161] Generating compact_guest.wasm
+[56/161] Building C object CMakeFiles/graph_wamr_capacity_test.dir/capacity/probe.c.o
+[57/161] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_graph.c.o
+[58/161] Building C object CMakeFiles/graph_wamr_phase_barrier_test.dir/tests/wamr_phase_barrier_test.c.o
+[59/161] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_predicate.c.o
+[60/161] Building C object CMakeFiles/graph_workload_stalls.dir/tests/workload_stalls_test.c.o
+[61/161] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_report.c.o
+[62/161] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_request.c.o
+[63/161] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_artifact.c.o
+[64/161] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_coap.c.o
+[65/161] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_control.c.o
+[66/161] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_node.c.o
+[67/161] Building C object core/CMakeFiles/kaos_graph_core.dir/ports/posix/clock.c.o
+[68/161] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_admission.c.o
+[69/161] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_endpoint.c.o
+[70/161] Building C object core/CMakeFiles/kaos_graph_core.dir/kaos_edge.c.o
+[71/161] Building C object core/CMakeFiles/kaos_p2_host.dir/home/karolina/Research/Code/kaos_core/verification/graph_core/p2_fixture_host.c.o
+[72/161] Linking C static library core/libkaos_graph_core.a
+[73/161] Building C object core/CMakeFiles/kaos_graph_host.dir/host_udp.c.o
+[74/161] Building C object core/CMakeFiles/kaos_graph_host.dir/kaos_host.c.o
+[75/161] Building C object core/CMakeFiles/kaos_host.dir/ports/posix/main.c.o
+[76/161] Linking C executable graph_native_request_test
+[77/161] Linking C executable graph_runtime_phase_barrier_test
+[78/161] Linking C executable graph_admission_test
+[79/161] Linking C executable graph_core_test
+[80/161] Linking C executable graph_admission_reuse_test
+[81/161] Linking C executable graph_request_test
+[82/161] Linking C executable graph_dynamic_binding_test
+[83/161] Linking C executable graph_object_facts_test
+[84/161] Linking C executable graph_report_test
+[85/161] Linking C executable graph_coap_test
+[86/161] Linking C executable graph_coap_server_test
+[87/161] Linking C executable graph_artifact_test
+[88/161] Linking C executable graph_host_control_test
+[89/161] Linking C executable graph_control_test
+[90/161] Linking C executable graph_p2_host_test
+[91/161] Linking C executable graph_endpoint_test
+[92/161] Linking C executable graph_node_test
+[93/161] Linking C executable graph_edge_test
+[94/161] Linking C executable graph_channel_admission_test
+[95/161] Linking C executable graph_p5_test
+[96/161] Linking C executable graph_p6_test
+[97/161] Linking C executable graph_p6_admission_test
+[98/161] Linking C executable graph_p6_control_test
+[99/161] Linking C executable graph_p7_test
+[100/161] Linking C executable graph_p7_control_test
+[101/161] Linking C executable graph_p7_lifecycle_test
+[102/161] Linking C executable graph_control_decoded_test
+[103/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/shared/platform/linux/platform_init.c.o
+[104/161] Linking C executable core/kaos_p2_host
+[105/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/shared/platform/common/posix/posix_blocking_op.c.o
+[106/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/shared/platform/common/posix/posix_malloc.c.o
+[107/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/shared/platform/common/posix/posix_sleep.c.o
+[108/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/shared/platform/common/posix/posix_memmap.c.o
+[109/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/shared/platform/common/posix/posix_time.c.o
+[110/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/shared/mem-alloc/ems/ems_gc.c.o
+[111/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/shared/platform/common/posix/posix_thread.c.o
+[112/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/shared/mem-alloc/ems/ems_hmu.c.o
+[113/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/shared/mem-alloc/mem_alloc.c.o
+[114/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/shared/mem-alloc/ems/ems_alloc.c.o
+[115/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/shared/mem-alloc/ems/ems_kfc.c.o
+[116/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/shared/utils/bh_bitmap.c.o
+[117/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/shared/utils/bh_assert.c.o
+[118/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/shared/utils/bh_leb128.c.o
+[119/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/shared/utils/bh_common.c.o
+[120/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/shared/utils/bh_list.c.o
+[121/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/shared/utils/bh_hashmap.c.o
+[122/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/shared/utils/bh_log.c.o
+[123/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/shared/utils/bh_queue.c.o
+[124/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/shared/utils/bh_vector.c.o
+[125/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/shared/utils/runtime_timer.c.o
+[126/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/common/wasm_blocking_op.c.o
+[127/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/common/wasm_application.c.o
+[128/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/common/wasm_loader_common.c.o
+[129/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/common/wasm_exec_env.c.o
+[130/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/common/wasm_native.c.o
+[131/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/common/wasm_memory.c.o
+[132/161] Building ASM object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/common/arch/invokeNative_em64.s.o
+[133/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/common/wasm_shared_memory.c.o
+[134/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/common/wasm_runtime_common.c.o
+[135/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/thread_manager.c.o
+[136/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/interpreter/wasm_runtime.c.o
+[137/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/common/wasm_c_api.c.o
+[138/161] Building C object core/runtime/CMakeFiles/kaos_wamr.dir/profile.c.o
+[139/161] Building C object core/runtime/CMakeFiles/kaos_wamr.dir/native_fixture.c.o
+[140/161] Building C object core/runtime/CMakeFiles/kaos_wamr.dir/kaos_wamr.c.o
+[141/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/interpreter/wasm_loader.c.o
+[142/161] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/wasm_interp_classic.c.o
+[143/161] Linking C static library core/runtime/libkaos_wamr_engine.a
+[144/161] Linking C static library core/runtime/libkaos_wamr.a
+[145/161] Linking C executable graph_lifecycle_barrier_test
+[146/161] Linking C executable graph_native_runtime_test
+[147/161] Linking C executable graph_wamr_phase_barrier_test
+[148/161] Linking C executable graph_native_removal_test
+[149/161] Linking C executable graph_workload_stalls
+[150/161] Linking C executable graph_wamr_test
+[151/161] Linking C executable graph_wamr_channel_test
+[152/161] Linking C executable graph_wamr_entry_test
+[153/161] Linking C static library core/libkaos_graph_host.a
+[154/161] Linking C executable graph_wamr_budget_test
+[155/161] Linking C executable graph_wamr_capacity_test
+[156/161] Linking C executable graph_host_udp_test
+[157/161] Linking C executable graph_wamr_startup_unwind_test
+[158/161] Linking C executable graph_host_transport_scheduling_test
+[159/161] Linking C executable graph_host_test
+[160/161] Linking C executable graph_host_scheduling_test
+[161/161] Linking C executable core/kaos_host

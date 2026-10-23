@@ -1,0 +1,38 @@
+[OUTPUT] 
+Internal ctest changing into directory: /tmp/kaos-refactor-four
+
+[HANDLER_OUTPUT] 
+Test project /tmp/kaos-refactor-four
+
+      Start  1: graph_p8_workloads
+ 1/14 Test  #1: graph_p8_workloads ...............   Passed    3.33 sec
+      Start  2: graph_p4_capacity
+ 2/14 Test  #2: graph_p4_capacity ................   Passed    3.11 sec
+      Start  3: graph_p5_capacity
+ 3/14 Test  #3: graph_p5_capacity ................   Passed    3.11 sec
+      Start  4: graph_p5
+ 4/14 Test  #4: graph_p5 .........................   Passed    0.05 sec
+      Start  5: graph_admission_reuse
+ 5/14 Test  #5: graph_admission_reuse ............   Passed    0.02 sec
+      Start  6: graph_host_control
+ 6/14 Test  #6: graph_host_control ...............   Passed    0.02 sec
+      Start  7: graph_p6
+ 7/14 Test  #7: graph_p6 .........................   Passed    0.03 sec
+      Start  8: graph_p6_admission
+ 8/14 Test  #8: graph_p6_admission ...............   Passed    0.02 sec
+      Start  9: graph_p6_control
+ 9/14 Test  #9: graph_p6_control .................   Passed    0.02 sec
+      Start 10: graph_p7
+10/14 Test #10: graph_p7 .........................   Passed    0.06 sec
+      Start 11: graph_p7_control
+11/14 Test #11: graph_p7_control .................   Passed    0.02 sec
+      Start 12: graph_p7_lifecycle
+12/14 Test #12: graph_p7_lifecycle ...............   Passed    0.03 sec
+      Start 13: graph_p6_capacity
+13/14 Test #13: graph_p6_capacity ................   Passed    0.14 sec
+      Start 14: graph_p7_capacity
+14/14 Test #14: graph_p7_capacity ................   Passed    0.12 sec
+
+100% tests passed, 0 tests failed out of 14
+
+Total Test time (real) =  10.12 sec

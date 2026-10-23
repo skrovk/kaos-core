@@ -1,0 +1,12 @@
+[OUTPUT] 
+Internal ctest changing into directory: /tmp/kaos-p4-session/four
+
+[HANDLER_OUTPUT] 
+Test project /tmp/kaos-p4-session/four
+
+    Start 4: graph_p6
+1/1 Test #4: graph_p6 .........................   Passed    0.04 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.04 sec

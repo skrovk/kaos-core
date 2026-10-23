@@ -1,0 +1,20 @@
+TLC2 Version 2.19 of 08 August 2024 (rev: 5a47802)
+Running breadth-first search Model-Checking with fp 19 and seed 42 with 1 worker on 14 cores with 1820MB heap and 64MB offheap memory [pid: 338115] (Linux 7.0.0-38-generic amd64, Ubuntu 21.0.12.1 x86_64, MSBDiskFPSet, DiskStateQueue).
+Parsing file /home/karolina/Research/Code/kaos_core/verification/graph_core/model/HostExecution.tla
+Parsing file /tmp/Naturals.tla
+Parsing file /tmp/FiniteSets.tla
+Parsing file /tmp/TLC.tla
+Parsing file /tmp/Sequences.tla
+Semantic processing of module Naturals
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module TLC
+Semantic processing of module HostExecution
+Starting... (2026-10-20 17:14:00)
+Computing initial states...
+Finished computing initial states: 1 distinct state generated at 2026-10-20 17:14:01.
+Progress(7) at 2026-10-20 17:14:04: 32,033 states generated (32,033 s/min), 11,909 distinct states found (11,909 ds/min), 8,323 states left on queue.
+Progress(11) at 2026-10-20 17:15:04: 1,233,450 states generated (1,201,417 s/min), 337,963 distinct states found (326,054 ds/min), 189,007 states left on queue.
+Progress(12) at 2026-10-20 17:16:04: 2,492,159 states generated (1,258,709 s/min), 637,586 distinct states found (299,623 ds/min), 333,605 states left on queue.
+Progress(12) at 2026-10-20 17:17:04: 3,708,899 states generated (1,216,740 s/min), 917,731 distinct states found (280,145 ds/min), 457,674 states left on queue.
+Progress(13) at 2026-10-20 17:18:04: 4,892,961 states generated (1,184,062 s/min), 1,175,700 distinct states found (257,969 ds/min), 567,514 states left on queue.

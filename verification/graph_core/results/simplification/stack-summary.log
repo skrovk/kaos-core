@@ -1,0 +1,16 @@
+default/kaos_admission.c changed: {'core_admission_reserve': (208, 176)} new: {'core_channel_same_identity': 32, 'core_binding_same_identity': 32, 'core_channel_descriptor_equal': 32, 'check_scope_channel': 80, 'check_scope_node': 80}
+four/kaos_admission.c changed: {'core_admission_reserve': (320, 272)} new: {'core_channel_same_identity': 32, 'core_binding_same_identity': 32, 'core_channel_descriptor_equal': 32, 'check_scope_channel': 80, 'check_scope_node': 96}
+default/kaos_request.c changed: {'read_request': (48, 64), 'submit': (992, 1008), 'core_request_submit': (64, 48), 'core_node_submit': (64, 48), 'core_endpoint_submit': (64, 48), 'core_endpoint_cancel': (64, 48)} new: {'core_cbor_write_head': 32, 'core_channel_encode': 32}
+four/kaos_request.c changed: {'read_request': (48, 64), 'submit': (1376, 1392), 'core_request_submit': (64, 48), 'core_node_submit': (64, 48), 'core_endpoint_submit': (64, 48), 'core_endpoint_cancel': (64, 48)} new: {'core_cbor_write_head': 32, 'core_channel_encode': 32}
+default/kaos_control.c changed: {'core_control_receive': (352, 288)} new: {'core_control_receive_message': 128}
+four/kaos_control.c changed: {'core_control_receive': (352, 288)} new: {'core_control_receive_message': 128}
+default/kaos_node.c changed: {} new: {'core_channel_same_identity': 32, 'core_binding_same_identity': 32, 'execution_can_take_artifact': 32, 'artifact_handoff_allowed': 48}
+four/kaos_node.c changed: {} new: {'core_channel_same_identity': 32, 'core_binding_same_identity': 32, 'execution_can_take_artifact': 32, 'artifact_handoff_allowed': 48}
+default/kaos_endpoint.c changed: {'notification': (112, 144), 'access_endpoint': (112, 144), 'core_endpoint_receive': (128, 64)} new: {'core_channel_same_identity': 32, 'core_channel_descriptor_equal': 32, 'core_binding_equal': 32, 'close_endpoint_queue': 32, 'frame_matches_endpoint': 128}
+four/kaos_endpoint.c changed: {'notification': (112, 144), 'access_endpoint': (112, 144), 'core_endpoint_receive': (128, 64)} new: {'core_channel_same_identity': 32, 'core_channel_descriptor_equal': 32, 'core_binding_equal': 32, 'close_endpoint_queue': 32, 'frame_matches_endpoint': 128}
+default/kaos_host.c changed: {} new: {'artifact_timeout_due': 32, 'runtime_diagnostics_locked': 32, 'handoff_staged_artifact_locked': 48, 'receive_artifact_locked': 64, 'apply_received_packet_locked': 624, 'release_closing_staging': 32, 'advance_graph_lifecycles_locked': 32, 'start_next_artifact_download': 96, 'send_management_peers': 1232, 'advance_due_lifecycles_locked': 32, 'send_application_batch': 688}
+four/kaos_host.c changed: {} new: {'artifact_timeout_due': 32, 'runtime_diagnostics_locked': 32, 'handoff_staged_artifact_locked': 48, 'receive_artifact_locked': 64, 'apply_received_packet_locked': 624, 'release_closing_staging': 32, 'advance_graph_lifecycles_locked': 32, 'start_next_artifact_download': 96, 'send_management_peers': 1232, 'advance_due_lifecycles_locked': 32, 'send_application_batch': 688}
+default/host_udp.c changed: {} new: {'parse_port': 48}
+four/host_udp.c changed: {} new: {'parse_port': 48}
+default/kaos_wamr.c changed: {'begin_call': (64, 32)} new: {'entry_time_us': 48, 'run_guest_entrypoints': 48, 'join_and_destroy_worker': 32}
+four/kaos_wamr.c changed: {'begin_call': (64, 32)} new: {'entry_time_us': 48, 'run_guest_entrypoints': 48, 'join_and_destroy_worker': 32}

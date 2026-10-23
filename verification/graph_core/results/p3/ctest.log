@@ -1,0 +1,309 @@
+Start testing: Oct 09 17:56 CEST
+----------------------------------------------------------
+1/13 Testing: graph_wamr
+1/13 Test: graph_wamr
+Command: "/tmp/kaos-p3-build/graph_wamr_test" "/tmp/kaos-p3-build/runtime_guest.wasm"
+Directory: /tmp/kaos-p3-build
+"graph_wamr" start time: Oct 09 17:56 CEST
+Output:
+----------------------------------------------------------
+/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/interpreter/wasm_interp_classic.c:6837:13: runtime error: member access within misaligned address 0x76d3687d284c for type 'struct WASMBranchBlock', which requires 8 byte alignment
+0x76d3687d284c: note: pointer points here
+  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00
+              ^ 
+/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/interpreter/wasm_interp_classic.c:6837:13: runtime error: member access within misaligned address 0x76d3687d284c for type 'struct WASMBranchBlock', which requires 8 byte alignment
+0x76d3687d284c: note: pointer points here
+  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  00 00 00 00 01 00 00 00
+              ^ 
+/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/interpreter/wasm_interp_classic.c:6837:13: runtime error: member access within misaligned address 0x76d3687d284c for type 'struct WASMBranchBlock', which requires 8 byte alignment
+0x76d3687d284c: note: pointer points here
+  00 00 00 00 11 0a 00 00  60 51 00 00 00 00 00 00  00 00 00 00 00 00 00 00  00 00 00 00 01 00 00 00
+              ^ 
+/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/interpreter/wasm_interp_classic.c:6837:13: runtime error: member access within misaligned address 0x76d3687d284c for type 'struct WASMBranchBlock', which requires 8 byte alignment
+0x76d3687d284c: note: pointer points here
+  00 00 00 00 11 0a 00 00  60 51 00 00 9a 0a 00 00  60 51 00 00 00 00 00 00  00 00 00 00 01 00 00 00
+              ^ 
+/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/interpreter/wasm_interp_classic.c:2110:17: runtime error: member access within misaligned address 0x76d3687d286c for type 'struct WASMBranchBlock', which requires 8 byte alignment
+0x76d3687d286c: note: pointer points here
+  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00
+              ^ 
+/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/interpreter/wasm_interp_classic.c:2110:17: runtime error: member access within misaligned address 0x76d3687d286c for type 'struct WASMBranchBlock', which requires 8 byte alignment
+0x76d3687d286c: note: pointer points here
+  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00
+              ^ 
+/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/interpreter/wasm_interp_classic.c:2110:17: runtime error: member access within misaligned address 0x76d3687d286c for type 'struct WASMBranchBlock', which requires 8 byte alignment
+0x76d3687d286c: note: pointer points here
+  00 00 00 00 17 0a 00 00  60 51 00 00 00 00 00 00  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00
+              ^ 
+/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/interpreter/wasm_interp_classic.c:2110:17: runtime error: member access within misaligned address 0x76d3687d286c for type 'struct WASMBranchBlock', which requires 8 byte alignment
+0x76d3687d286c: note: pointer points here
+  00 00 00 00 17 0a 00 00  60 51 00 00 00 00 00 00  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00
+              ^ 
+/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/interpreter/wasm_interp_classic.c:2226:17: runtime error: member access within misaligned address 0x76d3687d28cc for type 'struct WASMBranchBlock', which requires 8 byte alignment
+0x76d3687d28cc: note: pointer points here
+  00 00 00 00 3b 0a 00 00  60 51 00 00 00 00 00 00  00 00 00 00 44 28 7d 68  d3 76 00 00 00 00 00 00
+              ^ 
+/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/interpreter/wasm_interp_classic.c:2226:17: runtime error: member access within misaligned address 0x76d3687d28cc for type 'struct WASMBranchBlock', which requires 8 byte alignment
+0x76d3687d28cc: note: pointer points here
+  00 00 00 00 3b 0a 00 00  60 51 00 00 00 00 00 00  00 00 00 00 44 28 7d 68  d3 76 00 00 00 00 00 00
+              ^ 
+/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/interpreter/wasm_interp_classic.c:2226:17: runtime error: member access within misaligned address 0x76d3687d28cc for type 'struct WASMBranchBlock', which requires 8 byte alignment
+0x76d3687d28cc: note: pointer points here
+  00 00 00 00 3b 0a 00 00  60 51 00 00 00 00 00 00  00 00 00 00 44 28 7d 68  d3 76 00 00 00 00 00 00
+              ^ 
+/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/interpreter/wasm_interp_classic.c:2230:44: runtime error: member access within misaligned address 0x76d3687d28cc for type 'struct WASMBranchBlock', which requires 8 byte alignment
+0x76d3687d28cc: note: pointer points here
+  00 00 00 00 3b 0a 00 00  60 51 00 00 00 00 00 00  00 00 00 00 44 28 7d 68  d3 76 00 00 00 00 00 00
+              ^ 
+/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/interpreter/wasm_interp_classic.c:1170:27: runtime error: member access within misaligned address 0x76d3687d290c for type 'struct WASMInterpFrame', which requires 8 byte alignment
+0x76d3687d290c: note: pointer points here
+  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00
+              ^ 
+/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/interpreter/wasm_interp_classic.c:1236:21: runtime error: member access within misaligned address 0x76d3687d290c for type 'struct WASMInterpFrame', which requires 8 byte alignment
+0x76d3687d290c: note: pointer points here
+  00 00 00 00 f0 27 7d 68  d3 76 00 00 00 00 00 00  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00
+              ^ 
+/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/interpreter/wasm_interp_classic.c:1237:15: runtime error: member access within misaligned address 0x76d3687d290c for type 'struct WASMInterpFrame', which requires 8 byte alignment
+0x76d3687d290c: note: pointer points here
+  00 00 00 00 f0 27 7d 68  d3 76 00 00 40 19 7d 68  d3 76 00 00 00 00 00 00  00 00 00 00 00 00 00 00
+              ^ 
+/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/interpreter/wasm_interp_classic.c:1238:17: runtime error: member access within misaligned address 0x76d3687d290c for type 'struct WASMInterpFrame', which requires 8 byte alignment
+0x76d3687d290c: note: pointer points here
+  00 00 00 00 f0 27 7d 68  d3 76 00 00 40 19 7d 68  d3 76 00 00 00 00 00 00  00 00 00 00 00 00 00 00
+              ^ 
+/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/interpreter/wasm_interp_classic.c:1238:15: runtime error: member access within misaligned address 0x76d3687d290c for type 'struct WASMInterpFrame', which requires 8 byte alignment
+0x76d3687d290c: note: pointer points here
+  00 00 00 00 f0 27 7d 68  d3 76 00 00 40 19 7d 68  d3 76 00 00 00 00 00 00  00 00 00 00 00 00 00 00
+              ^ 
+/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/interpreter/wasm_interp_classic.c:1278:67: runtime error: member access within misaligned address 0x76d3687d290c for type 'struct WASMInterpFrame', which requires 8 byte alignment
+0x76d3687d290c: note: pointer points here
+  00 00 00 00 f0 27 7d 68  d3 76 00 00 40 19 7d 68  d3 76 00 00 00 00 00 00  00 00 00 00 00 00 00 00
+              ^ 
+/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/interpreter/wasm_interp_classic.c:2130:17: runtime error: member access within misaligned address 0x76d3687d28a4 for type 'struct WASMBranchBlock', which requires 8 byte alignment
+0x76d3687d28a4: note: pointer points here
+  d3 76 00 00 c7 0a 00 00  60 51 00 00 00 00 00 00  00 00 00 00 3c 28 7d 68  d3 76 00 00 00 00 00 00
+              ^ 
+/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/interpreter/wasm_interp_classic.c:2130:17: runtime error: member access within misaligned address 0x76d3687d28a4 for type 'struct WASMBranchBlock', which requires 8 byte alignment
+0x76d3687d28a4: note: pointer points here
+  d3 76 00 00 c7 0a 00 00  60 51 00 00 00 00 00 00  00 00 00 00 3c 28 7d 68  d3 76 00 00 00 00 00 00
+              ^ 
+/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/interpreter/wasm_interp_classic.c:2130:17: runtime error: member access within misaligned address 0x76d3687d28a4 for type 'struct WASMBranchBlock', which requires 8 byte alignment
+0x76d3687d28a4: note: pointer points here
+  d3 76 00 00 0c 0b 00 00  60 51 00 00 00 00 00 00  00 00 00 00 3c 28 7d 68  d3 76 00 00 00 00 00 00
+              ^ 
+/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/interpreter/wasm_interp_classic.c:2130:17: runtime error: member access within misaligned address 0x76d3687d28a4 for type 'struct WASMBranchBlock', which requires 8 byte alignment
+0x76d3687d28a4: note: pointer points here
+  d3 76 00 00 0c 0b 00 00  60 51 00 00 0c 0b 00 00  60 51 00 00 3c 28 7d 68  d3 76 00 00 00 00 00 00
+              ^ 
+/home/karolina/Research/Code/sim_env/.deps/wamr/core/iwasm/interpreter/wasm_interp_classic.c:6621:32: runtime error: member access within misaligned address 0x76d368719904 for type 'struct WASMInterpFrame', which requires 8 byte alignment
+0x76d368719904: note: pointer points here
+  d3 76 00 00 f0 97 71 68  d3 76 00 00 40 89 71 68  d3 76 00 00 00 00 00 00  00 00 00 00 00 00 00 00
+              ^ 
+WAMR restricted lifecycle: passed
+<end of output>
+Test time =   0.20 sec
+----------------------------------------------------------
+Test Passed.
+"graph_wamr" end time: Oct 09 17:56 CEST
+"graph_wamr" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/13 Testing: graph_core_foundations
+2/13 Test: graph_core_foundations
+Command: "/tmp/kaos-p3-build/graph_core_test"
+Directory: /tmp/kaos-p3-build
+"graph_core_foundations" start time: Oct 09 17:56 CEST
+Output:
+----------------------------------------------------------
+op=1 boundary=issue now_us=10 phase=1 closing=0 bytes=128 allocations=1 unclaimed=0
+op=1 boundary=execute now_us=20 phase=2 closing=0 bytes=128 allocations=1 unclaimed=0
+op=1 boundary=complete now_us=30 phase=3 closing=0 bytes=128 allocations=1 unclaimed=0
+op=1 boundary=accept now_us=40 phase=0 closing=0 bytes=128 allocations=1 unclaimed=1
+7 foundation groups passed; lifetime=80 action=24 access=16 bytes
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"graph_core_foundations" end time: Oct 09 17:56 CEST
+"graph_core_foundations" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/13 Testing: graph_admission
+3/13 Test: graph_admission
+Command: "/tmp/kaos-p3-build/graph_admission_test"
+Directory: /tmp/kaos-p3-build
+"graph_admission" start time: Oct 09 17:56 CEST
+Output:
+----------------------------------------------------------
+admission: all six variants, atomic capacities, incidence, scoped cleanup and remote fences passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_admission" end time: Oct 09 17:56 CEST
+"graph_admission" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/13 Testing: graph_request
+4/13 Test: graph_request
+Command: "/tmp/kaos-p3-build/graph_request_test"
+Directory: /tmp/kaos-p3-build
+"graph_request" start time: Oct 09 17:56 CEST
+Output:
+----------------------------------------------------------
+requests: deterministic framing, immutable copies, identity/manifest/predicate/deadline boundaries passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_request" end time: Oct 09 17:56 CEST
+"graph_request" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/13 Testing: graph_dynamic_binding
+5/13 Test: graph_dynamic_binding
+Command: "/tmp/kaos-p3-build/graph_dynamic_binding_test"
+Directory: /tmp/kaos-p3-build
+"graph_dynamic_binding" start time: Oct 09 17:56 CEST
+Output:
+----------------------------------------------------------
+dynamic binding: unconditional capability, strict schema and retained lifecycle/port guards passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_dynamic_binding" end time: Oct 09 17:56 CEST
+"graph_dynamic_binding" time elapsed: 00:00:00
+----------------------------------------------------------
+
+6/13 Testing: graph_report
+6/13 Test: graph_report
+Command: "/tmp/kaos-p3-build/graph_report_test"
+Directory: /tmp/kaos-p3-build
+"graph_report" start time: Oct 09 17:56 CEST
+Output:
+----------------------------------------------------------
+report: standalone snapshots, conflict isolation, late cleanup and revision bounds passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_report" end time: Oct 09 17:56 CEST
+"graph_report" time elapsed: 00:00:00
+----------------------------------------------------------
+
+7/13 Testing: graph_object_facts
+7/13 Test: graph_object_facts
+Command: "/tmp/kaos-p3-build/graph_object_facts_test"
+Directory: /tmp/kaos-p3-build
+"graph_object_facts" start time: Oct 09 17:56 CEST
+Output:
+----------------------------------------------------------
+object facts: containment, unchanged rejection, aggregate ACK identity and schema 3 passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_object_facts" end time: Oct 09 17:56 CEST
+"graph_object_facts" time elapsed: 00:00:00
+----------------------------------------------------------
+
+8/13 Testing: graph_coap
+8/13 Test: graph_coap
+Command: "/tmp/kaos-p3-build/graph_coap_test"
+Directory: /tmp/kaos-p3-build
+"graph_coap" start time: Oct 09 17:56 CEST
+Output:
+----------------------------------------------------------
+CoAP codec, exchange, bounded cache and Block1 tests passed
+<end of output>
+Test time =   0.05 sec
+----------------------------------------------------------
+Test Passed.
+"graph_coap" end time: Oct 09 17:56 CEST
+"graph_coap" time elapsed: 00:00:00
+----------------------------------------------------------
+
+9/13 Testing: graph_coap_server
+9/13 Test: graph_coap_server
+Command: "/tmp/kaos-p3-build/graph_coap_server_test"
+Directory: /tmp/kaos-p3-build
+"graph_coap_server" start time: Oct 09 17:56 CEST
+Output:
+----------------------------------------------------------
+CoAP server helpers: option policy, reply encoding and read-only replay passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_coap_server" end time: Oct 09 17:56 CEST
+"graph_coap_server" time elapsed: 00:00:00
+----------------------------------------------------------
+
+10/13 Testing: graph_artifact
+10/13 Test: graph_artifact
+Command: "/tmp/kaos-p3-build/graph_artifact_test"
+Directory: /tmp/kaos-p3-build
+"graph_artifact" start time: Oct 09 17:56 CEST
+Output:
+----------------------------------------------------------
+Artifact length/CRC, Block2, cancellation and ownership tests passed
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"graph_artifact" end time: Oct 09 17:56 CEST
+"graph_artifact" time elapsed: 00:00:00
+----------------------------------------------------------
+
+11/13 Testing: graph_control
+11/13 Test: graph_control
+Command: "/tmp/kaos-p3-build/graph_control_test"
+Directory: /tmp/kaos-p3-build
+"graph_control" start time: Oct 09 17:56 CEST
+Output:
+----------------------------------------------------------
+control: admission, lost ACK, logical duplicate, cache pressure, query and Block1 passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_control" end time: Oct 09 17:56 CEST
+"graph_control" time elapsed: 00:00:00
+----------------------------------------------------------
+
+12/13 Testing: graph_p2_host
+12/13 Test: graph_p2_host
+Command: "/tmp/kaos-p3-build/graph_p2_host_test"
+Directory: /tmp/kaos-p3-build
+"graph_p2_host" start time: Oct 09 17:56 CEST
+Output:
+----------------------------------------------------------
+CLEANUP 20 selected
+CLEANUP 3 scoped test removal
+host service: late cutoff history and scoped binding cleanup passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_p2_host" end time: Oct 09 17:56 CEST
+"graph_p2_host" time elapsed: 00:00:00
+----------------------------------------------------------
+
+13/13 Testing: graph_node
+13/13 Test: graph_node
+Command: "/tmp/kaos-p3-build/graph_node_test"
+Directory: /tmp/kaos-p3-build
+"graph_node" start time: Oct 09 17:56 CEST
+Output:
+----------------------------------------------------------
+node: startup, cancellation, exit, deadlines, owned disposal and reuse passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"graph_node" end time: Oct 09 17:56 CEST
+"graph_node" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 09 17:56 CEST

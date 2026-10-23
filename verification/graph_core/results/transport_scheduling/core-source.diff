@@ -1,0 +1,903 @@
+diff --git a/graph_core/include/kaos_host.h b/graph_core/include/kaos_host.h
+index b1ff8d7..0d8e5d3 100644
+--- a/graph_core/include/kaos_host.h
++++ b/graph_core/include/kaos_host.h
+@@ -7,13 +7,44 @@
+ #include "kaos_node.h"
+ #include <stdatomic.h>
+ 
++/* Fixed per-round packet limits; no queue or task per traffic class. */
++#ifndef CORE_HOST_APPLICATION_RX_BUDGET
++#define CORE_HOST_APPLICATION_RX_BUDGET 4u
++#endif
++#ifndef CORE_HOST_MANAGEMENT_RX_BUDGET
++#define CORE_HOST_MANAGEMENT_RX_BUDGET 1u
++#endif
++#ifndef CORE_HOST_APPLICATION_TX_BUDGET
++#define CORE_HOST_APPLICATION_TX_BUDGET CORE_MAX_ENDPOINT_RESERVATIONS
++#endif
++#ifndef CORE_HOST_ARTIFACT_INTERVAL_US
++#define CORE_HOST_ARTIFACT_INTERVAL_US UINT64_C(1000)
++#endif
++_Static_assert(CORE_HOST_APPLICATION_RX_BUDGET > 0 && CORE_HOST_APPLICATION_RX_BUDGET <= 64,
++               "application receive budget must be 1..64");
++_Static_assert(CORE_HOST_MANAGEMENT_RX_BUDGET > 0 && CORE_HOST_MANAGEMENT_RX_BUDGET <= 4,
++               "management receive budget must be 1..4 (bounded reply storage)");
++_Static_assert(CORE_HOST_APPLICATION_TX_BUDGET > 0 && CORE_HOST_APPLICATION_TX_BUDGET <= 64,
++               "application transmit budget must be 1..64");
++
+ typedef struct {
+     uint64_t local_device, authority, collector;
+     uint64_t peers[CORE_MAX_PEERS]; /* includes local_device */
+     size_t peer_count, node_bytes, byte_limit;
+     bool collector_enabled;
++    uint64_t artifact_interval_us; /* min send-attempt spacing; 0 disables pacing */
+ } core_host_config;
+ 
++/* Saturating control-task counters, inspect after stopping or on that task.
++ * Socket receipt/submission is not guest consumption or physical execution. */
++typedef struct {
++    uint64_t rounds, received[CORE_HOST_CLASSES], receive_drops[CORE_HOST_CLASSES];
++    uint64_t invalid_packets[CORE_HOST_CLASSES], sent[CORE_HOST_CLASSES];
++    uint64_t send_failures[CORE_HOST_CLASSES], endpoint_drops, artifact_requests;
++    uint64_t max_round_us, max_management_gap_us, artifact_receive_max_us;
++    uint64_t artifact_complete_max_us;
++} core_host_stats;
++
+ typedef struct {
+     core_artifact transfer;
+     core_op_id id;
+@@ -40,21 +71,25 @@ typedef struct {
+     int active_staging;
+     core_coap_ids ids;
+     core_host_platform platform;
++    core_host_stats stats;
++    uint64_t artifact_interval_us, next_artifact_send_us, last_management_us;
++    bool management_observed;
+     atomic_bool stopping;
+     bool initialized;
+ } core_host;
+ 
+ bool core_host_init(core_host *host, const core_host_config *config,
+                      const core_host_platform *platform);
+-/* One bounded control turn: advance existing lifecycles, incorporate optional
+- * input, advance its consequences, reclaim staging, then deliver output and
+- * select the next deadline. Input and its lifecycle decisions share the
++/* One bounded service round: lifecycle decisions, application receives,
++ * management receives, application sends, replies/management, paced artifact,
++ * maintenance. Each input and its lifecycle decisions share the
+  * registry lock. Output and allocation/free run outside it. Workers only
+  * publish runtime evidence and check entry permission; they never schedule
+  * node/edge passes. No packet bytes are borrowed after return, no network
+  * waits or guest execution occur here. Only the control task calls step/run.
+- * next_deadline is absolute, and run() uses this same interface. */
+-bool core_host_step(core_host *host, const core_host_packet *packet, uint64_t *next_deadline);
++ * next_deadline is absolute (0 requests another round without waiting).
++ * run() uses this same interface. */
++bool core_host_step(core_host *host, uint64_t *next_deadline);
+ bool core_host_run(core_host *host);
+ /* Thread-safe normal task call, not a signal/ISR handler. */
+ void core_host_request_stop(core_host *host);
+diff --git a/graph_core/include/kaos_host_platform.h b/graph_core/include/kaos_host_platform.h
+index 35d0bdf..3da7e2d 100644
+--- a/graph_core/include/kaos_host_platform.h
++++ b/graph_core/include/kaos_host_platform.h
+@@ -3,16 +3,23 @@
+ 
+ #include "kaos_coap.h"
+ 
++typedef enum { CORE_HOST_MANAGEMENT, CORE_HOST_APPLICATION, CORE_HOST_CLASSES } core_host_class;
+ typedef struct {
+     uint64_t sender;
++    core_host_class traffic_class;
+     size_t size;
+     uint8_t bytes[CORE_COAP_MAX_DATAGRAM];
+ } core_host_packet;
+-typedef enum { CORE_HOST_WAKE, CORE_HOST_PACKET, CORE_HOST_STOP, CORE_HOST_ERROR } core_host_event;
++typedef enum { CORE_HOST_WAKE, CORE_HOST_PACKET, CORE_HOST_STOP, CORE_HOST_ERROR,
++               CORE_HOST_EMPTY, CORE_HOST_DROPPED } core_host_event;
+ 
+ /* Mechanisms only. wait() takes an absolute monotonic microsecond deadline
+- * (UINT64_MAX means no timer), returns at most one complete attributed packet,
+- * and must retain wakeups issued before waiting. send() is nonblocking and
++ * (UINT64_MAX means no timer), observes both classes and retains earlier
++ * wakeups. It returns WAKE, STOP or ERROR without receiving a packet. recv()
++ * is nonblocking and consumes at most one datagram of the selected class:
++ * PACKET, DROPPED (unknown sender or oversized), EMPTY, STOP or ERROR. A
++ * DROPPED datagram counts against the host's receive budget. Readiness may
++ * become stale; EMPTY is always allowed. send() is nonblocking and
+  * borrows bytes only during the call. Attribution is configured address/ID
+  * mapping, not cryptographic authentication. All callbacks are required except
+  * diagnostic and channel_observation. Observers must not block or reenter the
+@@ -24,8 +31,9 @@ typedef struct {
+     void (*lock)(void *);
+     void (*unlock)(void *);
+     void (*wake)(void *);
+-    core_host_event (*wait)(void *, uint64_t, core_host_packet *);
+-    bool (*send)(void *, uint64_t, const uint8_t *, size_t);
++    core_host_event (*wait)(void *, uint64_t);
++    core_host_event (*recv)(void *, core_host_class, core_host_packet *);
++    bool (*send)(void *, core_host_class, uint64_t, const uint8_t *, size_t);
+     uint64_t (*retry_us)(void *); /* initial CoAP timeout in [2,3] seconds */
+     void (*diagnostic)(void *, const char *, core_op_id, size_t);
+     /* Successful guest PUT/GET only, including local channels. GET means bytes
+diff --git a/graph_core/kaos_host.c b/graph_core/kaos_host.c
+index 1a656c8..599f6f5 100644
+--- a/graph_core/kaos_host.c
++++ b/graph_core/kaos_host.c
+@@ -7,6 +7,15 @@
+ static void lock(core_host *h) { h->platform.lock(h->platform.context); }
+ static void unlock(core_host *h) { h->platform.unlock(h->platform.context); }
+ static bool now(core_host *h, uint64_t *time) { return h->platform.now(h->platform.context, time); }
++static void count(uint64_t *value) { if (*value != UINT64_MAX) ++*value; }
++static void maximum(uint64_t *value, uint64_t sample) { if (sample > *value) *value = sample; }
++static bool send_packet(core_host *h, core_host_class traffic_class, uint64_t peer,
++                        const uint8_t *bytes, size_t size)
++{
++    const bool sent = h->platform.send(h->platform.context, traffic_class, peer, bytes, size);
++    count(sent ? &h->stats.sent[traffic_class] : &h->stats.send_failures[traffic_class]);
++    return sent;
++}
+ static void wake(void *context)
+ {
+     core_host *h = context;
+@@ -91,7 +100,8 @@ static void entry_unlock(void *context) { unlock(context); }
+ static bool platform_valid(const core_host_platform *p)
+ {
+     return p != NULL && p->now != NULL && p->lock != NULL && p->unlock != NULL &&
+-        p->wake != NULL && p->wait != NULL && p->send != NULL && p->retry_us != NULL;
++        p->wake != NULL && p->wait != NULL && p->recv != NULL &&
++        p->send != NULL && p->retry_us != NULL;
+ }
+ 
+ static bool enrollment_valid(const core_host_config *c)
+@@ -113,6 +123,7 @@ bool core_host_init(core_host *h, const core_host_config *config, const core_hos
+         !core_admission_configure(&h->admission, config->local_device, config->authority,
+                                   config->peers, config->peer_count)) return false;
+     h->platform = *platform;
++    h->artifact_interval_us = config->artifact_interval_us;
+     h->control = (core_control){.admission = &h->admission, .edges = &h->edges,
+         .collector = config->collector, .collector_enabled = config->collector_enabled};
+     h->nodes = (core_node_service){.admission = &h->admission};
+@@ -247,6 +258,12 @@ static void advance_lifecycles(core_host *h, uint64_t time)
+     }
+ }
+ 
++static void advance_due(core_host *h, uint64_t time)
++{
++    if (time >= core_node_next_deadline(&h->nodes) || time >= core_edge_next_deadline(&h->edges))
++        advance_lifecycles(h, time);
++}
++
+ static bool send_artifact(core_host *h)
+ {
+     uint64_t time;
+@@ -255,14 +272,25 @@ static bool send_artifact(core_host *h)
+         core_host_staging *s = &h->staging[h->active_staging];
+         const core_admission_record *r = core_admission_find(&h->admission, s->id);
+         if (!now(h, &time)) { unlock(h); return false; }
++        const core_coap_exchange *exchange = &h->artifact.exchange;
++        /* Timeout decisions are never paced, including the terminal retry.
++         * Pacing changes send opportunities, not existing deadlines. */
++        const bool timeout_due = time >= s->transfer.deadline_us ||
++            (exchange->active && (time >= exchange->deadline_us ||
++             (!exchange->acknowledged && exchange->retransmissions == CORE_COAP_MAX_RETRANSMIT &&
++              time >= exchange->next_retry_us)));
++        if (time < h->next_artifact_send_us && !timeout_due) { unlock(h); return true; }
+         const core_coap_poll_result result = core_artifact_client_next(&h->artifact,
+             h->admission.authority, r->request.artifact_ref, r->request.artifact_ref_size,
+             &h->ids, time, h->platform.retry_us(h->platform.context));
+         if (result == CORE_COAP_SEND) {
++            h->next_artifact_send_us = h->artifact_interval_us > UINT64_MAX - time ?
++                UINT64_MAX : time + h->artifact_interval_us;
++            count(&h->stats.artifact_requests);
+             /* Only the control task changes exchanges; these bytes remain
+              * owned by the exchange throughout the unlocked send. */
+             unlock(h);
+-            const bool sent = h->platform.send(h->platform.context, h->admission.authority,
++            const bool sent = send_packet(h, CORE_HOST_MANAGEMENT, h->admission.authority,
+                 h->artifact.exchange.request, h->artifact.exchange.request_size);
+             lock(h);
+             if (!now(h, &time)) { unlock(h); return false; }
+@@ -284,30 +312,34 @@ static bool send_management(core_host *h)
+         const bool send = core_control_peer_next(&h->control, &h->peers[i], &h->ids, time,
+             h->platform.retry_us(h->platform.context), bytes, sizeof(bytes), &size);
+         unlock(h);
+-        if (send) (void)h->platform.send(h->platform.context, h->peers[i].id, bytes, size);
++        if (send) (void)send_packet(h, CORE_HOST_MANAGEMENT, h->peers[i].id, bytes, size);
+     }
+     return true;
+ }
+ 
+-static void send_data(core_host *h)
++static bool send_data(core_host *h, bool *exhausted)
+ {
+-    for (size_t i = 0; i < CORE_MAX_ENDPOINT_RESERVATIONS; ++i) {
++    for (size_t i = 0; i < CORE_HOST_APPLICATION_TX_BUDGET; ++i) {
+         core_data_frame frame;
+-        uint64_t destination;
++        uint64_t destination, time;
+         lock(h);
++        if (!now(h, &time)) { unlock(h); return false; }
++        advance_due(h, time);
+         const bool available = core_endpoint_next(&h->endpoints, &destination, &frame);
+         if (available && destination == h->admission.local_device)
+-            (void)core_endpoint_receive(&h->endpoints, h->admission.local_device, &frame);
++            if (core_endpoint_receive(&h->endpoints, h->admission.local_device, &frame) != CORE_DATA_OK)
++                count(&h->stats.endpoint_drops);
+         unlock(h);
+         if (!available) break;
+         if (destination != h->admission.local_device) {
+             uint8_t bytes[CORE_DATA_FRAME_BYTES];
+             size_t size;
+             if (core_data_encode(&frame, bytes, sizeof(bytes), &size))
+-                (void)h->platform.send(h->platform.context, destination, bytes, size);
++                (void)send_packet(h, CORE_HOST_APPLICATION, destination, bytes, size);
+         }
+-        if (i + 1 == CORE_MAX_ENDPOINT_RESERVATIONS) wake(h);
++        if (i + 1 == CORE_HOST_APPLICATION_TX_BUDGET) *exhausted = true;
+     }
++    return true;
+ }
+ 
+ /* Registry lock held; diagnostics must be nonblocking. */
+@@ -328,6 +360,13 @@ static bool receive_artifact(core_host *h, uint64_t sender, const core_coap_mess
+ {
+     const core_artifact_result result = core_artifact_client_receive(&h->artifact,
+         sender, message, time, acknowledge);
++    uint64_t finished;
++    if (!now(h, &finished)) return false;
++    if (finished >= time) {
++        maximum(&h->stats.artifact_receive_max_us, finished - time);
++        if (result == CORE_ARTIFACT_COMPLETE)
++            maximum(&h->stats.artifact_complete_max_us, finished - time);
++    }
+     if (result == CORE_ARTIFACT_INVALID) artifact_failure(h, time);
+     if (result != CORE_ARTIFACT_COMPLETE || h->active_staging < 0) return true;
+ 
+@@ -361,16 +400,25 @@ static bool is_response(const core_coap_message *message)
+ static bool receive(core_host *h, const core_host_packet *packet, uint64_t time,
+                       core_host_packet *response)
+ {
+-    if (packet->size == 0 || packet->size > sizeof(packet->bytes)) return true;
++    if (packet->size == 0 || packet->size > sizeof(packet->bytes)) {
++        count(&h->stats.invalid_packets[packet->traffic_class]);
++        return true;
++    }
+     response->sender = packet->sender;
+-    if (packet->bytes[0] == CORE_SCHEMA_VERSION) {
++    if (packet->traffic_class == CORE_HOST_APPLICATION) {
+         core_data_frame frame;
+         if (core_data_decode(packet->bytes, packet->size, &frame))
+-            (void)core_endpoint_receive(&h->endpoints, packet->sender, &frame);
++            { if (core_endpoint_receive(&h->endpoints, packet->sender, &frame) != CORE_DATA_OK)
++                count(&h->stats.endpoint_drops); }
++        else count(&h->stats.invalid_packets[CORE_HOST_APPLICATION]);
+         return true;
+     }
+     core_coap_message message;
+-    if (!core_coap_decode(packet->bytes, packet->size, &message)) return true;
++    if (packet->bytes[0] == CORE_SCHEMA_VERSION ||
++        !core_coap_decode(packet->bytes, packet->size, &message)) {
++        count(&h->stats.invalid_packets[CORE_HOST_MANAGEMENT]);
++        return true;
++    }
+     if (!is_response(&message)) {
+         (void)core_control_receive(&h->control, packet->sender, packet->bytes, packet->size,
+             time, response->bytes, sizeof(response->bytes), &response->size);
+@@ -391,12 +439,27 @@ static bool receive(core_host *h, const core_host_packet *packet, uint64_t time,
+     return true;
+ }
+ 
++static uint64_t artifact_deadline(const core_host *h)
++{
++    if (h->active_staging < 0) return UINT64_MAX;
++    const core_artifact *transfer = h->artifact.transfer;
++    const core_coap_exchange *exchange = &h->artifact.exchange;
++    uint64_t next = h->next_artifact_send_us;
++    if (exchange->active) {
++        next = core_coap_exchange_deadline(exchange);
++        if (!exchange->acknowledged && exchange->retransmissions < CORE_COAP_MAX_RETRANSMIT &&
++            next < h->next_artifact_send_us) next = h->next_artifact_send_us;
++        if (next > exchange->deadline_us) next = exchange->deadline_us;
++    }
++    return next < transfer->deadline_us ? next : transfer->deadline_us;
++}
++
+ static uint64_t next_deadline(const core_host *h)
+ {
+     uint64_t next = core_node_next_deadline(&h->nodes);
+     const uint64_t edge = core_edge_next_deadline(&h->edges);
+     if (edge < next) next = edge;
+-    const uint64_t artifact = core_coap_exchange_deadline(&h->artifact.exchange);
++    const uint64_t artifact = artifact_deadline(h);
+     if (artifact < next) next = artifact;
+     for (size_t i = 0; i < h->peer_count; ++i) {
+         const uint64_t peer = core_coap_exchange_deadline(&h->peers[i].exchange);
+@@ -405,18 +468,76 @@ static uint64_t next_deadline(const core_host *h)
+     return next;
+ }
+ 
+-bool core_host_step(core_host *h, const core_host_packet *packet, uint64_t *deadline)
++/* Each consumed datagram spends one budget unit even if the adapter discards
++ * it. A full batch requests another round; no new external wake is required. */
++static bool receive_batch(core_host *h, core_host_class traffic_class, size_t budget,
++                          core_host_packet *responses, size_t *response_count, bool *exhausted)
++{
++    for (size_t i = 0; i < budget; ++i) {
++        core_host_packet packet;
++        uint64_t time;
++        lock(h);
++        if (!now(h, &time)) { unlock(h); return false; }
++        advance_due(h, time);
++        unlock(h);
++        const core_host_event event = h->platform.recv(h->platform.context, traffic_class, &packet);
++        if (event == CORE_HOST_EMPTY) return true;
++        if (event == CORE_HOST_STOP) { atomic_store(&h->stopping, true); return true; }
++        if (event == CORE_HOST_ERROR) return false;
++        if (event == CORE_HOST_DROPPED) count(&h->stats.receive_drops[traffic_class]);
++        else if (event == CORE_HOST_PACKET) {
++            count(&h->stats.received[traffic_class]);
++            if (packet.traffic_class != traffic_class) count(&h->stats.invalid_packets[traffic_class]);
++            else {
++                /* Application handlers never reply. Management consumes at
++                 * most one reply slot per budget unit, avoiding a datagram
++                 * temporary and copy on the embedded control stack. */
++                core_host_packet *response = &responses[*response_count];
++                response->size = 0;
++                lock(h);
++                if (!now(h, &time)) { unlock(h); return false; }
++                advance_lifecycles(h, time); /* expiry also wins after socket reception */
++                const bool good = receive(h, &packet, time, response) && now(h, &time);
++                if (good) advance_lifecycles(h, time);
++                unlock(h);
++                if (!good) return false;
++                if (response->size) ++*response_count;
++            }
++        } else return false;
++        if (i + 1 == budget) *exhausted = true;
++    }
++    return true;
++}
++
++bool core_host_step(core_host *h, uint64_t *deadline)
+ {
+     if (!h->initialized || deadline == NULL) return false;
+-    core_host_packet response = {0};
+-    uint64_t time;
++    core_host_packet responses[CORE_HOST_MANAGEMENT_RX_BUDGET];
++    size_t response_count = 0;
++    bool exhausted = false;
++    uint64_t time, started;
++
+     lock(h);
+-    if (!now(h, &time)) goto failed;
++    if (!now(h, &started)) goto failed;
++    time = started;
+     advance_lifecycles(h, time); /* expiry wins over queued input */
+-    if (packet != NULL) {
+-        if (!receive(h, packet, time, &response) || !now(h, &time)) goto failed;
+-        advance_lifecycles(h, time); /* apply input before workers can enter */
+-    }
++    unlock(h);
++
++    if (!receive_batch(h, CORE_HOST_APPLICATION, CORE_HOST_APPLICATION_RX_BUDGET,
++                       responses, &response_count, &exhausted) ||
++        !receive_batch(h, CORE_HOST_MANAGEMENT, CORE_HOST_MANAGEMENT_RX_BUDGET,
++                       responses, &response_count, &exhausted)
++    ) return false;
++
++
++    lock(h);
++    if (!now(h, &time)) goto failed;
++    if (h->management_observed && time >= h->last_management_us)
++        maximum(&h->stats.max_management_gap_us, time - h->last_management_us);
++
++    h->last_management_us = time;
++    h->management_observed = true;
++
+     if (cleanup_staging(h)) {
+         if (!now(h, &time)) goto failed;
+         advance_lifecycles(h, time); /* accept released staging before sleeping */
+@@ -426,15 +547,22 @@ bool core_host_step(core_host *h, const core_host_packet *packet, uint64_t *dead
+ 
+     /* All output follows the control decisions. Each bounded sender borrows
+      * the registry only to select work; network I/O always runs unlocked. */
+-    if (response.size)
+-        (void)h->platform.send(h->platform.context, response.sender, response.bytes, response.size);
+-    if (!send_artifact(h) || !send_management(h)) return false;
+-    send_data(h);
++    if (!send_data(h, &exhausted)) return false;
++    for (size_t i = 0; i < response_count; ++i)
++        (void)send_packet(h, CORE_HOST_MANAGEMENT, responses[i].sender,
++                         responses[i].bytes, responses[i].size);
++    /* The full finite peer pass gives each peer one opportunity per round;
++     * there is no deferred partial scan needing a second fairness cursor. */
++    if (!send_management(h) || !send_artifact(h)) return false;
+ 
+     lock(h);
+     runtime_diagnostics(h);
+     core_admission_maintain(&h->admission);
+-    *deadline = next_deadline(h);
++    if (!now(h, &time)) goto failed;
++    advance_due(h, time);
++    *deadline = exhausted ? 0 : next_deadline(h);
++    count(&h->stats.rounds);
++    if (time >= started) maximum(&h->stats.max_round_us, time - started);
+     unlock(h);
+     return true;
+ failed:
+@@ -444,16 +572,14 @@ failed:
+ 
+ bool core_host_run(core_host *h)
+ {
+-    core_host_packet packet;
+-    const core_host_packet *input = NULL;
+     while (!atomic_load(&h->stopping)) {
+         uint64_t deadline;
+-        if (!core_host_step(h, input, &deadline)) return false;
++        if (!core_host_step(h, &deadline)) return false;
+         if (atomic_load(&h->stopping)) break;
+-        const core_host_event event = h->platform.wait(h->platform.context, deadline, &packet);
++        if (deadline == 0) continue;
++        const core_host_event event = h->platform.wait(h->platform.context, deadline);
+         if (event == CORE_HOST_STOP) break;
+         if (event == CORE_HOST_ERROR) return false;
+-        input = event == CORE_HOST_PACKET ? &packet : NULL;
+     }
+     return true;
+ }
+diff --git a/graph_core/ports/espidf/app_main.c b/graph_core/ports/espidf/app_main.c
+index 684fbf7..d29c421 100644
+--- a/graph_core/ports/espidf/app_main.c
++++ b/graph_core/ports/espidf/app_main.c
+@@ -22,11 +22,12 @@ void app_main(void)
+     vTaskPrioritySet(NULL, 3);
+ 
+     core_host_config config = {.local_device = CONFIG_KAOS_DEVICE_ID, .peer_count = 1,
++        .artifact_interval_us = CORE_HOST_ARTIFACT_INTERVAL_US,
+         .peers = {CONFIG_KAOS_DEVICE_ID}, .node_bytes = CONFIG_KAOS_NODE_BYTES,
+         .byte_limit = CORE_MAX_NODE_RESERVATIONS * (size_t)CONFIG_KAOS_NODE_BYTES +
+                       CORE_MAX_ENDPOINT_RESERVATIONS * CORE_ENDPOINT_BYTES};
+     core_host_udp_peer routes[CORE_MAX_PEERS + 1];
+-    if (!core_host_udp_parse_peer(CONFIG_KAOS_AUTHORITY, &routes[0])) {
++    if (!core_host_udp_parse_peer(CONFIG_KAOS_AUTHORITY, &routes[0]) || routes[0].application.sin_port != 0) {
+         puts("Invalid KaOS authority");
+         return;
+     }
+@@ -35,29 +36,33 @@ void app_main(void)
+     char peers[] = CONFIG_KAOS_PEERS;
+     char *saved;
+     for (char *peer = strtok_r(peers, ",", &saved); peer; peer = strtok_r(NULL, ",", &saved)) {
+-        if (config.peer_count == CORE_MAX_PEERS || !core_host_udp_parse_peer(peer, &routes[route_count])) {
++        if (config.peer_count == CORE_MAX_PEERS || !core_host_udp_parse_peer(peer, &routes[route_count]) ||
++            routes[route_count].application.sin_port == 0) {
+             puts("Invalid KaOS peer enrollment");
+             return;
+         }
+         config.peers[config.peer_count++] = routes[route_count++].id;
+     }
+     if (CONFIG_KAOS_COLLECTOR[0]) {
+-        if (!core_host_udp_parse_peer(CONFIG_KAOS_COLLECTOR, &routes[route_count])) {
++        if (!core_host_udp_parse_peer(CONFIG_KAOS_COLLECTOR, &routes[route_count]) ||
++            routes[route_count].application.sin_port != 0) {
+             puts("Invalid KaOS collector");
+             return;
+         }
+         config.collector_enabled = true;
+         config.collector = routes[route_count++].id;
+     }
+-    const struct sockaddr_in local = {.sin_family = AF_INET,
++    const struct sockaddr_in management = {.sin_family = AF_INET,
+         .sin_port = htons(CONFIG_KAOS_UDP_PORT), .sin_addr = {.s_addr = htonl(INADDR_ANY)}};
++    const struct sockaddr_in application = {.sin_family = AF_INET,
++        .sin_port = htons(CONFIG_KAOS_APPLICATION_UDP_PORT), .sin_addr = {.s_addr = htonl(INADDR_ANY)}};
+     core_host_platform platform;
+-    if (!core_host_udp_open(&udp, &local, routes, route_count, &platform)) {
++    if (!core_host_udp_open(&udp, &management, &application, routes, route_count, &platform)) {
+         puts("KaOS socket initialization failed");
+         return;
+     }
+     if (core_host_init(&host, &config, &platform)) {
+-        printf("LISTENING %d\n", CONFIG_KAOS_UDP_PORT);
++        printf("LISTENING %d %d\n", CONFIG_KAOS_UDP_PORT, CONFIG_KAOS_APPLICATION_UDP_PORT);
+         (void)core_host_run(&host);
+         core_host_destroy(&host);
+     } else puts("KaOS host initialization failed");
+diff --git a/graph_core/ports/espidf/main/Kconfig.projbuild b/graph_core/ports/espidf/main/Kconfig.projbuild
+index cfb6bd0..8daee59 100644
+--- a/graph_core/ports/espidf/main/Kconfig.projbuild
++++ b/graph_core/ports/espidf/main/Kconfig.projbuild
+@@ -4,14 +4,18 @@ config KAOS_DEVICE_ID
+     range 0 2147483647
+     default 1
+ config KAOS_UDP_PORT
+-    int "Local UDP port"
++    int "Local management UDP port"
+     range 1 65535
+     default 5683
++config KAOS_APPLICATION_UDP_PORT
++    int "Local application UDP port (must differ from management)"
++    range 1 65535
++    default 5684
+ config KAOS_AUTHORITY
+     string "Authority id@IPv4:port"
+     default "99@192.168.1.2:5683"
+ config KAOS_PEERS
+-    string "Remote owners: comma-separated id@IPv4:port"
++    string "Remote owners: comma-separated id@IPv4:management_port:application_port"
+     default ""
+ config KAOS_COLLECTOR
+     string "Collector id@IPv4:port (empty disables)"
+diff --git a/graph_core/ports/host_udp.c b/graph_core/ports/host_udp.c
+index 012de79..4ba3e7e 100644
+--- a/graph_core/ports/host_udp.c
++++ b/graph_core/ports/host_udp.c
+@@ -32,13 +32,22 @@ static void notify(void *context)
+     /* A saturated counter already retains a wake. Mailboxes retain evidence. */
+     errno = saved_errno;
+ }
+-static bool send_packet(void *context, uint64_t peer, const uint8_t *bytes, size_t size)
++static const struct sockaddr_in *peer_address(const core_host_udp_peer *peer,
++                                              core_host_class traffic_class)
++{
++    return traffic_class == CORE_HOST_MANAGEMENT ? &peer->address : &peer->application;
++}
++static bool send_packet(void *context, core_host_class traffic_class, uint64_t peer,
++                         const uint8_t *bytes, size_t size)
+ {
+     core_host_udp *udp = context;
++    if ((unsigned)traffic_class >= CORE_HOST_CLASSES || size > CORE_COAP_MAX_DATAGRAM) return false;
+     for (size_t i = 0; i < udp->peer_count; ++i) {
+         if (udp->peers[i].id != peer) continue;
+-        return sendto(udp->socket, bytes, size, 0, (const struct sockaddr *)&udp->peers[i].address,
+-                      sizeof(udp->peers[i].address)) == (ssize_t)size;
++        const struct sockaddr_in *address = peer_address(&udp->peers[i], traffic_class);
++        if (address->sin_port == 0) return false;
++        return sendto(udp->sockets[traffic_class], bytes, size, 0,
++                      (const struct sockaddr *)address, sizeof(*address)) == (ssize_t)size;
+     }
+     return false;
+ }
+@@ -52,7 +61,7 @@ static uint64_t retry_delay(void *context)
+     udp->random_state = x;
+     return CORE_COAP_ACK_TIMEOUT_US + x % 1000001u;
+ }
+-static core_host_event wait_input(void *context, uint64_t deadline, core_host_packet *packet)
++static core_host_event wait_input(void *context, uint64_t deadline)
+ {
+     core_host_udp *udp = context;
+     if (udp->stopped) return CORE_HOST_STOP;
+@@ -67,9 +76,12 @@ static core_host_event wait_input(void *context, uint64_t deadline, core_host_pa
+     }
+     fd_set read_fds;
+     FD_ZERO(&read_fds);
+-    FD_SET(udp->socket, &read_fds);
+     FD_SET(udp->wake_fd, &read_fds);
+-    const int max_fd = udp->socket > udp->wake_fd ? udp->socket : udp->wake_fd;
++    int max_fd = udp->wake_fd;
++    for (size_t i = 0; i < CORE_HOST_CLASSES; ++i) {
++        FD_SET(udp->sockets[i], &read_fds);
++        if (udp->sockets[i] > max_fd) max_fd = udp->sockets[i];
++    }
+     const int ready = select(max_fd + 1, &read_fds, NULL, NULL, limit);
+     if (udp->stopped) return CORE_HOST_STOP;
+     if (ready < 0) return errno == EINTR ? CORE_HOST_WAKE : CORE_HOST_ERROR;
+@@ -78,40 +90,63 @@ static core_host_event wait_input(void *context, uint64_t deadline, core_host_pa
+         uint64_t count;
+         (void)read(udp->wake_fd, &count, sizeof(count));
+     }
+-    if (!FD_ISSET(udp->socket, &read_fds)) return CORE_HOST_WAKE;
++    return CORE_HOST_WAKE;
++}
++static core_host_event receive_packet(void *context, core_host_class traffic_class,
++                                      core_host_packet *packet)
++{
++    core_host_udp *udp = context;
++    if (udp->stopped) return CORE_HOST_STOP;
++    if ((unsigned)traffic_class >= CORE_HOST_CLASSES) return CORE_HOST_ERROR;
+     /* One extra byte detects oversized/truncated packets on both BSD stacks. */
+     uint8_t bytes[CORE_COAP_MAX_DATAGRAM + 1];
+     struct sockaddr_in sender;
+     socklen_t address_size = sizeof(sender);
+-    const ssize_t size = recvfrom(udp->socket, bytes, sizeof(bytes), 0,
++    const ssize_t size = recvfrom(udp->sockets[traffic_class], bytes, sizeof(bytes), 0,
+                                   (struct sockaddr *)&sender, &address_size);
+-    if (size < 0 || (size_t)size > sizeof(packet->bytes) || address_size != sizeof(sender) ||
+-        sender.sin_family != AF_INET) return CORE_HOST_WAKE;
++    if (size < 0) return errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR ?
++                         CORE_HOST_EMPTY : CORE_HOST_ERROR;
++    if ((size_t)size > sizeof(packet->bytes) || address_size != sizeof(sender) ||
++        sender.sin_family != AF_INET) return CORE_HOST_DROPPED;
+     for (size_t i = 0; i < udp->peer_count; ++i) {
+-        const struct sockaddr_in *address = &udp->peers[i].address;
++        const struct sockaddr_in *address = peer_address(&udp->peers[i], traffic_class);
+         if (sender.sin_addr.s_addr != address->sin_addr.s_addr || sender.sin_port != address->sin_port)
+             continue;
+         packet->sender = udp->peers[i].id;
++        packet->traffic_class = traffic_class;
+         packet->size = (size_t)size;
+         memcpy(packet->bytes, bytes, packet->size);
+         return CORE_HOST_PACKET;
+     }
+-    return CORE_HOST_WAKE;
++    return CORE_HOST_DROPPED;
++}
++
++static bool same_address(const struct sockaddr_in *a, const struct sockaddr_in *b)
++{
++    return a->sin_port != 0 && a->sin_addr.s_addr == b->sin_addr.s_addr &&
++           a->sin_port == b->sin_port;
+ }
+ 
+-bool core_host_udp_open(core_host_udp *udp, const struct sockaddr_in *local,
++bool core_host_udp_open(core_host_udp *udp, const struct sockaddr_in *management,
++    const struct sockaddr_in *application,
+     const core_host_udp_peer *peers, size_t peer_count, core_host_platform *out)
+ {
+-    if (peer_count > CORE_MAX_PEERS + 1 || local->sin_family != AF_INET) return false;
++    *udp = (core_host_udp){.sockets = {-1, -1}, .wake_fd = -1};
++    if (peer_count > CORE_MAX_PEERS + 1 || management->sin_family != AF_INET ||
++        application->sin_family != AF_INET ||
++        (management->sin_port != 0 && management->sin_port == application->sin_port)) return false;
+     for (size_t i = 0; i < peer_count; ++i) {
+-        if (peers[i].address.sin_family != AF_INET || peers[i].address.sin_port == 0) return false;
++        if (peers[i].address.sin_family != AF_INET || peers[i].address.sin_port == 0 ||
++            (peers[i].application.sin_port != 0 &&
++             (peers[i].application.sin_family != AF_INET ||
++              same_address(&peers[i].address, &peers[i].application)))) return false;
+         for (size_t j = 0; j < i; ++j)
+             if (peers[i].id == peers[j].id ||
+-                (peers[i].address.sin_addr.s_addr == peers[j].address.sin_addr.s_addr &&
+-                 peers[i].address.sin_port == peers[j].address.sin_port)) return false;
++                same_address(&peers[i].address, &peers[j].address) ||
++                same_address(&peers[i].application, &peers[j].application)) return false;
+     }
+-    *udp = (core_host_udp){.socket = -1, .wake_fd = -1};
+     if (pthread_mutex_init(&udp->mutex, NULL) != 0) return false;
++    udp->mutex_initialized = true;
+     memcpy(udp->peers, peers, peer_count * sizeof(*peers));
+     udp->peer_count = peer_count;
+     uint64_t time;
+@@ -125,15 +160,18 @@ bool core_host_udp_open(core_host_udp *udp, const struct sockaddr_in *local,
+ #else
+     udp->wake_fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+ #endif
+-    udp->socket = socket(AF_INET, SOCK_DGRAM, 0);
+-    if (udp->wake_fd < 0 || udp->socket < 0 || udp->socket >= FD_SETSIZE || udp->wake_fd >= FD_SETSIZE)
+-        goto fail;
+-    const int flags = fcntl(udp->socket, F_GETFL, 0);
+-    if (flags < 0 || fcntl(udp->socket, F_SETFL, flags | O_NONBLOCK) != 0 ||
+-        bind(udp->socket, (const struct sockaddr *)local, sizeof(*local)) != 0) goto fail;
++    if (udp->wake_fd < 0 || udp->wake_fd >= FD_SETSIZE) goto fail;
++    const struct sockaddr_in *local[CORE_HOST_CLASSES] = {management, application};
++    for (size_t i = 0; i < CORE_HOST_CLASSES; ++i) {
++        udp->sockets[i] = socket(AF_INET, SOCK_DGRAM, 0);
++        if (udp->sockets[i] < 0 || udp->sockets[i] >= FD_SETSIZE) goto fail;
++        const int flags = fcntl(udp->sockets[i], F_GETFL, 0);
++        if (flags < 0 || fcntl(udp->sockets[i], F_SETFL, flags | O_NONBLOCK) != 0 ||
++            bind(udp->sockets[i], (const struct sockaddr *)local[i], sizeof(*local[i])) != 0) goto fail;
++    }
+     *out = (core_host_platform){.context = udp, .now = clock_now, .lock = registry_lock,
+         .unlock = registry_unlock, .wake = notify, .wait = wait_input,
+-        .send = send_packet, .retry_us = retry_delay};
++        .recv = receive_packet, .send = send_packet, .retry_us = retry_delay};
+     return true;
+ fail:
+     core_host_udp_close(udp);
+@@ -147,12 +185,18 @@ void core_host_udp_stop(core_host_udp *udp)
+ }
+ void core_host_udp_close(core_host_udp *udp)
+ {
+-    if (udp->socket >= 0) close(udp->socket);
++    for (size_t i = 0; i < CORE_HOST_CLASSES; ++i) {
++        if (udp->sockets[i] >= 0) close(udp->sockets[i]);
++        udp->sockets[i] = -1;
++    }
+     if (udp->wake_fd >= 0) close(udp->wake_fd);
++    udp->wake_fd = -1;
+ #ifdef ESP_PLATFORM
+     if (udp->eventfd_registered) (void)esp_vfs_eventfd_unregister();
++    udp->eventfd_registered = false;
+ #endif
+-    pthread_mutex_destroy(&udp->mutex);
++    if (udp->mutex_initialized) pthread_mutex_destroy(&udp->mutex);
++    udp->mutex_initialized = false;
+ }
+ 
+ bool core_host_udp_parse_peer(const char *text, core_host_udp_peer *out)
+@@ -177,11 +221,23 @@ bool core_host_udp_parse_peer(const char *text, core_host_udp_peer *out)
+     }
+     ++p;
+     if (*p == '\0') return false;
+-    for (const char *q = p; *q; ++q) if (*q < '0' || *q > '9') return false;
++    const char *q = p;
++    while (*q >= '0' && *q <= '9') ++q;
++    if (q == p || (*q != '\0' && *q != ':')) return false;
+     errno = 0;
+     const unsigned long port = strtoul(p, &end, 10);
+-    if (errno || *end || port == 0 || port > UINT16_MAX) return false;
++    if (errno || end != q || port == 0 || port > UINT16_MAX) return false;
+     *out = (core_host_udp_peer){.id = id, .address = {.sin_family = AF_INET,
+         .sin_addr = address, .sin_port = htons((uint16_t)port)}};
++    if (*q == ':') {
++        p = q + 1;
++        if (*p == '\0') return false;
++        for (q = p; *q; ++q) if (*q < '0' || *q > '9') return false;
++        errno = 0;
++        const unsigned long app_port = strtoul(p, &end, 10);
++        if (errno || *end || app_port == 0 || app_port > UINT16_MAX || app_port == port) return false;
++        out->application = (struct sockaddr_in){.sin_family = AF_INET,
++            .sin_addr = address, .sin_port = htons((uint16_t)app_port)};
++    }
+     return true;
+ }
+diff --git a/graph_core/ports/host_udp.h b/graph_core/ports/host_udp.h
+index 5074037..6e7303b 100644
+--- a/graph_core/ports/host_udp.h
++++ b/graph_core/ports/host_udp.h
+@@ -12,27 +12,31 @@
+ 
+ typedef struct {
+     uint64_t id;
+-    struct sockaddr_in address;
++    struct sockaddr_in address; /* management; required */
++    struct sockaddr_in application; /* zero port for management-only peers */
+ } core_host_udp_peer;
+ 
+ /* BSD socket adapter shared by POSIX and ESP-IDF. Address storage and OS
+  * handles stay here; the host knows only device IDs and complete datagrams. */
+ typedef struct {
+-    int socket, wake_fd;
++    int sockets[CORE_HOST_CLASSES], wake_fd;
+     pthread_mutex_t mutex;
+     core_host_udp_peer peers[CORE_MAX_PEERS + 1]; /* remote owners + O + DB */
+     size_t peer_count;
+     uint32_t random_state;
+     volatile sig_atomic_t stopped;
+     bool eventfd_registered;
++    bool mutex_initialized;
+ } core_host_udp;
+ 
+-bool core_host_udp_open(core_host_udp *udp, const struct sockaddr_in *local,
++bool core_host_udp_open(core_host_udp *udp, const struct sockaddr_in *management,
++    const struct sockaddr_in *application,
+     const core_host_udp_peer *peers, size_t peer_count, core_host_platform *out);
+ void core_host_udp_close(core_host_udp *udp);
+ /* POSIX signal handler: only sets sig_atomic_t and writes the wake descriptor. */
+ void core_host_udp_stop(core_host_udp *udp);
+-/* id:port uses loopback; id@IPv4:port supplies an explicit enrolled address. */
++/* id:management:application uses loopback; id@IPv4:management:application
++ * supplies an explicit address. Omit :application for authority/collector. */
+ bool core_host_udp_parse_peer(const char *text, core_host_udp_peer *out);
+ 
+ #endif
+diff --git a/graph_core/ports/posix/main.c b/graph_core/ports/posix/main.c
+index 17efe0f..428fda9 100644
+--- a/graph_core/ports/posix/main.c
++++ b/graph_core/ports/posix/main.c
+@@ -52,6 +52,29 @@ static void channel_observation(void *context, unsigned direction, core_instance
+     line[length++] = '\n';
+     if (write(STDOUT_FILENO, line, length) != (ssize_t)length) ++observation_drops;
+ }
++static void transport_summary(const core_host_stats *stats)
++{
++    /* One bounded, nonblocking observation after workers join. A missing line
++     * means the summary was unavailable; these counters never affect service. */
++    char line[768];
++    const int size = snprintf(line, sizeof(line),
++        "TRANSPORT rounds=%" PRIu64 " rx_app=%" PRIu64 " rx_mgmt=%" PRIu64
++        " drop_app=%" PRIu64 " drop_mgmt=%" PRIu64
++        " invalid_app=%" PRIu64 " invalid_mgmt=%" PRIu64
++        " sent_app=%" PRIu64 " sent_mgmt=%" PRIu64
++        " send_fail_app=%" PRIu64 " send_fail_mgmt=%" PRIu64
++        " endpoint_drops=%" PRIu64 " artifact_requests=%" PRIu64
++        " max_round_us=%" PRIu64 " max_management_gap_us=%" PRIu64
++        " artifact_receive_max_us=%" PRIu64 " artifact_complete_max_us=%" PRIu64 "\n",
++        stats->rounds, stats->received[CORE_HOST_APPLICATION], stats->received[CORE_HOST_MANAGEMENT],
++        stats->receive_drops[CORE_HOST_APPLICATION], stats->receive_drops[CORE_HOST_MANAGEMENT],
++        stats->invalid_packets[CORE_HOST_APPLICATION], stats->invalid_packets[CORE_HOST_MANAGEMENT],
++        stats->sent[CORE_HOST_APPLICATION], stats->sent[CORE_HOST_MANAGEMENT],
++        stats->send_failures[CORE_HOST_APPLICATION], stats->send_failures[CORE_HOST_MANAGEMENT],
++        stats->endpoint_drops, stats->artifact_requests, stats->max_round_us, stats->max_management_gap_us,
++        stats->artifact_receive_max_us, stats->artifact_complete_max_us);
++    if (size > 0 && (size_t)size < sizeof(line)) (void)write(STDOUT_FILENO, line, (size_t)size);
++}
+ static bool number(const char *text, uint64_t max, uint64_t *out)
+ {
+     if (*text == '\0') return false;
+@@ -68,41 +91,65 @@ static struct sockaddr_in address(uint16_t port)
+     return (struct sockaddr_in){.sin_family = AF_INET, .sin_port = htons(port),
+         .sin_addr = {.s_addr = htonl(INADDR_LOOPBACK)}};
+ }
++static bool local_route(const core_host_udp_peer *peer, uint16_t management, uint16_t application)
++{
++    return (peer->address.sin_addr.s_addr == htonl(INADDR_LOOPBACK) &&
++            (peer->address.sin_port == htons(management) || peer->address.sin_port == htons(application))) ||
++           (peer->application.sin_addr.s_addr == htonl(INADDR_LOOPBACK) &&
++            (peer->application.sin_port == htons(management) || peer->application.sin_port == htons(application)));
++}
+ int main(int argc, char **argv)
+ {
+     core_host_config config = {.node_bytes = 131072,
++        .artifact_interval_us = CORE_HOST_ARTIFACT_INTERVAL_US,
+         .byte_limit = CORE_MAX_NODE_RESERVATIONS * 131072u + CORE_MAX_ENDPOINT_RESERVATIONS * CORE_ENDPOINT_BYTES};
+-    uint64_t port, authority_port;
+-    if (argc < 5 || argc > 4 + CORE_MAX_PEERS ||
+-        !number(argv[1], UINT16_MAX, &port) || !port ||
+-        !number(argv[2], UINT16_MAX, &authority_port) || !authority_port || port == authority_port ||
+-        !number(argv[3], UINT64_MAX, &config.local_device) ||
+-        !number(argv[4], UINT64_MAX, &config.authority)) {
+-        fprintf(stderr, "usage: %s listen_port authority_port local_device_id authority_id [peer_id:udp_port ...]\n", argv[0]);
++    uint64_t management_port, application_port, authority_port;
++    if (argc < 6 || argc > 5 + CORE_MAX_PEERS ||
++        !number(argv[1], UINT16_MAX, &management_port) || !management_port ||
++        !number(argv[2], UINT16_MAX, &application_port) || !application_port ||
++        management_port == application_port ||
++        !number(argv[3], UINT16_MAX, &authority_port) || !authority_port ||
++        management_port == authority_port || application_port == authority_port ||
++        !number(argv[4], UINT64_MAX, &config.local_device) ||
++        !number(argv[5], UINT64_MAX, &config.authority)) {
++        fprintf(stderr, "usage: %s management_port application_port authority_port local_device_id authority_id "
++                        "[peer_id:management_port:application_port ...]\n"
++                        "KaOS requires distinct explicit management and application ports.\n", argv[0]);
+         return 2;
+     }
+-    config.peer_count = (size_t)argc - 4;
++    config.peer_count = (size_t)argc - 5;
+     config.peers[0] = config.local_device;
+     core_host_udp_peer routes[CORE_MAX_PEERS + 1] = {
+         {.id = config.authority, .address = address((uint16_t)authority_port)}};
+     size_t route_count = 1;
+     for (size_t i = 1; i < config.peer_count; ++i) {
+-        if (!core_host_udp_parse_peer(argv[i + 4], &routes[route_count]) ||
+-            (routes[route_count].address.sin_addr.s_addr == htonl(INADDR_LOOPBACK) &&
+-             routes[route_count].address.sin_port == htons((uint16_t)port))) return 2;
++        if (!core_host_udp_parse_peer(argv[i + 5], &routes[route_count]) ||
++            routes[route_count].application.sin_port == 0 ||
++            local_route(&routes[route_count], (uint16_t)management_port, (uint16_t)application_port)) {
++            fputs("Invalid remote owner: provide id:management:application or id@IPv4:management:application "
++                  "with nonlocal ports.\n", stderr);
++            return 2;
++        }
+         config.peers[i] = routes[route_count++].id;
+     }
+     const char *collector = getenv("KAOS_COLLECTOR");
+     if (collector != NULL) {
+         if (!core_host_udp_parse_peer(collector, &routes[route_count]) ||
+-            (routes[route_count].address.sin_addr.s_addr == htonl(INADDR_LOOPBACK) &&
+-             routes[route_count].address.sin_port == htons((uint16_t)port))) return 2;
++            routes[route_count].application.sin_port != 0 ||
++            local_route(&routes[route_count], (uint16_t)management_port, (uint16_t)application_port)) {
++            fputs("Invalid collector: provide id@IPv4:management_port with a nonlocal port.\n", stderr);
++            return 2;
++        }
+         config.collector_enabled = true;
+         config.collector = routes[route_count++].id;
+     }
+-    const struct sockaddr_in local = address((uint16_t)port);
++    const struct sockaddr_in management = address((uint16_t)management_port);
++    const struct sockaddr_in application = address((uint16_t)application_port);
+     core_host_platform platform;
+-    if (!core_host_udp_open(&udp, &local, routes, route_count, &platform)) return 1;
++    if (!core_host_udp_open(&udp, &management, &application, routes, route_count, &platform)) {
++        fputs("KaOS socket initialization failed: check port availability and unique peer routes.\n", stderr);
++        return 1;
++    }
+     const int flags = fcntl(STDOUT_FILENO, F_GETFL, 0);
+     if (flags < 0 || fcntl(STDOUT_FILENO, F_SETFL, flags | O_NONBLOCK) != 0) {
+         core_host_udp_close(&udp);
+@@ -119,10 +166,12 @@ int main(int argc, char **argv)
+         return 1;
+     }
+     char ready[64];
+-    const int size = snprintf(ready, sizeof(ready), "LISTENING %" PRIu64 "\n", port);
++    const int size = snprintf(ready, sizeof(ready), "LISTENING %" PRIu64 " %" PRIu64 "\n",
++                              management_port, application_port);
+     (void)write(STDOUT_FILENO, ready, (size_t)size);
+     const bool good = core_host_run(&host);
+     core_host_destroy(&host);
++    transport_summary(&host.stats);
+     if (tracing) {
+         /* Workers have joined. A missing final line makes the trace incomplete. */
+         char final[96];

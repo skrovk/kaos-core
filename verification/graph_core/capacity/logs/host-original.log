@@ -1,0 +1,9 @@
+[01:12:13:229 - 70CB319C16C0]: thread manager error: failed to allocate memory
+[01:12:13:250 - 70CB319C16C0]: Init vector failed: alloc memory failed.
+
+[01:12:13:251 - 70CB319C16C0]: thread manager error: failed to allocate memory
+[01:12:13:253 - 70CB319C16C0]: thread manager error: failed to allocate memory
+[01:12:13:255 - 70CB319C16C0]: thread manager error: failed to allocate memory
+minimum_fixture_arena=86080 artifact=626 native_stack=262144 slots=2
+concurrent=2 candidate_arena=87040
+capacity probe PASS

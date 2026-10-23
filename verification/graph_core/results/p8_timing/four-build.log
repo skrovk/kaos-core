@@ -1,0 +1,14 @@
+[1/14] Building C object core/CMakeFiles/kaos_host.dir/ports/posix/main.c.o
+[2/14] Building C object core/CMakeFiles/kaos_p3_host.dir/ports/posix/main.c.o
+[3/14] Building C object core/CMakeFiles/kaos_graph_host.dir/ports/host_udp.c.o
+[4/14] Building C object core/CMakeFiles/kaos_graph_host.dir/kaos_host.c.o
+[5/14] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/thread_manager.c.o
+[6/14] Building C object core/runtime/CMakeFiles/kaos_wamr_engine.dir/wasm_interp_classic.c.o
+[7/14] Linking C static library core/runtime/libkaos_wamr_engine.a
+[8/14] Linking C executable graph_p4_capacity
+[9/14] Linking C executable graph_p6_capacity
+[10/14] Linking C executable graph_p5_capacity
+[11/14] Linking C executable graph_p7_capacity
+[12/14] Linking C static library core/libkaos_graph_host.a
+[13/14] Linking C executable core/kaos_p3_host
+[14/14] Linking C executable core/kaos_host

@@ -1,0 +1,326 @@
+[
+  {
+    "profile": "default",
+    "source": "graph_core/ports/posix/main.c",
+    "equal": true,
+    "sha256": [
+      "3bebbbac0c28e0d8aa990078a21aa915f71ca96e63ce1a8b527e330d37490618",
+      "3bebbbac0c28e0d8aa990078a21aa915f71ca96e63ce1a8b527e330d37490618"
+    ]
+  },
+  {
+    "profile": "default",
+    "source": "graph_core/kaos_host.c",
+    "equal": false,
+    "sha256": [
+      "1415f540b9da775c8eaa048fc570ead6851b0b326af7969b534192896af3ec56",
+      "474a3f7b3dd1588db067c2d60db377399095f53be7110e74781d9b258ce189ab"
+    ]
+  },
+  {
+    "profile": "default",
+    "source": "graph_core/host_udp.c",
+    "equal": true,
+    "sha256": [
+      "48d826c948820078594c86d80c740f6632ce38abb079d6f02f304a35ba81fd65",
+      "48d826c948820078594c86d80c740f6632ce38abb079d6f02f304a35ba81fd65"
+    ]
+  },
+  {
+    "profile": "default",
+    "source": "graph_core/kaos_graph.c",
+    "equal": true,
+    "sha256": [
+      "840417303978892a791f9e9c6bc8d1ba92808bdf02dbd80cec2b62e8e4af188e",
+      "840417303978892a791f9e9c6bc8d1ba92808bdf02dbd80cec2b62e8e4af188e"
+    ]
+  },
+  {
+    "profile": "default",
+    "source": "graph_core/kaos_predicate.c",
+    "equal": true,
+    "sha256": [
+      "b5d17ab86b758e7d50847f06079d97fbf795d74d3ff546f7045f6349de2f002e",
+      "b5d17ab86b758e7d50847f06079d97fbf795d74d3ff546f7045f6349de2f002e"
+    ]
+  },
+  {
+    "profile": "default",
+    "source": "graph_core/kaos_admission.c",
+    "equal": false,
+    "sha256": [
+      "0e81cdbfff15e75fff6c5d5ca329ab5d4ad7b14a59731bcd672dd5f38fd48dde",
+      "6f3178ab04c2a3366da5505368176b5b6ffa8581fc2e52b310d74e283a5ae1de"
+    ]
+  },
+  {
+    "profile": "default",
+    "source": "graph_core/kaos_request.c",
+    "equal": true,
+    "sha256": [
+      "b0e53e9387e0f46f321b63e53f3eb23773cfe76c1ee97e3a70751bb31a0c5462",
+      "b0e53e9387e0f46f321b63e53f3eb23773cfe76c1ee97e3a70751bb31a0c5462"
+    ]
+  },
+  {
+    "profile": "default",
+    "source": "graph_core/kaos_report.c",
+    "equal": true,
+    "sha256": [
+      "565b2f148295633397088cc630951e3b8d40e7a1530eeae760341e6c7fcbe7c5",
+      "565b2f148295633397088cc630951e3b8d40e7a1530eeae760341e6c7fcbe7c5"
+    ]
+  },
+  {
+    "profile": "default",
+    "source": "graph_core/kaos_coap.c",
+    "equal": false,
+    "sha256": [
+      "a3d2e48e8bd57062e4ccbd0ea91864637a0753bb0dc516978774afce0ed3cf94",
+      "504f411c385cba43a6ca781e280b1e72d39a51eb7262bcffd20c9f7263a4f0c6"
+    ]
+  },
+  {
+    "profile": "default",
+    "source": "graph_core/kaos_artifact.c",
+    "equal": true,
+    "sha256": [
+      "96d8f5dec616e479a17dbfba9731af3f698edddb80925f6cf6bf363125721d23",
+      "96d8f5dec616e479a17dbfba9731af3f698edddb80925f6cf6bf363125721d23"
+    ]
+  },
+  {
+    "profile": "default",
+    "source": "graph_core/kaos_control.c",
+    "equal": true,
+    "sha256": [
+      "4fe2fe38bab9caaa8dcb3ee56e5fc158af23ca38040259fa2d1b4aa8b8c3589d",
+      "4fe2fe38bab9caaa8dcb3ee56e5fc158af23ca38040259fa2d1b4aa8b8c3589d"
+    ]
+  },
+  {
+    "profile": "default",
+    "source": "graph_core/kaos_node.c",
+    "equal": false,
+    "sha256": [
+      "463dd9aa0fe455704610304e8d44e92fe64c07498eb8ca9f47a3d1301c406d11",
+      "60ba223302e3dbca258a2726acc4bc24c67baed825895246bc914f31544ccebe"
+    ]
+  },
+  {
+    "profile": "default",
+    "source": "graph_core/kaos_endpoint.c",
+    "equal": false,
+    "sha256": [
+      "531455a095a0b6a0a30e615ff46f6e6b524cc3ff9501f06e96f56e60b05f144e",
+      "c4a2779b6d321b306cd6c72ee07d7996004999b0edbe0d870a650e5d7d3acfe7"
+    ]
+  },
+  {
+    "profile": "default",
+    "source": "graph_core/kaos_edge.c",
+    "equal": true,
+    "sha256": [
+      "c8f75e162290609ba26e32d27fc33b9a6c30cb973530cce15f19ca2cffdab4ec",
+      "c8f75e162290609ba26e32d27fc33b9a6c30cb973530cce15f19ca2cffdab4ec"
+    ]
+  },
+  {
+    "profile": "default",
+    "source": "graph_core/ports/posix/clock.c",
+    "equal": true,
+    "sha256": [
+      "a29ff64dd21ae575324a26c587cf5122faf0334d4d5dfcebcc99cf5a1910c5ce",
+      "a29ff64dd21ae575324a26c587cf5122faf0334d4d5dfcebcc99cf5a1910c5ce"
+    ]
+  },
+  {
+    "profile": "default",
+    "source": "graph_core/runtime/kaos_wamr.c",
+    "equal": true,
+    "sha256": [
+      "93e34b54948344e3af578f3934b883646089d2485439dd1f893340c25165d88f",
+      "93e34b54948344e3af578f3934b883646089d2485439dd1f893340c25165d88f"
+    ]
+  },
+  {
+    "profile": "default",
+    "source": "graph_core/runtime/profile.c",
+    "equal": true,
+    "sha256": [
+      "3237cef000a7f235d6ef2885cf85c17e2f14e1a25f4436e485da297cc3428bc3",
+      "3237cef000a7f235d6ef2885cf85c17e2f14e1a25f4436e485da297cc3428bc3"
+    ]
+  },
+  {
+    "profile": "default",
+    "source": "graph_core/runtime/native_fixture.c",
+    "equal": true,
+    "sha256": [
+      "5626fd2297b5122eb2af4d2f2b0e005b1d431ce7f75eed3f8c26eb2af44a4cf8",
+      "5626fd2297b5122eb2af4d2f2b0e005b1d431ce7f75eed3f8c26eb2af44a4cf8"
+    ]
+  },
+  {
+    "profile": "four",
+    "source": "graph_core/ports/posix/main.c",
+    "equal": true,
+    "sha256": [
+      "4dce06a582001138bfb8c18fb670e9f18711dd517de099624ce85ef7cb2197d3",
+      "4dce06a582001138bfb8c18fb670e9f18711dd517de099624ce85ef7cb2197d3"
+    ]
+  },
+  {
+    "profile": "four",
+    "source": "graph_core/kaos_host.c",
+    "equal": false,
+    "sha256": [
+      "eac58cf6d2818ae11d755fe888a496feb0f440507407af5f56d83bc907f40956",
+      "7d28d5943baffad3137d4023921c407eb26d95dc21d3cf2e288dfaa1cfda8b18"
+    ]
+  },
+  {
+    "profile": "four",
+    "source": "graph_core/host_udp.c",
+    "equal": true,
+    "sha256": [
+      "48d826c948820078594c86d80c740f6632ce38abb079d6f02f304a35ba81fd65",
+      "48d826c948820078594c86d80c740f6632ce38abb079d6f02f304a35ba81fd65"
+    ]
+  },
+  {
+    "profile": "four",
+    "source": "graph_core/kaos_graph.c",
+    "equal": true,
+    "sha256": [
+      "840417303978892a791f9e9c6bc8d1ba92808bdf02dbd80cec2b62e8e4af188e",
+      "840417303978892a791f9e9c6bc8d1ba92808bdf02dbd80cec2b62e8e4af188e"
+    ]
+  },
+  {
+    "profile": "four",
+    "source": "graph_core/kaos_predicate.c",
+    "equal": true,
+    "sha256": [
+      "b5d17ab86b758e7d50847f06079d97fbf795d74d3ff546f7045f6349de2f002e",
+      "b5d17ab86b758e7d50847f06079d97fbf795d74d3ff546f7045f6349de2f002e"
+    ]
+  },
+  {
+    "profile": "four",
+    "source": "graph_core/kaos_admission.c",
+    "equal": false,
+    "sha256": [
+      "8dabf8046074b1762e643c896dc65256819c06ca38b71ab237150001dde36137",
+      "432ab42a666eaa2ada8f8ad282dc6c81f76676e391917f8fc3f98b1c4b527b08"
+    ]
+  },
+  {
+    "profile": "four",
+    "source": "graph_core/kaos_request.c",
+    "equal": true,
+    "sha256": [
+      "7bbfb4d77b7136fc93e282f2d38d15c550b2a4440138df386bc48d487cca9c39",
+      "7bbfb4d77b7136fc93e282f2d38d15c550b2a4440138df386bc48d487cca9c39"
+    ]
+  },
+  {
+    "profile": "four",
+    "source": "graph_core/kaos_report.c",
+    "equal": true,
+    "sha256": [
+      "9aa131f6c785156204e9aacda36af9df00ee6e1a42dde2f2df91f6196db11a2c",
+      "9aa131f6c785156204e9aacda36af9df00ee6e1a42dde2f2df91f6196db11a2c"
+    ]
+  },
+  {
+    "profile": "four",
+    "source": "graph_core/kaos_coap.c",
+    "equal": false,
+    "sha256": [
+      "a3d2e48e8bd57062e4ccbd0ea91864637a0753bb0dc516978774afce0ed3cf94",
+      "504f411c385cba43a6ca781e280b1e72d39a51eb7262bcffd20c9f7263a4f0c6"
+    ]
+  },
+  {
+    "profile": "four",
+    "source": "graph_core/kaos_artifact.c",
+    "equal": true,
+    "sha256": [
+      "96d8f5dec616e479a17dbfba9731af3f698edddb80925f6cf6bf363125721d23",
+      "96d8f5dec616e479a17dbfba9731af3f698edddb80925f6cf6bf363125721d23"
+    ]
+  },
+  {
+    "profile": "four",
+    "source": "graph_core/kaos_control.c",
+    "equal": true,
+    "sha256": [
+      "2f96d205d479d6bf7d598235fe0f907d27309f6d25e0fecbde750eabdc98a947",
+      "2f96d205d479d6bf7d598235fe0f907d27309f6d25e0fecbde750eabdc98a947"
+    ]
+  },
+  {
+    "profile": "four",
+    "source": "graph_core/kaos_node.c",
+    "equal": false,
+    "sha256": [
+      "403d1ef3f29892f67b0c9cce86b825b4564c4c7ac6a710fe57e339d12d23c57c",
+      "46b650ae098146c608a4fb1bad8a0c9e63f24309f8e5819413e012a417930468"
+    ]
+  },
+  {
+    "profile": "four",
+    "source": "graph_core/kaos_endpoint.c",
+    "equal": false,
+    "sha256": [
+      "ab1264af7df387a338f09035c92bb685c2f93744aaf9403eeccc1e8ca9ee4fbd",
+      "35dfb2b2a8d0c02ae0597ec12bc0b202ab4e083aba1c6a3d6d227420be604b0b"
+    ]
+  },
+  {
+    "profile": "four",
+    "source": "graph_core/kaos_edge.c",
+    "equal": true,
+    "sha256": [
+      "7ea27ee910ad1886c2043ef01c4c3cb7fc7958be6ef1328f347c4f815cb861d5",
+      "7ea27ee910ad1886c2043ef01c4c3cb7fc7958be6ef1328f347c4f815cb861d5"
+    ]
+  },
+  {
+    "profile": "four",
+    "source": "graph_core/ports/posix/clock.c",
+    "equal": true,
+    "sha256": [
+      "a29ff64dd21ae575324a26c587cf5122faf0334d4d5dfcebcc99cf5a1910c5ce",
+      "a29ff64dd21ae575324a26c587cf5122faf0334d4d5dfcebcc99cf5a1910c5ce"
+    ]
+  },
+  {
+    "profile": "four",
+    "source": "graph_core/runtime/kaos_wamr.c",
+    "equal": true,
+    "sha256": [
+      "52e6d605ea4c31015e83a7a9352cac16655f630031fc28b646b3a59e8cf5a724",
+      "52e6d605ea4c31015e83a7a9352cac16655f630031fc28b646b3a59e8cf5a724"
+    ]
+  },
+  {
+    "profile": "four",
+    "source": "graph_core/runtime/profile.c",
+    "equal": true,
+    "sha256": [
+      "3237cef000a7f235d6ef2885cf85c17e2f14e1a25f4436e485da297cc3428bc3",
+      "3237cef000a7f235d6ef2885cf85c17e2f14e1a25f4436e485da297cc3428bc3"
+    ]
+  },
+  {
+    "profile": "four",
+    "source": "graph_core/runtime/native_fixture.c",
+    "equal": true,
+    "sha256": [
+      "5626fd2297b5122eb2af4d2f2b0e005b1d431ce7f75eed3f8c26eb2af44a4cf8",
+      "5626fd2297b5122eb2af4d2f2b0e005b1d431ce7f75eed3f8c26eb2af44a4cf8"
+    ]
+  }
+]

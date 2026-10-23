@@ -1,0 +1,12 @@
+[OUTPUT] 
+Internal ctest changing into directory: /tmp/kaos-timing-host
+
+[HANDLER_OUTPUT] 
+Test project /tmp/kaos-timing-host
+
+    Start 4: graph_p8_mixed
+1/1 Test #4: graph_p8_mixed ...................   Passed   13.15 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =  13.16 sec

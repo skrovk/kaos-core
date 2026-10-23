@@ -1,0 +1,4 @@
+native default {'admission': 6104, 'control': 7168, 'edge': 344, 'endpoint': 8336, 'host': 33912, 'node': 144, 'staging': 136, 'udp': 440}
+native four {'admission': 40632, 'control': 7168, 'edge': 2904, 'endpoint': 33248, 'host': 96280, 'node': 240, 'staging': 136, 'udp': 440}
+esp32 default {'admission': 5928, 'control': 7120, 'edge': 336, 'endpoint': 8320, 'host': 33464, 'node': 104, 'staging': 104, 'udp': 392}
+esp32 four {'admission': 40040, 'control': 7120, 'edge': 2896, 'endpoint': 33232, 'host': 95336, 'node': 184, 'staging': 104, 'udp': 392}

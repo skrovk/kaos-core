@@ -1,0 +1,283 @@
+{
+  "date": "2026-10-15",
+  "scope": "P8 protocol experiment runner slice: production kaos_host processes, existing O/CoAP APIs, bounded transparent control/data impairment, six-kind workload and attributed evidence.",
+  "source_sha256": {
+    "../sim_env/sim_env/graph_run.py": "e31224836d7251e273a48d287d65636cf2e14e63f96a5caee5c74210861b7352",
+    "../sim_env/sim_env/graph_relay.py": "f00aaeafca628f087d8d17788def56677d297cc3215e61e4e584b6169eab4dd1",
+    "../sim_env/sim_env/graph_protocol.py": "ec61153d4c7c402bc2732a801260d01d058511943e9573a7d8e158da78d9e1cd",
+    "../sim_env/sim_env/graph_transport.py": "6ce56ab3840b5e3db7a79b89d2dcdd245df61eebf761c5abcd727b734c886e37",
+    "../sim_env/sim_env/graph_evidence.py": "0eb34d1ef10dd4d44e47f258b4365cb5b0950aaf6ccf10d4cdfa145504f71614",
+    "../sim_env/sim_env/orchestrator.py": "d4fecd890f4e02b23ef6e1d7988db8eb84872a93a1f1c4428cec793263f7cd94",
+    "../sim_env/sim_env/models.py": "c0d09d6d126a42ad4e4f7f3ee63b15b1a90fafe085940417eef5c5132ab2e14f",
+    "../sim_env/tests/test_graph_run.py": "232f183243b7174af91f8bcbfc3df598f751e270665f0752a66121b2dd24f245",
+    "../sim_env/tests/test_graph_relay.py": "b18e22731652db1c461ac31873f8b262bfe73eb7649910800219df7578e8487e",
+    "verification/graph_core/CMakeLists.txt": "8b7c2fa8825de69030b6a86fcb35683bd55c539ed73a59715e9ac5f134c0d3eb",
+    "verification/graph_core/evidence.csv": "aae8a6c507552c1e70a30b140e7ffb5a0c0da9f671181d68f0cc6eb908e88901",
+    "guide/README.md": "72ce24307f7d8ec155ac5cc72f32ea2c29b51ea6b75471a12457328eb5641553",
+    "guide/architecture.md": "9ea0f360020523fa4a53adb23fdd503f99f49ffb244c7517179c527279063926",
+    "guide/usage.md": "36a74f6f9f790e3aa3e09ee13a9e9e08f737ef6917c95dab0714a27423b359c6",
+    "guide/verification.md": "303dd3af33a188d8c3d7b1d2129bfa7c163d3fbc57dccdbd119b5157e8110937",
+    "implementation_rails/graph_operation_implementation_plan.md": "3f56ef16defae1740d493c8797e7b99be9c39b0457e9af805f25f5bf3f7f8414",
+    "graph_core/kaos_request.c": "e450be5228b2ab2ca6218915dd81b21638e4ade8bb86a3b42d99feb0b60ddff9",
+    "graph_core/kaos_predicate.c": "f578bfd625987922f8dca4eeec43ee329e129eec12ea98f8c4412d27f27e9d2e",
+    "graph_core/kaos_admission.c": "ea44039a8323be64bc46e57a5979a027313a41ea1e098466802f3b9daa5798ce",
+    "graph_core/kaos_artifact.c": "b82adb947e9b76f6706d13450cc67a7f2e59303b180be5f8a363e9e4afbfbfa1",
+    "graph_core/kaos_graph.c": "fc3e63bff1d5fa615fddd9e2b931274a0f610e19caa608dceffea6f256ceecac",
+    "graph_core/kaos_host.c": "977eb09926ce31fa9a77781b63dd4e98028565384f5186a558f7c02ef291b80a",
+    "graph_core/kaos_endpoint.c": "e57e108bafc22fc91d317b6c61a0b68f3f08ff14f511dff5e0cb987b2881a25f",
+    "graph_core/kaos_control.c": "ffc947c80ef9bbbbd93e0aded20e683d6db9d440464ef1964d5aebeb6b220980",
+    "graph_core/kaos_report.c": "efcc3473b5657053aaba1e4c85ddccf22031d6fd740d131ca6d680ebdbd224d8",
+    "graph_core/kaos_edge.c": "e935e7ad4e5195f5d768bb921d57141077d63d26f88a5aea6337583dd93b0501",
+    "graph_core/kaos_node.c": "0e86538b31c9ff244d7b4cd90532dd1f540664838bc29307a4c5d44b8215ad94",
+    "graph_core/kaos_coap.c": "904ec321886c49dc39a70ed8661e1269551371dae9dab35387dcf0fc000424eb",
+    "graph_core/include/kaos_control.h": "c8117f29956a34acb7da956993f185842c65ba60dd16afbd0f7c9848595bc540",
+    "graph_core/include/kaos_wamr.h": "6abe1e110a8e7b60fa0821de8a7c23baf215145daf6a1dfccdd6cbd4b2c1ed4d",
+    "graph_core/include/kaos_admission.h": "6b6abaf8fc562aecc483b13a9587b9751bf77a2353051ffeada9702bea1a286f",
+    "graph_core/include/kaos_coap.h": "d325494043daa939025e6c76ad259496f7cd9f1ee8ffbe8ace64013f44701881",
+    "graph_core/include/kaos_predicate.h": "da0a6b6e1281f32d604a0347daa556f0729f32e17e7bb8ca3bfa04be98d06221",
+    "graph_core/include/kaos_host.h": "cf22ce62c7bd34e483d5bd02d0e59092ee35ec3c0d068ee30ecbccce9337d181",
+    "graph_core/include/kaos_limits.h": "cf78da6da9a38b7d967232401a3fbf4e2eef1c1acea1653b8d895d495ada3bbd",
+    "graph_core/include/kaos_node.h": "b4cefbdf42bfb2da7162b9f99ad2dcf40d217d193a0add90ea8351155b8a9d6a",
+    "graph_core/include/kaos_report.h": "f99c818857ae483e25a7e5878daa29a4b06717e68f2a1a52063610b74130a8d6",
+    "graph_core/include/kaos_artifact.h": "b7c881a2c5d4bfe4863140c5f07adca6e531cb438484bbd647d131ef9805af66",
+    "graph_core/include/kaos_endpoint.h": "4352573e910b43c1945b98903080d78c39ab80ec554a60549d082974530a661e",
+    "graph_core/include/kaos_runtime.h": "06a4c64e5e2c5575ac50d5b7c67dac96278e955fe416ea929f7d7ed549ba0edd",
+    "graph_core/include/kaos_edge.h": "fbed64cb1c6321f02c6df40870a855b7370e4e9f0e47588f75f5c40b17e8960f",
+    "graph_core/include/kaos_host_platform.h": "c9f8fa447cf381f00a0e44419b908e677846e5876e5649b2d5df3628eb08629b",
+    "graph_core/include/kaos_graph.h": "8cedf2bf6a76987f6e4935d726c7740833a7cadefa66e9004cba6523233a9d2e"
+  },
+  "checks": {
+    "baseline_host": {
+      "passed": 36,
+      "total": 36
+    },
+    "final_host": {
+      "passed": 38,
+      "total": 38,
+      "includes": "ASan/UBSan/WAMR and P4-P8 real UDP process tests; sibling Python discovery"
+    },
+    "new_relay_cases": {
+      "passed": 11,
+      "total": 11
+    },
+    "new_runner_cases": {
+      "passed": 7,
+      "total": 7
+    },
+    "six_operation_example": {
+      "status": "passed",
+      "outcomes": [
+        {
+          "operation": 0,
+          "kind": 1,
+          "report": [
+            4,
+            8,
+            0,
+            1,
+            4,
+            1,
+            39,
+            [
+              1
+            ]
+          ]
+        },
+        {
+          "operation": 1,
+          "kind": 2,
+          "report": [
+            4,
+            8,
+            1,
+            2,
+            8,
+            1,
+            39,
+            [
+              1,
+              3,
+              3
+            ]
+          ]
+        },
+        {
+          "operation": 2,
+          "kind": 6,
+          "report": [
+            4,
+            8,
+            2,
+            1,
+            4,
+            1,
+            8,
+            [
+              56,
+              56
+            ]
+          ]
+        },
+        {
+          "operation": 3,
+          "kind": 3,
+          "report": [
+            4,
+            8,
+            3,
+            1,
+            6,
+            1,
+            33,
+            [
+              3,
+              3
+            ]
+          ]
+        },
+        {
+          "operation": 4,
+          "kind": 5,
+          "report": [
+            4,
+            8,
+            4,
+            2,
+            6,
+            1,
+            8,
+            [
+              56,
+              56,
+              56
+            ]
+          ]
+        },
+        {
+          "operation": 5,
+          "kind": 4,
+          "report": [
+            4,
+            8,
+            5,
+            1,
+            2,
+            1,
+            8,
+            [
+              56
+            ]
+          ]
+        }
+      ],
+      "scope": "six graph operations; no ventilation or target qualification"
+    },
+    "ruff": "lint and format --check passed for all four new Python files",
+    "existing_tests_unchanged": {
+      "files_checked": 54,
+      "changed": 0,
+      "baseline_hashes": "results/p8/existing-tests-sha256.json"
+    },
+    "review": "Parallel approach comparison favored unchanged host + transparent proxy over legacy LOAD retrofit or C relay envelopes. Final read-only review found no blocking issue in the documented slice; coordinator-lock timeout overrun documented.",
+    "python_discovery": {
+      "discovered": 114,
+      "passed": 87,
+      "skipped": 27,
+      "skip_scope": "20 retained legacy integration cases plus 7 new P8 process cases without their dedicated environment; all 7 new process cases pass in graph_p8_process."
+    }
+  },
+  "profile": {
+    "host_build": "CORE_BUILD_HOST=ON CORE_BUILD_P2_HOST=ON CORE_SANITIZE=ON; default two-node profile per device",
+    "workload": "Two real hosts; traffic.wasm; logical nodes 10/20; directed service 7; payload 4 bytes; queue depth 2; example node/channel allowance 3 s and cleanup 2 s",
+    "relay": "At most 10 participants; queue default 256 copies; datagrams <=1152 bytes; 32 receives/socket and 128 deliveries/turn",
+    "clock": "Actual monotonic host clocks; seeded per-link decisions are conditional on arrival sequence; no deterministic OS replay"
+  },
+  "example_observations": {
+    "event_counts": {
+      "host_stdout": 7,
+      "run_ready": 1,
+      "artifact": 1,
+      "submit": 6,
+      "packet_decision": 159,
+      "packet_delivered": 159,
+      "admission_response": 6,
+      "report": 9,
+      "storage_ack": 9,
+      "process_exit": 2,
+      "teardown": 1
+    },
+    "data_packets_delivered": 67,
+    "diagnostic_lines": [
+      {
+        "kind": "host_stdout",
+        "timestamp_us": 276742952413,
+        "device": 1,
+        "line": "LISTENING 52974"
+      },
+      {
+        "kind": "host_stdout",
+        "timestamp_us": 276742952814,
+        "device": 2,
+        "line": "LISTENING 52784"
+      },
+      {
+        "kind": "host_stdout",
+        "timestamp_us": 276742960171,
+        "device": 1,
+        "line": "ARTIFACT 0 913"
+      },
+      {
+        "kind": "host_stdout",
+        "timestamp_us": 276742978679,
+        "device": 2,
+        "line": "ARTIFACT 1 913"
+      },
+      {
+        "kind": "host_stdout",
+        "timestamp_us": 276742980866,
+        "device": 2,
+        "line": "ERROR 1 1"
+      },
+      {
+        "kind": "host_stdout",
+        "timestamp_us": 276742991772,
+        "device": 1,
+        "line": "ERROR 0 1"
+      },
+      {
+        "kind": "host_stdout",
+        "timestamp_us": 276742992406,
+        "device": 2,
+        "line": "ERROR 1 1"
+      }
+    ],
+    "caveat": "Fixed traffic guest uses ERROR as test markers; stdout has no loss counter. Packet delivery alone does not prove application consumption."
+  },
+  "commands": [
+    "cmake --build /tmp/kaos-refactor-host -j4",
+    "ctest --test-dir /tmp/kaos-refactor-host --output-on-failure --output-log /tmp/kaos-p8-evidence/final-host.log",
+    "uv --directory ../sim_env run --offline python -m sim_env.graph_run --host /tmp/kaos-refactor-host/core/kaos_host --guest /tmp/kaos-refactor-host/traffic.wasm --output /tmp/kaos-p8-evidence/installed-lifecycle --seed 42",
+    "Actual retained CLI execution used ../sim_env/.venv/bin/python -m sim_env.graph_run in ../sim_env; same uv-managed environment.",
+    "../sim_env/.venv/bin/ruff check --no-cache --config ../sim_env/pyproject.toml <four new Python files>",
+    "../sim_env/.venv/bin/ruff format --check --config ../sim_env/pyproject.toml <four new Python files>"
+  ],
+  "execution_environment": "Initial sandbox attempt was blocked by read-only uv cache, loopback socket restrictions and LeakSanitizer under tracing. Successful checks ran with approved outside-sandbox access. WAMR keeps existing detect_stack_use_after_return=0; no sanitizer coverage beyond that is claimed. Build reconfiguration needed access to generated dependency version.h.",
+  "limitations": [
+    "This increment does not complete P8 or P9.",
+    "No C/firmware code, public ABI, protocol wire format, or existing test cases were changed in this increment.",
+    "Named C transition barriers, full event/UDP kernel-loss accounting and resource/worker observations remain open.",
+    "Runner has no automated collector/crash/recovery scenarios; unexpected process exit aborts the experiment.",
+    "Observation timeout can overrun while waiting for a same-coordinator exchange lock; it never changes device protocol deadlines.",
+    "Query may return missing acknowledged history; caller must retain returned evidence. No automatic redispatch or rejected-authorization release.",
+    "O retains evidence in memory; flushed JSONL is not fsync/crash durability. Teardown produces no CLEANED evidence.",
+    "R07/R08 ventilation behavior, plant parameters and QoC acceptance remain undecided.",
+    "No new ESP32 physical, Wi-Fi, four-node profile, or TLC qualification run; all P9 gates remain as documented.",
+    "Q05 replay after discarded history and Q08 unauthenticated configured-origin assumptions remain unchanged."
+  ],
+  "logs": {
+    "baseline": "results/p8/baseline-host.log",
+    "final": "results/p8/final-host.log",
+    "details": "results/p8/final-ctest-detail.log",
+    "example": "results/p8/lifecycle/"
+  }
+}

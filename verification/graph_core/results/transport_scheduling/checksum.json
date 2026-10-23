@@ -1,0 +1,6 @@
+{"clock":"CLOCK_MONOTONIC nanoseconds","scope":"CRC32 call only; no registry lock or network load","samples":[
+{"bytes":0,"repeats":100,"p50_ns":41,"p95_ns":56,"max_ns":194,"crc32":0},
+{"bytes":256,"repeats":100,"p50_ns":6663,"p95_ns":6890,"max_ns":7215,"crc32":688229491},
+{"bytes":4096,"repeats":100,"p50_ns":106424,"p95_ns":119304,"max_ns":144949,"crc32":2727420034},
+{"bytes":16384,"repeats":100,"p50_ns":335008,"p95_ns":430550,"max_ns":443908,"crc32":3893830384},
+{"bytes":65536,"repeats":100,"p50_ns":1318125,"p95_ns":1391645,"max_ns":1498676,"crc32":2971526817}],"observation_sink":0}

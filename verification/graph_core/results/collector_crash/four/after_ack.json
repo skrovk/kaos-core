@@ -1,0 +1,25 @@
+{
+  "crash": "after_ack",
+  "operation": 2,
+  "target": 1,
+  "events": [
+    {
+      "boundary": "stored_before_ack",
+      "revision": 6,
+      "payload_sha256": "8509450d7c8331000ca5da70fbee72112dfb359c5e29ed03517f2dc021ded969"
+    },
+    {
+      "boundary": "device_acknowledged",
+      "revision": 6
+    },
+    {
+      "boundary": "collector_killed",
+      "exitcode": -9
+    }
+  ],
+  "disposition": "history_unavailable_authority_uncertain",
+  "new_addition_and_removal_succeeded": true,
+  "incidence_count_before_retrieval": 1,
+  "authority_observed_closure_at_end": false,
+  "scope": "two hosts; one channel; volatile collector loss; no recovery"
+}

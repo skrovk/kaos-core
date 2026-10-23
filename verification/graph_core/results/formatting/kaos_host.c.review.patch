@@ -1,0 +1,27 @@
+--- kaos_host.c before
++++ kaos_host.c after
+@@ -311,5 +311,8 @@
+ uint64_t time;
+ lock(h);
+-if (h->active_staging >= 0) {
++if (h->active_staging < 0) {
++unlock(h);
++return true;
++}
+ core_host_staging *s = &h->staging[h->active_staging];
+ const core_admission_record *r = core_admission_find(&h->admission, s->id);
+@@ -327,6 +330,6 @@
+ }
+ const core_coap_poll_result result = core_artifact_client_next(
+-&h->artifact, h->admission.authority, r->request.artifact_ref,
+-r->request.artifact_ref_size, &h->ids, time, h->platform.retry_us(h->platform.context));
++&h->artifact, h->admission.authority, r->request.artifact_ref, r->request.artifact_ref_size,
++&h->ids, time, h->platform.retry_us(h->platform.context));
+ if (result == CORE_COAP_SEND) {
+ h->next_artifact_send_us = h->artifact_interval_us > UINT64_MAX - time
+@@ -349,5 +352,4 @@
+ } else if (result == CORE_COAP_TIMED_OUT)
+ artifact_failure(h, time);
+-}
+ unlock(h);
+ return true;

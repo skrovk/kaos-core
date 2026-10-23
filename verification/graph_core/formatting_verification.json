@@ -1,0 +1,117 @@
+{
+  "date": "2026-10-22",
+  "scope": "Formatting guideline and graph_core C/H formatting; equivalent guard-clause rewrites in 13 functions. Legacy code, external dependencies, existing tests and historical verification evidence were not reformatted.",
+  "baseline": "Dirty working tree captured immediately before this task; includes the completed simplification and clock relocation. This is not Git HEAD.",
+  "policy": {
+    "guide": "guide/c-formatting.md",
+    "configuration": ".clang-format",
+    "formatter": "clang-format 14.0.4",
+    "binary": "/opt/wasi-sdk/bin/clang-format",
+    "configuration_sha256": "5fafa78be24a199f0a6d5ddebc8641bc6083a62a85858eecd9cf200f9d2fb0c5",
+    "rules": "4 spaces, 100-column target, Linux brace placement, no single-line control bodies, preserve include order/string literals/comments, semantic blank lines, early guards only when cleanup and evaluation order are preserved."
+  },
+  "review": {
+    "files_checked": 40,
+    "files_changed": 39,
+    "mechanical_token_changes": [],
+    "control_flow_edited_functions": {
+      "kaos_admission.c": [
+        "detach_notification",
+        "core_admission_release_endpoints",
+        "core_admission_release_binding",
+        "resources_released"
+      ],
+      "kaos_coap.c": [
+        "core_coap_find"
+      ],
+      "kaos_endpoint.c": [
+        "core_endpoint_close",
+        "close_bindings_with_unavailable_nodes",
+        "advance_endpoint_queues"
+      ],
+      "kaos_host.c": [
+        "send_artifact"
+      ],
+      "kaos_node.c": [
+        "observe_node_runtime_failure",
+        "advance_node_startup",
+        "accept_node_init",
+        "request_node_runtime_cleanup"
+      ]
+    },
+    "invariants": [
+      "Guard conditions retain left-to-right short-circuit evaluation.",
+      "Admission release retains validation-before-mutation passes and notification order.",
+      "Closing endpoints do not enter preparation; unsuccessful uncharge retains ownership.",
+      "Node INIT is consumed before eligibility checking, as before.",
+      "Host inactive artifact path still locks/unlocks without reading the clock.",
+      "Worker lock scopes, entry checks, cleanup tails, deadlines and two bounded edge/node passes retain their order."
+    ],
+    "limit": "Lexical comparison ignores comments/whitespace and is a review aid; it is not formal behavioral equivalence verification."
+  },
+  "results": {
+    "format": "All 40 files pass clang-format --dry-run --Werror.",
+    "default": {
+      "passed": 60,
+      "failed": 0,
+      "seconds": 62.49,
+      "command": "ctest --test-dir /tmp/kaos-timing-host --output-on-failure",
+      "log": "results/formatting/default-ctest.log"
+    },
+    "four": {
+      "passed": 34,
+      "failed": 0,
+      "seconds": 45.77,
+      "command": "ctest --test-dir /tmp/kaos-refactor-four --output-on-failure",
+      "log": "results/formatting/four-ctest.log"
+    },
+    "runtime_process": {
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 1.069,
+      "command": "env KAOS_P3_HOST=/tmp/kaos-timing-host/core/kaos_host KAOS_P3_GUEST=/tmp/kaos-timing-host/node.wasm ASAN_OPTIONS=detect_stack_use_after_return=0 uv --directory ../sim_env run --offline python -m unittest discover -s tests -p test_graph_runtime_process.py -v",
+      "log": "results/formatting/runtime-process.log"
+    },
+    "sanitizers": [
+      "ASan",
+      "UBSan",
+      "LeakSanitizer"
+    ],
+    "inner_skips": "Default Python discovery retains 41 opt-in skips among 171 entries; the smaller profile skips its three-node local pipeline. The nine explicit runtime cases have no skips.",
+    "esp32": {
+      "build": "passed",
+      "idf": "v5.5",
+      "profile": "four-node network host",
+      "command": "source /home/karolina/esp/esp-idf/export.sh; cmake --build /tmp/kaos-transport-esp32 -j4",
+      "binary_bytes": 917888,
+      "board_run": false,
+      "log": "results/formatting/esp-build.log"
+    },
+    "codegen": {
+      "method": "Compile each of 18 native translation units before/after with the configured include/define flags, -O2 -g0, sanitizers removed, stdin source and normalized file-prefix mapping; repeat for default/four profiles.",
+      "identical_objects": 26,
+      "total_objects": 36,
+      "differences": "The five files containing control-flow edits differ in both profiles. The other thirteen native translation units produce byte-identical objects in both profiles.",
+      "limit": "Compiler comparison is additional evidence for unchanged formatting-only translation units; neither code size nor timing equivalence is claimed for guard rewrites."
+    },
+    "existing_verification_sources": {
+      "count": 94,
+      "result": "Every baseline C/H/Python file under verification remains byte-identical, including saved harnesses. No existing test or assertion changed."
+    },
+    "whitespace": "git diff --check passes."
+  },
+  "evidence": {
+    "directory": "results/formatting",
+    "source_patch": "source.patch",
+    "semantic_patch": "semantic.patch",
+    "review_patches": "*.review.patch strip blank lines/indentation to expose the five control-flow diffs; review with full source for scopes.",
+    "baseline_hashes": "baseline.json",
+    "final_source_hashes": "source-hashes.json",
+    "unchanged_verification_hashes": "preserved-test-hashes.json",
+    "token_audit": "token-check.json",
+    "compiler_audit": "codegen.json"
+  },
+  "limitations": "Regression checks and source review support behavior preservation but are not exhaustive proof. No physical target stack, timing or throughput qualification was performed. Application-CoAP/manifest design remains unchanged.",
+  "environment": "Host tests used authorized socket/sanitizer access outside the sandbox. Builds needed the generated WAMR version header in the sibling dependency directory."
+}

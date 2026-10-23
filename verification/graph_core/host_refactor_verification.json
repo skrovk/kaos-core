@@ -1,0 +1,130 @@
+{
+  "date": "2026-10-12",
+  "scope": "Shared graph host consolidation after P7",
+  "status": "Implemented; 35 default-host and 12 four-node CTest entries pass; networked ESP32 target cross-build passes. Physical Wi-Fi and final composed formal qualification remain open.",
+  "design_guidance": "User-approved codebase-design guidance substituted for unavailable refactoring skill.",
+  "baseline": {
+    "git_head": "2488ab4617f245b22c399feebbb2bc9278ede903",
+    "snapshot": "/tmp/kaos-host-refactor/baseline",
+    "snapshot_manifest_sha256": "44a5d11f7ed0f14f559a83ac3a1a4387f7e548becb46e16089694cbab527ac90",
+    "host_tests_passed": 32,
+    "log": "verification/graph_core/results/host_refactor/baseline-host.log",
+    "note": "Existing uncommitted work preserved. Comparison uses the session snapshot, not git diff alone."
+  },
+  "changes": {
+    "modified_snapshot_files": [
+      "docs/guide/architecture.md",
+      "docs/guide/usage.md",
+      "docs/guide/verification.md",
+      "graph_core/CMakeLists.txt",
+      "graph_core/include/kaos_admission.h",
+      "graph_core/include/kaos_artifact.h",
+      "graph_core/include/kaos_coap.h",
+      "graph_core/include/kaos_control.h",
+      "graph_core/include/kaos_edge.h",
+      "graph_core/include/kaos_limits.h",
+      "graph_core/include/kaos_node.h",
+      "graph_core/kaos_artifact.c",
+      "graph_core/kaos_coap.c",
+      "graph_core/kaos_control.c",
+      "graph_core/kaos_edge.c",
+      "graph_core/kaos_node.c",
+      "verification/graph_core/CMakeLists.txt",
+      "verification/graph_core/four/CMakeLists.txt",
+      "verification/graph_core/tests/p2_host_test.c"
+    ],
+    "removed_production_hosts": [
+      "graph_core/ports/p2_host.c",
+      "graph_core/ports/p4_host.inc"
+    ],
+    "added_sources": [
+      "graph_core/kaos_host.c",
+      "graph_core/include/kaos_host.h",
+      "graph_core/include/kaos_host_platform.h",
+      "graph_core/ports/host_udp.c",
+      "graph_core/ports/host_udp.h",
+      "graph_core/ports/posix/main.c",
+      "verification/graph_core/p2_fixture_host.c",
+      "graph_core/ports/espidf/CMakeLists.txt",
+      "graph_core/ports/espidf/app_main.c",
+      "graph_core/ports/espidf/main/CMakeLists.txt",
+      "graph_core/ports/espidf/main/Kconfig.projbuild",
+      "graph_core/ports/espidf/sdkconfig.defaults",
+      "verification/graph_core/tests/host_test.c",
+      "verification/graph_core/tests/host_control_test.c",
+      "verification/graph_core/tests/host_udp_test.c"
+    ],
+    "implementation_plan": "docs/graph_operation_implementation_plan.md (added Shared host consolidation after P7 section)",
+    "source_sha256": "verification/graph_core/results/host_refactor/source-sha256.json",
+    "test_preservation": "verification/graph_core/results/host_refactor/test-preservation.json"
+  },
+  "host": {
+    "configure": "cmake -S verification/graph_core -B /tmp/kaos-p3-session/host -DCORE_BUILD_HOST=ON -DCORE_BUILD_P2_HOST=ON -DCORE_BUILD_P3_HOST=OFF -DCORE_BUILD_P4_HOST=OFF -DCORE_SANITIZE=ON",
+    "build": "cmake --build /tmp/kaos-p3-session/host -j4",
+    "test": "ctest --test-dir /tmp/kaos-p3-session/host --output-on-failure",
+    "passed_entries": 35,
+    "failed_entries": 0,
+    "seconds": 14.97,
+    "python_regression": {
+      "discovered": 96,
+      "passed": 76,
+      "skipped": 20,
+      "reason": "Preexisting SIM_INTEGRATION-gated legacy cases; P4-P7 UDP/WAMR process scenarios ran against kaos_host."
+    },
+    "sanitizers": [
+      "ASan",
+      "UBSan fail-fast",
+      "LSan"
+    ],
+    "sanitizer_exception": "WAMR tests disable ASan fake stacks because WAMR checks native stack addresses.",
+    "new_tests": [
+      "graph_host",
+      "graph_host_control",
+      "graph_host_udp"
+    ],
+    "coverage": [
+      "Duplicate admission; one artifact restart; stale reply isolation; staging reclamation",
+      "Queued valid artifact at strict deadline; identical scheduler for step and run",
+      "Late owner CLEANED after cutoff; stale slot/incarnation/token isolation; non-wrapping IDs",
+      "Retained wakeup; IPv4 enrollment; oversized datagram rejection; unlocked send; shutdown"
+    ],
+    "log": "verification/graph_core/results/host_refactor/final-host.log",
+    "details": "verification/graph_core/results/host_refactor/host-details.log",
+    "compatibility": "Earlier 32-test regression also passed with legacy P3/P4 build options enabled; final suite uses the canonical option with legacy runtime aliases disabled."
+  },
+  "four_node": {
+    "build": "cmake --build /tmp/kaos-p4-session/four -j4",
+    "test": "ctest --test-dir /tmp/kaos-p4-session/four --output-on-failure",
+    "passed_entries": 12,
+    "failed_entries": 0,
+    "seconds": 6.75,
+    "profile": "CORE_FOUR_NODE_PROFILE=ON, CORE_SANITIZE=ON",
+    "log": "verification/graph_core/results/host_refactor/final-four.log",
+    "details": "verification/graph_core/results/host_refactor/four-details.log"
+  },
+  "esp32": {
+    "command": "source /home/karolina/esp/esp-idf/export.sh && idf.py -C graph_core/ports/espidf -B /tmp/kaos-host-refactor/esp32 build",
+    "result": "Cross-build passed",
+    "idf_version": "5.5",
+    "target": "Original ESP32, no PSRAM",
+    "profile": "Four-node static profile; provisional 28672 bytes per node; Wi-Fi enabled",
+    "firmware_bytes": 912736,
+    "app_partition_bytes": 1048576,
+    "flashed": false,
+    "physical_run": false,
+    "log": "verification/graph_core/results/host_refactor/esp32-build.log"
+  },
+  "artifacts_sha256": "verification/graph_core/results/host_refactor/artifact-sha256.json",
+  "logs_sha256": "verification/graph_core/results/host_refactor/log-sha256.json",
+  "sandbox": "Approved escalation was needed for WAMR generated headers in the sibling dependency checkout and for UDP/subprocess/sanitizer test execution.",
+  "remaining_plan": {
+    "P8": "Use canonical kaos_host; application policy and QoC decisions remain separate.",
+    "P9": "Measure networked ESP-IDF memory, stacks, scheduling and distributed Wi-Fi/collector behavior; map shared scheduler into final Q14 formal composition."
+  },
+  "limitations": [
+    "No physical network or capacity claim follows from cross-compilation.",
+    "Existing abstract formal models were unchanged and not rerun; final composed safety/liveness verification remains open.",
+    "Earlier P7 local-board measurements do not qualify the new networked firmware.",
+    "Protocol schema, guest ABI, original cutoffs, retention rules and live-host assumptions are unchanged."
+  ]
+}

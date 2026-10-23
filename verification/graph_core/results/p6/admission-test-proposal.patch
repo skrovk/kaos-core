@@ -1,0 +1,12 @@
+--- verification/graph_core/tests/admission_test.c
++++ verification/graph_core/tests/admission_test.c
+@@ -291,6 +291,9 @@
+     CHECK(memcmp(&pool, &before, sizeof(pool)) == 0);
+     core_binding released = {.channel = add.scope.bindings[0].channel, .creating_op = {1}};
+     CHECK(core_admission_release_binding(&pool, &released));
++    /* Reusing incidence also requires accepted closure of the remote role. */
++    CHECK(core_report_observe(&pool.records[0].evidence, 2,
++        CORE_OBJECT_CLEANUP | CORE_OBJECT_STOPPED | CORE_OBJECT_CLEANED) == CORE_REPORT_CHANGED);
+     CHECK(fixture_submit(&pool, &edge, &record) == CORE_ADMIT_ACCEPTED);
+     CHECK(pool.reserved_bytes == 4096 + 4 * CORE_ENDPOINT_BYTES);
+ }

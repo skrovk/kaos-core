@@ -6,9 +6,52 @@ This plan designs the six graph operations from the thesis protocols and finite 
 
 Prepared on 1 October 2026; consolidated on 2 October 2026 against all recorded answers Q01–Q23 in the [design questions](graph_operation_design_questions.md). Agreed answers are implementation inputs; provisional choices and unanswered policies remain explicitly marked. The [common principles summary](graph_operation_design_principles_summary.md) distills the agreed baseline; the earlier [detailed principles](graph_operation_design_principles.md) summarize Q01–Q07 only and must be read with the later answers. The [test catalogue](graph_operation_test_plan.md) defines concrete stimuli and expected observations independently of legacy compatibility. The [verification inventory](graph_operation_verification_inventory.csv) maps every existing configuration to planned implementation regressions and records its audit scope. These documents do not change runtime code.
 
-Implementation can begin with bounded core, transport and WAMR qualification prototypes. Freezing the complete ABI, evidence schema, resource profile and ventilation behavior requires the specific deliverables in [Remaining information and implementation gates](#remaining-information-and-implementation-gates). Missing measured limits are outputs of those prototypes, not a reason to postpone them. This plan does not treat advancing past a discussion question as approval of its unanswered parts.
+The initial implementation sequence began with bounded core, transport and WAMR qualification prototypes. See [current status](#current-status-and-verification-baseline) for completed work and the latest verification baseline. Freezing the complete ABI, evidence schema, resource profile and ventilation behavior requires the specific deliverables in [Remaining information and implementation gates](#remaining-information-and-implementation-gates). Missing measured limits are outputs of those prototypes, not a reason to postpone them. This plan does not treat advancing past a discussion question as approval of its unanswered parts.
 
 Scope decision on 2 October 2026: [Q05](graph_operation_design_questions.md#q05) accepts obsolete construction after required rejection history is discarded as an implementation limitation. A complete permanent-retention, compaction or fresh-confirmation mechanism is deferred. Stale ADD/PREPARE may recreate an object; resource/peripheral/data effects and possible O reconciliation must be disclosed. Source protocols and formal results remain unchanged and stronger in this respect. Statements below about no resurrection, at-most-once execution and safe retirement are reference goals subject to this explicit exception, not unconditional implementation claims. Checks against live/pending records, bounded resource admission, outstanding cleanup and memory-safe ownership remain required. Periodic O sweeps are a possible mitigation, not yet a committed feature.
+
+## Current status and verification baseline
+
+Current status through **23 October 2026**, based on recorded graph-operation
+decisions, the application proposal and implementation evidence.
+A missing test or measurement is not automatically a missing policy decision.
+
+The behavior-preserving simplification, formatting and repository cleanup are
+complete. The latest cleanup verification passes **60/60 default** and
+**34/34 four-node** sanitizer entries. The next protocol change is application
+traffic over CoAP, pending its traffic/wire contract; fault experiments, formal
+coverage and target qualification remain open independently of that decision.
+
+| Work | Completed scope and remaining boundary |
+|---|---|
+| Native imports and application fixtures | Bounded per-instance grants, a fixed trusted registry, signature/memory checks, cancellation and replacement isolation; APP03 optional-branch expiry; APP11 EMPTY/FULL/drop plumbing with real WAMR guests. The sensor remains synthetic; application validity and fallback still need R07 decisions. See [continuation evidence](../verification/graph_core/continuation_verification.json). |
+| Lifecycle and fault fixtures | Configuration/main-entry, adapter completion and real-WAMR preparation/destruction barriers; observation-corruption rejection; live relay-overflow accounting; collector ACK-boundary crashes and shared-host crashes. These cover selected schedules, with remaining gaps listed under [agreed work](#agreed-work-that-can-proceed). |
+| Two-port transport scheduling | Separate application/management sockets, bounded rounds, recurring management service and paced artifact transfer; simulator routing shares one directed-link impairment policy and pending-copy bound. [Transport evidence](../verification/graph_core/transport_scheduling_verification.json) includes exploratory contention/checksum runs and an ESP32 cross-build, not target timing acceptance. |
+| Simplification, steps 0–6 | Shared UDP beside CoAP under `graph_core/`; reused codec/validation helpers; explicit admission, host and teardown phases; raw/decoded control equivalence and worker-startup unwind coverage. Initial node cleanup, exactly two edge-then-node passes, receiver-first activation and original deadlines are preserved. [Evidence](../verification/graph_core/simplification_verification.json). Only protocol slice P remains pending in this plan. |
+| Platform layout and readability | Clocks reside in `ports/posix/` and `ports/espidf/`. [Formatting guidance](../AGENTS.md#c-formatting-and-readability), pinned clang-format configuration, semantic statement grouping and equivalent guard clauses are implemented. Existing test sources were preserved. [Formatting evidence](../verification/graph_core/formatting_verification.json). |
+| Repository cleanup | Legacy root implementation, its tests/build output, unused unicoap and P3/P4 executable aliases are retired. Use `CORE_BUILD_HOST` / `kaos_host`; retain the P2 regression fixture. The sibling simulator reports the retired build path. Historical contracts/results remain indexed at their original paths. This did not port legacy application features. [Cleanup record](repository_cleanup.md). |
+
+The latest [cleanup verification](../verification/graph_core/cleanup_verification.json)
+records **60/60 default** and **34/34 four-node** sanitizer entries, a successful
+standalone core build without WAMR, and both simulator retirement checks.
+All 758 pre-existing verification files were preserved except the two CMake
+files updated to select the canonical host option; test sources and saved
+evidence were unchanged. The cleanup did not rebuild ESP-IDF or run hardware.
+
+The preceding simplification and formatting passes also ran **9/9 opt-in runtime
+process cases** and passed the ESP32 four-node network-host cross-build. These
+are separate recorded runs, not additional cases rerun during cleanup. Default
+Python discovery retains opt-in skips, and the smaller profile skips its
+three-node local pipeline; passing suite totals do not establish full coverage.
+
+Earlier increments and exact coverage remain in the
+[adapter-barrier](../verification/graph_core/adapter_barrier_verification.json),
+[observation-loss](../verification/graph_core/observation_loss_verification.json),
+[collector-crash](../verification/graph_core/collector_crash_verification.json),
+[relay-overflow](../verification/graph_core/relay_overflow_verification.json),
+[host-crash](../verification/graph_core/host_crash_verification.json) and
+[WAMR-barrier](../verification/graph_core/wamr_phase_barrier_verification.json)
+records. Their historical test totals are not the current baseline.
 
 ## Evidence and source precedence
 
@@ -270,14 +313,14 @@ The first six entries reconcile existing wording or explicitly accepted differen
 
 ## Remaining information and implementation gates
 
-There is no unanswered decision that prevents **all** implementation work. P0/P1, bounded Boolean/identity/core fixtures, CoAP/CBOR experiments and the WAMR lifecycle prototype can start under the recorded agreements. Provisional fixture settings must be labeled and finite. The following register distinguishes behavioral decisions still needing an answer from engineering specifications and measurements to produce during implementation. A package must close its relevant entries before freezing dependent behavior; unrelated work can proceed.
+The R01–R08 register below retains the implementation gates and their agreed scope. Completed implementations and current evidence are summarized in [current status](#current-status-and-verification-baseline); the [current decisions](#current-decisions-and-dependencies) and [agreed work](#agreed-work-that-can-proceed) below identify what remains. Unanswered application decisions do not block unrelated qualification. Provisional fixture settings must be labeled and finite; each package must close its relevant gates before freezing dependent behavior.
 
 | ID | Information still required | How it is supplied and what it gates |
 |---|---|---|
 | R01 | **Guest/event ABI and qualification (Q11/Q14).** Channel-state change, generic `ERROR` without a channel field, and empty first-main-entry `INIT` are agreed placeholders. Reserved INIT capacity, latest-pending-state coalescing per channel and a bounded nonblocking ERROR FIFO returning FULL are agreed. Explicit event reception with an immediate check or cancellable finite wait is also agreed. Accepted ERROR handling is reporting-only under the agreed placeholder policy; proper response behavior belongs to a later extension. Specific payloads/signatures, reporting integration and numeric limits remain implementation deliverables. Specify put/get arguments, sizes/errors and logical channel addressing for later dynamic additions. | Q11's behavioral baseline is settled. Specify and qualify the concrete interfaces/layouts before finalizing P3/P4 event handlers; this is implementation work, not a pending error-policy decision. Data-call nonblocking/FULL/EMPTY/drop-incoming behavior remains settled. Preserve INIT attribution/STARTED gates and reserved startup/control completion capacity; budget unread notifications without retaining reclaimed endpoint resources. Qualify event-wait cancellation and independent control/cleanup progress, with no asynchronous guest event callback. |
 | R02 | **Exit integration and qualification (Q12/Q23).** Conservative policy agreed: configuration failure or main exit before startup success triggers existing whole-addition cleanup; after success preserve Succeeded, report exit/fault, disable local use and permit safe local reclamation. Full distributed node removal after success requires a fresh O-authorized operation with complete current incidence. No automatic restart. | Implementation deliverable for P3/P6, not an unanswered policy decision. Specify attributed exit reporting, serialized exit/usability versus INIT acceptance, retained obligations during local reclamation and subsequent removal of an already-exited instance. Qualify LIFE11–LIFE13 on host/ESP32, including O unavailability, active channel operations and full resource accounting. |
 | R03 | **Evidence and management schema (Q04/Q06–Q09/Q17).** P2 schema 3 selects complete cumulative owner facts and aggregate snapshots, aggregate-only revisions with a 78-advance bound, exact storage-ACK keys, query/missing-result distinction and bounded scope. | Preserve this contract through P3–P7 execution, issued-action/source guards, collector/ACK integration and shared cleanup. Keep multipart consistency and Q06 retention; a newer revision grants no DB supersession rights. Extensions to facts/scope require a new aggregate bound. |
-| R04 | **Transport, artifact and data adapter details (Q08/Q09/Q13/Q16/Q18).** Select/pin CoAP and CBOR libraries; define paths, response/error mapping including discarded submissions, tags, CRC32 parameters, transfer correlation and staging medium. Specify the application-data carrier/frame, exact binding attribution and oversize handling separately from management CoAP. | Engineering selection and measured qualification in P0/P2; required for production control integration and P4 remote data. Share host/device fixtures. Q18 settles the application service, not its wire carrier; selecting one must preserve best-effort semantics. No additional user choice is required for routine tags, CRC parameters or library experiments. |
+| R04 | **Transport, artifact and data adapter details (Q08/Q09/Q13/Q16/Q18).** Select/pin CoAP and CBOR libraries; define paths, response/error mapping including discarded submissions, tags, CRC32 parameters, transfer correlation and staging medium. Specify the application-data carrier/frame, exact binding attribution and oversize handling separately from management CoAP. | Engineering selection and measured qualification in P0/P2; required for production control integration and P4 remote data. Share host/device fixtures. Q18 settles the application service, not its wire carrier; selecting one must preserve best-effort semantics. No additional user choice is required for routine tags, CRC parameters or library experiments. The [planned transport scheduling increment](#planned-transport-scheduling-increment) extends the current adapter with two sockets and bounded class service; preserve Q18 semantics. |
 | R05 | **Qualified embedded profile and runtime (Q01/Q07/Q10/Q14/Q15/Q23).** Actual board/firmware/runtime/toolchain configurations; usable RAM/flash; resident/endpoint/operation/result/observer limits; payload/expression/transfer bounds; guest and native stacks; worker/event/control reserves; timing unit, four allowances and CoAP/query schedules. Demonstrate inert instantiation, startup attribution, noncooperative interruption and full reclamation. | Measured P0 prototypes, refined in P9. Board access and representative guest artifacts/traffic are required for physical measurements, not for initial host work. Two nodes/one local channel is the minimum, not a maximum. Pin both host and embedded runtime builds; qualify distributed placement separately. Gates supported profiles, fixed sizing and timing/feasibility claims. |
 | R06 | **Collector realization (Q04/Q06/Q07), implemented in P7.** Bounded host RAM collector with explicit authorized-scope registration, a separate enrolled UDP socket and query/store/ACK handoff. Exact report versions remain until O ACKs each; no supersession. Retrieval/O ACK are trusted local APIs, diagnostics have a separate bounded eviction ring, and full storage refuses the copy before any device ACK. | [P7 contract](graph_p7_contract.md) records capacities, interfaces, backpressure and failure behavior. No device exporter task/buffer, persistence or replication is selected. Collector process loss may lose the only historical copy after device retirement; archive availability never gates operation completion. |
 | R07 | **Ventilation control and service criteria (Q20).** Supervisory policies with both inputs and CO2 only; local controller law; sampling/control periods, plausible-value/rate checks, observation gaps and duplicate/reordered command handling. Supply QoC controlled quantity/reference, formula/units, evaluation window, nominal/degraded thresholds and missing-observation treatment. Supply fallback action, duration, expiry and escalation. | These workload decisions need explicit answers before implementing the final application behavior and service pass/fail evaluator in P8. Deterministic plumbing fixtures and graph-operation testing may proceed. Occupancy optionality is settled; no simulator default or actuator hold assumption fills these gaps. |
@@ -285,6 +328,114 @@ There is no unanswered decision that prevents **all** implementation work. P0/P1
 
 Before release, P9 must also supply Q14's final TLA+/TLC safety and conditional-liveness evidence, with finite bounds, fairness/failure assumptions and handler-to-model traceability. This verification is mandatory but is work to perform, not information the user must provide before coding. Authentication, full stale-construction prevention, clock synchronization, reboot/takeover, pooled storage, migration and automatic recovery stay deferred; none is a hidden prerequisite for the agreed baseline.
 
+### Current decisions and dependencies
+
+| Area | Details still needed | What depends on it |
+|---|---|---|
+| Application-CoAP and traffic manifest | Required application rate likely belongs in the manifest, whose interface is still being designed; settle the CoAP resource/profile, response suppression, message-ID reuse, duplicate handling and congestion behavior | Protocol slice P and coordinated host/simulator wire migration; maximum supported remote rate is a qualification measurement, not a preselected rate cap |
+| Ventilation control, R07 | Supervisory rules with CO2 plus occupancy and with CO2 alone; local airflow controller; sampling/control periods; plausible-value and rate checks; handling observation gaps and duplicate/reordered commands | Final control guests and application fault responses |
+| Quality of Control, R07 | Controlled quantity and reference; formula and units; evaluation window; nominal/degraded thresholds; treatment of missing observations | APP05–APP10 service acceptance and healthy/faulted comparisons |
+| Fallback, R07 | Trigger and response to unknown evidence; permitted action; maximum duration; expiry, restoration and escalation rules | Occupancy/CO2/actuator/supervisor-loss behavior; no universal hold-last or stop policy is selected |
+| Plant experiment, R08 | Room volume, CO2 generation/background exchange, actuator range/lag, initial state, occupancy script, sensor/noise rates, integration step and fault schedules | Numerical plant experiments and their validation |
+| Measurement coverage, R08 | Which observer supports each claim; actual guest consumption versus host copies; command versus physical response; sample rates, clock mapping and observation-loss treatment | Freshness, end-to-end timing and physical-service claims |
+| Continuing-operation proposal | Concrete assessment/report interfaces; supported/violated/unknown validity rules; monitoring/refresh budgets; ordering and stale-evidence treatment; service-mode transition rules | Implementing the proposed runtime service-assessment layer |
+| Recovery proposal | Feasibility and placement inputs, objective priorities, interruption and switching limits, restoration evidence, any delegated authority and conflict rules | Automated repair and optimization beyond explicit authorized graph operations |
+
+The [application-CoAP plan](graph_core_simplification_plan.md#application-over-coap-separate-protocol-slice)
+proposes wrapping the existing DataFrame in best-effort NON messages, retaining
+the two traffic classes and bounded scheduling. Application datagrams still use
+the existing DataFrame wire format today. Neither a manifest schema nor a rate
+cap has been selected. Existing wire-fixture changes need specific approval;
+the completed cleanup did not authorize the protocol migration.
+
+The R07 and R08 entries above define the application and experiment gates.
+The detailed source documents are
+[application operation](</home/karolina/Research/Thesis/protocol specs/application_operation_specification.md>)
+and [intent–condition scenarios](</home/karolina/Research/Thesis/protocol specs/application_operation_scenarios.md>).
+The application document explicitly labels itself a proposal; its requirements
+are not silently adopted as previously agreed implementation behavior.
+
+The scenario profiles are useful for working out these choices. For example,
+IC-04 needs source validity, selection and interruption rules in addition to
+an OR startup predicate. IC-07 needs authority fencing and duplicate physical
+effect handling beyond channel identity. Neither mechanism follows merely
+from successful graph addition.
+
+### Agreed work that can proceed
+
+- Remaining protocol observation and fault experiments: named lifecycle
+  barriers, complete observation-loss accounting, collector/crash scenarios,
+  and repeatable replay checks. [Configuration and main-entry barriers](../verification/graph_core/barrier_verification.json)
+  now cover removal and exact controller-deadline expiry with real WAMR workers,
+  unrelated-worker progress and repeated partial-order checks. Preparation and
+  disposal completion now also have manually scheduled adapter-contract checks:
+  late preparation cannot revive startup, and cleanup cutoff retains ownership
+  until disposal. [Real WAMR preparation/destruction gates](../verification/graph_core/wamr_phase_barrier_verification.json)
+  now also hold actual instantiation and deinstantiation boundaries, check
+  cancellation and cleanup cutoff, and require unrelated worker startup and
+  cleanup during those holds. Preparation-failure injection and broader process
+  replay remain open. The later worker-startup unwind test covers failed worker
+  creation and joining already-created workers; it does not close WAMR
+  instantiation/allocation-failure qualification.
+  [Observation corruption checks](../verification/graph_core/observation_loss_verification.json)
+  now make sample/timing assessments inconclusive for missing, duplicated or
+  reordered records and nonzero reported drops, and reject truncated collector
+  snapshots. [Live relay overflow](../verification/graph_core/relay_overflow_verification.json) now counts
+  dropped packet copies and rejects normal run completion. A one-slot UDP test
+  exercises actual overflow and distinguishes configured link loss. Kernel loss,
+  default-capacity throughput and delayed-injector qualification remain open.
+  [Collector process crash checks](../verification/graph_core/collector_crash_verification.json)
+  now cover SIGKILL before/after the device accepts a storage ACK: a remaining
+  device copy can be retrieved; lost archived history leaves O's possible
+  incidence retained. [Shared-host crash checks](../verification/graph_core/host_crash_verification.json)
+  now kill two active sink instances and their endpoint/coordinator roles together;
+  surviving-source removal remains Unresolved and O retains both connections.
+  Unrelated-channel isolation during a crash, freeze/resume and broader device
+  crash schedules remain open.
+  Existing finite fixtures cover selected paths.
+  Absence of an observation cannot establish nonexecution or cleanup.
+- Qualify the implemented [transport scheduler](../verification/graph_core/transport_scheduling_verification.json)
+  on the target: sustained application/management load, timer lateness, worker
+  progress, network buffering, stack/heap and lock timing. Two sockets, bounded
+  rounds, recurring management service and artifact pacing now pass host checks;
+  the relay retains one impairment policy per directed link and a global
+  pending-copy limit shared by both classes.
+  Short POSIX before/after experiments preserve feedback during artifact transfer.
+  Checksum timing is recorded; optimisation remains conditional on declared
+  workload targets and target measurements. The priority-3 control task can
+  remain runnable ahead of priority-2 workers under sustained load.
+- Final Q14 model work and TLC runs covering the composed implementation's
+  queues, workers, timers, startup, channel operations, reporting and reclamation.
+  The new HostExecution model joins several of these mechanisms in finite
+  scenarios. Complete scheduler/collector/admission coverage and concrete
+  trace mapping are still deliverables, not user-supplied policies.
+
+APP01 acquisition scheduling and freshness are not established by the current
+relative event waits or publication-to-GET measurements. OBS09 permits clock
+experiments, but any acquisition-age claim needs an explicit provenance and
+clock-error model. These boundaries must stay visible when adding fixtures.
+
+### External qualification
+
+P9/R05 requires physical memory/stack/timing measurements and distributed Wi-Fi
+and collector checks on the declared target configuration. Host sanitizer
+results cannot substitute for those measurements. Earlier qualification work
+reported no serial board available; the cleanup made no new board-availability
+check or physical measurement. Board access must be checked when scheduling
+these experiments. Formal work does not depend on board access; the recorded
+model runs used the locally installed TLC tool.
+
+### Deliberately deferred scope
+
+Restart, persistent recovery, takeover, migration/live replacement, in-place
+rebinding, reliable application channels and autonomous recovery remain
+extensions. Cryptographic authentication and complete rejection of obsolete
+construction after forgotten history are also outside the selected baseline.
+The accepted Q05/Q08 limitations remain qualifications of results.
+
+The draft [design chapter](</home/karolina/Research/Thesis/kaos_design_v2.tex>)
+lists migration and broader contract monitoring. Those outline entries do not
+override the explicit Q22 deferral or select a monitoring interface.
 ## Implementation sequence and completion gates
 
 These are dependency-ordered work packages, not calendar estimates. Each ends with reviewable code, its stated tests and an updated evidence inventory; no package is complete merely because a model previously passed. P0 outputs can unblock their consumers independently: a pending ventilation decision or board measurement does not block unrelated deterministic core work. Implement ownership, revisions, bounded reporting and cleanup with each vertical slice; P7 completes their management/archive integration rather than introducing those obligations late.
@@ -299,12 +450,268 @@ These are dependency-ordered work packages, not calendar estimates. Each ends wi
 | P5 Multi-channel node addition | Add immutable P gates, independent work, PossibleSet, startup races and continuing optional-channel ownership after success. Depends on P3/P4. | HP07–HP12, PRED, F00–F15/C01–C06, optional deadline tests and all three failure histories. |
 | P6 Full node removal and overlapping work | Compute/fix complete current scope, fence additions, cancel pending creators, preserve historic successes, aggregate every closure obligation, including fresh removal of an exited instance whose safe local resources were already reclaimed. Depends on P4/P5. | HP13–HP16, CON01–CON15, REM tests including pending optional work and distributed authorization in flight. |
 | P7 Reporting, collector and reconciliation | Complete Q06 retention/queries, R06 collector export/retrieval/exact storage ACKs and retain-until-O-ACK behavior. Integrate Q17 fresh removal attempts with shared physical cleanup and bounded independent observers. Preserve revisions/obligations through optional work and late closure. Contracts start in P2; finish on P5/P6 and R03/R06. | MGMT/ID/RES, including MGMT17: direct/archive reordering, obsolete ACKs, DB-full refusal and DB/O loss, eligible device eviction, missing history, shared-cleanup observer exhaustion and no deadline reset. Archiving never gates operation completion. Record Q05 characterization separately from reference conformance. |
-| P8 Simulator integration and applications | Integrate concurrent O, new executable, control/data impairment and protocol observations as P2–P7 land; run deterministic rebuilt workloads first. Separately implement the agreed Q21 plant/simulated peripherals and Q20 WASM control/evaluator once R07/R08 are supplied. Use Q17 removal/fresh-add scripts for explicit recovery experiments. | Protocol integration can pass independently of ventilation acceptance. APP/QoC gates require selected metric/policies/parameters and adequate observations, qualified model/time mapping and matching healthy/faulted scenarios. Keep plant state through guest removal and oracle truth out of guests. Unanswered criteria remain blocked, not passed. |
-| P9 Final target and formal qualification | Refine R05 with functional packages: host sanitizers/allocation/churn tests, relevant embedded protocol cases, target memory/stack/scheduling measurements and distributed Wi-Fi placements. Run final Q14 TLA+/TLC safety/liveness configurations and map witnesses/counterexamples to runtime tests. | No-PSRAM T-Display meets the minimum workload and declared supported limits with control/cleanup headroom. Numeric allowances have measured support; final models include queues/workers/timers/access/reclamation and documented assumptions. Keep Q05/Q08 exceptions, Q12 trust and experiment limits explicit; no new run is claimed by this plan. |
+| P8 Simulator integration and applications | Integrate concurrent O, new executable, control/data impairment and protocol observations as P2–P7 land; run deterministic rebuilt workloads first. Separately implement the agreed Q21 plant/simulated peripherals and Q20 WASM control/evaluator once R07/R08 are supplied. Use Q17 removal/fresh-add scripts for explicit recovery experiments. | Protocol integration can pass independently of ventilation acceptance. APP/QoC gates require selected metric/policies/parameters and adequate observations, qualified model/time mapping and matching healthy/faulted scenarios. Keep plant state through guest removal and oracle truth out of guests. Unanswered criteria remain blocked, not passed. Include the [planned transport scheduling increment](#planned-transport-scheduling-increment), two-port runner/relay integration and contention checks. |
+| P9 Final target and formal qualification | Refine R05 with functional packages: host sanitizers/allocation/churn tests, relevant embedded protocol cases, target memory/stack/scheduling measurements and distributed Wi-Fi placements. Run final Q14 TLA+/TLC safety/liveness configurations and map witnesses/counterexamples to runtime tests. | No-PSRAM T-Display meets the minimum workload and declared supported limits with control/cleanup headroom. Numeric allowances have measured support; final models include queues/workers/timers/access/reclamation and documented assumptions. Keep Q05/Q08 exceptions, Q12 trust and experiment limits explicit; no new run is claimed by this plan. Qualify the planned transport scheduler under concurrent application, management and artifact load, including checksum timing and the final Q14 service assumptions. |
 
 Do not postpone cleanup until after the happy path: each allocation/start feature ships with its cancellation, partial-failure and retained-evidence behavior. Similarly, enable new concurrent simulator operations only with stable protocol correlation, not with the existing globally serialized host command sequence as a substitute.
 
 Q22 scope agreement: deliver and evaluate the six graph operations with their agreed cleanup/reporting interfaces; explicit O-authorized scenario compositions may exercise removal followed by fresh addition, preserving closure and reuse rules. Defer migration, live replacement, in-place rebinding, reliable application channels and autonomous recovery. Add further operations as extensions to the current model only after cleanup and the other baseline mechanisms have been validated through Q14 formal checks and concrete lifetime/resource/failure tests. Extensions require their own state/transition and obligation checks; no generic extension framework or baseline implementation of these capabilities is required.
+
+### Planned transport scheduling increment
+
+**Planned on 20 October 2026; implemented and functionally checked on 21 October
+2026. Target timing/resource qualification and final Q14 coverage remain open.**
+See [the implementation record](#2026-10-21-two-port-transport-scheduling) and
+`verification/graph_core/transport_scheduling_verification.json`.
+
+Extend R04 and the shared host with separate application and management
+UDP sockets, bounded application preference, existing outgoing endpoint
+round-robin selection, and recurring management/artifact service. Retain
+Q18 best-effort semantics and Q14 lifecycle ownership. Implement the core
+and simulator changes as a P8 increment; qualify resource and timing
+behavior under R05/P9 and include the final scheduler in Q14 checking.
+This engineering work can proceed independently of R07/R08 ventilation
+decisions. Numeric scheduling settings below are provisional; workload
+latency acceptance still needs declared targets.
+
+#### Baseline before this increment
+
+- `graph_core/ports/host_udp.c` uses one nonblocking UDP socket for all traffic
+  and reads at most one datagram per host-loop iteration.
+- `graph_core/kaos_host.c` advances lifecycle decisions, handles input, and
+  submits immediate replies, artifact traffic, management traffic, then a
+  bounded application-data batch.
+- `graph_core/kaos_endpoint.c` already selects outgoing messages round-robin
+  across eligible sender endpoints, with FIFO order inside each endpoint.
+  The cursor persists between batches.
+- Artifact downloads use sequential CoAP block requests, initially requesting
+  256-byte blocks, with one active artifact exchange. Waiting for a response
+  does not block the host.
+- ESP32 runs the host at priority 3 and WAMR workers at priority 2. Both
+  management and application-data submission execute in the host task.
+- Application data is best effort: dequeue precedes submission, failed
+  submission does not requeue, and a full receiving endpoint drops arrivals.
+
+#### Scope and guarantees
+
+Use two transport classes:
+
+| Class | Socket contents | Service policy |
+|---|---|---|
+| Application | Channel data frames | Preferential bounded receive and transmit batches |
+| Management | Graph operations, reports, queries, acknowledgements, artifact exchanges | Recurring bounded service; pace artifact requests separately from essential management output |
+
+Separate sockets provide separate receive queues and permit explicit receive
+selection. They do not reserve radio airtime, isolate all network memory, or
+assign Wi-Fi priority. Lower network layers remain shared.
+
+Retain one host task as the owner of graph transitions and transport
+scheduling. Keep existing task priorities for the first implementation.
+Do not introduce a task or socket per endpoint.
+
+Fairness remains per outgoing endpoint and per message, not per application,
+byte, or radio airtime. Incoming application packets share the application
+socket queue; the host cannot round-robin unread packets by endpoint.
+Per-endpoint buffering after decoding does not protect socket capacity from
+a noisy producer. Producer rate admission and stronger ingress isolation are
+separate extensions.
+
+Preserve existing application delivery semantics. Add failure counters, but
+do not silently introduce retries or promise delivery because service
+opportunities are fair.
+
+#### Transport interfaces and configuration
+
+1. Add an explicit application/management class to the host transport
+   boundary. Sending selects a class; received packets retain the class of
+   the socket on which they arrived. Keep device IDs in the host and socket
+   addresses in the platform adapter.
+2. Separate waiting for readiness from nonblocking reception by class.
+   Waiting observes both sockets, the wake descriptor, and the earliest
+   deadline; the host decides how much work to take from each class.
+   Readiness may become stale, so a receive attempt must be allowed to return
+   empty without blocking.
+3. Extend peer routes to contain explicit management and application
+   addresses. Authority and collector routes may be management-only.
+   Validate unique attribution for each class and reject missing required
+   application routes. Source IP and port checks remain configured-peer
+   attribution, not authentication.
+4. Bind two distinct local ports. Send each class from its corresponding
+   socket so source-port attribution remains consistent. Preserve the
+   management port where practical; configure the application port
+   explicitly rather than assuming an adjacent port is available.
+5. Reject application frames arriving on the management socket and management
+   frames arriving on the application socket. Retain payload, binding,
+   generation, permission, and peer validation after classification.
+6. Bound resources for both sockets. Close both on shutdown and on partial
+   initialization failure. Preserve wakeups issued before waiting, including
+   stop requests and work remaining after a batch.
+
+Update `kaos_host_platform.h`, `host_udp.h`, `host_udp.c`, POSIX arguments,
+ESP-IDF Kconfig and startup, test adapters, launch scripts, and readiness
+output together. This is a transport configuration change; it need not alter
+the data-frame or CoAP payload schema. Treat old single-port launch
+configurations as incompatible and report a clear configuration error.
+
+#### Host scheduling policy
+
+Implement explicit service rounds. One round performs the following:
+
+1. Apply due lifecycle and timeout decisions before admitting queued data.
+2. Receive and dispatch a bounded application batch.
+3. Receive and dispatch a bounded management batch. Apply each accepted
+   management message's lifecycle consequences before subsequent data work.
+   Keep replies associated with their management socket.
+4. Submit a bounded application batch using the existing endpoint cursor.
+5. Service immediate management replies and a bounded pass of due management
+   exchanges. If work is deferred between rounds, retain a cursor so the
+   same peer cannot always win.
+6. Service at most one eligible artifact request or retransmission, subject
+   to artifact pacing.
+7. Perform bounded maintenance, calculate the next deadline, and wait only
+   when no runnable work remains.
+
+Preserve the existing rule that an applied removal closes access before
+subsequent channel service. Priority selection does not make a removal
+effective before its request has been read and processed.
+
+Use finite configurable packet budgets for each phase, with optional elapsed
+time limits checked between packets. Count malformed, rejected, and unknown
+peer datagrams against receive work budgets so they cannot create an
+unbounded drain loop. A time limit cannot interrupt an individual handler.
+
+As an initial tuning profile, use up to four application receives and one
+management receive per round; retain the current application transmit cap
+of `CORE_MAX_ENDPOINT_RESERVATIONS`. Retain a bounded full peer pass for
+management output. These are starting values for verification, not admitted
+latency guarantees. Skip empty phases so a quiet class does not waste work.
+
+Every completed round must offer management service even under continuous
+application load. Retain due timer handling independently of socket
+readiness. This provides a bounded number of application operations between
+management opportunities; a wall-clock bound additionally requires bounded
+handler execution, lock waits, and CPU scheduling.
+
+Artifact pacing must limit requests for new blocks and constrain repeated
+attempts without renewing CoAP or operation deadlines. Give eligible
+artifact work a recurring opportunity even during continuous application
+traffic. Include the next permitted artifact-send time in the wait deadline,
+and avoid repeatedly waking on an already-due retry that pacing prevents.
+If an operation allowance expires while paced, preserve its normal failure
+and cleanup behavior.
+
+Essential management and artifact responses still share one receive queue.
+Pacing requests limits expected artifact response pressure; it does not let
+the host select an essential management packet from behind unread artifact
+packets. Record this remaining limitation.
+
+#### Artifact checksum performance candidate
+
+**Examine the artifact checksum if application latency becomes an issue
+during verification. It is also an explicit candidate for optimising system
+performance. Optimisation is not a prerequisite for the initial socket and
+scheduling change.**
+
+Currently, `core_artifact_receive()` in `graph_core/kaos_artifact.c` computes
+CRC32 across the entire artifact when the final block arrives. This executes
+synchronously through the host receive handler with the registry lock held.
+The host cannot receive another packet during the calculation, and guest
+channel calls requiring that lock must wait.
+
+Measure checksum execution time and registry-lock hold time for several
+artifact sizes, including the supported maximum. Correlate final-block
+arrival and checksum completion with application latency, queue overflow,
+and guest channel-call waiting time. Separate this completion-time effect
+from sustained radio and packet-processing contention during the download.
+
+If measurements justify optimisation, evaluate:
+
+- Incremental CRC updates for each newly accepted block, followed by a final
+  comparison. Duplicate blocks must not be counted again, and restart must
+  reset the checksum state.
+- A worker or bounded incremental verification phase, with explicit ownership
+  of artifact storage and cancellation behavior.
+- A faster CRC implementation that preserves the existing checksum result,
+  assessed for both execution time and remaining lock occupancy.
+
+Any optimisation must preserve validation before runtime handoff, deadline
+checks, duplicate/restart semantics, and safe cleanup. Moving computation
+outside the lock requires a lifetime claim and revalidation before publishing
+completion. Do not release artifact storage while verification still uses it.
+
+#### Implementation sequence
+
+| Step | Work | Completion evidence |
+|---|---|---|
+| 1 | Add transport classes, two sockets, route validation, nonblocking receive-by-class, and configuration changes | Both classes route correctly; invalid configuration and partial startup clean up safely |
+| 2 | Add service rounds, packet budgets, wake/deadline integration, persistent fairness, and artifact pacing | Deterministic scheduling tests establish recurring service and lifecycle ordering |
+| 3 | Update simulator, relay, authority routing, launchers, and fixtures | Distributed operations and application workloads run through the two-port topology |
+| 4 | Add bounded counters and timing observations; run contention experiments | Comparable baseline and changed measurements, including artifact checksum timing |
+| 5 | Tune budgets and pacing; document supported operating conditions | Recorded selected settings, workload limits, remaining interference, and verification results |
+
+In `sim_env`, update `graph_transport.py` to target management addresses and
+extend `graph_relay.py` to distinguish participant and traffic class.
+Preserve source attribution on forwarded packets. Update the process runner
+and all tests that assume one address per participant.
+
+Keep directed-link impairment budgets shared across the two traffic classes
+unless an experiment explicitly configures separate resources. Giving each
+port an independent full link budget would artificially double simulated
+capacity and conceal contention. Preserve aggregate loss, delay, and queue
+accounting while adding class-specific observations.
+
+After implementation, update `guide/architecture.md`, `guide/usage.md`,
+and `guide/verification.md`; record the implemented contract and evidence
+in `implementation_rails/` and update the remaining information and implementation gates in this plan.
+
+#### Verification and acceptance
+
+Extend the existing host, UDP, scheduling, endpoint, artifact, and simulator
+tests rather than creating a separate transport test framework.
+
+| Scenario | Required evidence |
+|---|---|
+| Both sockets continuously ready | Application receives its configured preference; management receives its opportunity every round |
+| Continuous application output | Endpoint round-robin persists across rounds; management and artifact work continue |
+| Unequal endpoint rates and message sizes | No eligible outgoing endpoint is skipped indefinitely; distinguish packet fairness from byte share |
+| Artifact download with periodic application traffic | Application service continues throughout download; record delay and losses during blocks and final checksum |
+| Continuous management or malformed traffic | Receive budgets remain bounded; application and timer service continue |
+| Removal or expiry during queued data | No data operation bypasses the permission change after it is applied; deadline precedence is preserved |
+| Full endpoint or socket buffers and send failures | Bounded resource use and observable failures; no new delivery claim or unbounded retry queue |
+| Artifact loss, duplicate blocks, timeout, and restart | Existing exchange semantics and deadlines remain valid under pacing |
+| Exhausted batch followed by no new packets | Pending work resumes without depending on a new external wakeup |
+| Two-port relay and direct UDP runs | Correct class routing, peer attribution, aggregate impairment accounting, and shutdown |
+
+Use deterministic fake-clock tests to check exact service order and maximum
+rounds between opportunities. Use real sockets for routing and resource
+cleanup. Exercise both static capacity profiles and retain existing graph
+operation regressions.
+
+Measure on ESP32 as well as POSIX: application-only baseline, concurrent
+artifact transfer, management churn, and combined saturation. Record:
+
+- Per-endpoint application latency distributions and worst observed delay.
+- Host receive-to-endpoint enqueue time, guest `Get` delay, and local
+  `Put`-to-submission time as separate boundaries.
+- Endpoint overflow, submission failures, and available network/relay loss
+  evidence. Do not infer the location of a loss from a missing sequence alone.
+- Maximum gaps between management service, timer lateness, artifact progress,
+  and graph-operation completion or timeout.
+- Host-round duration, checksum duration, lock hold/wait time, and application
+  worker progress under sustained host load.
+
+Use bounded instrumentation; record its overhead and dropped observations.
+Cross-device latency needs a stated clock-error model; use local measurements
+where synchronization is unavailable. Successful `sendto()` is not a radio
+transmission timestamp.
+
+Before performance acceptance, declare the target application rates,
+endpoint counts, message sizes, latency/loss limits, and management/artifact
+progress targets for the selected workload. Compare identical conditions
+against the single-socket baseline. Report overload behavior separately from
+the admitted operating range. Functional completion requires the scheduling
+and protocol checks above; a claim of adequate application latency additionally
+requires the declared workload targets to pass.
 
 ### Core increment on 6 October 2026
 
@@ -512,6 +919,306 @@ and [verification record](../verification/graph_core/scheduling_refactor_verific
 describe the ordering and tests. This changes neither the task topology nor the
 remaining P8/P9 qualification scope.
 
+### P8 protocol runner increment on 15 October 2026
+
+`../sim_env/sim_env/graph_run.py` now owns fresh process experiments around the
+canonical `kaos_host`, the existing O authorization API and CoAP transport. Its
+CLI runs all six operation kinds, including complete removal before adding a
+fresh binding. Per-coordinator exchange locks allow independent concurrent
+submissions without a global lifecycle wait. Accepted exact report bytes are
+logged before storage ACK; missing history and transport timeout preserve O's
+uncertainty. Process teardown never supplies graph closure.
+
+`graph_relay.py` uses one proxy socket per participant, preserving enrolled
+source-address attribution without firmware changes or relay envelopes. It
+provides directed-link loss, fixed delay and duplication,
+scripted reordering through delay changes, a bounded pending queue and records
+policy changes, actual packet decisions, delivery lateness and teardown drops.
+Existing descriptors remain the experiment interface; no new scenario schema
+or extension framework is introduced. Legacy LOAD execution is not selected.
+
+New relay and real-host tests preserve every existing test case. The evidence
+record is `verification/graph_core/p8_verification.json`. This increment leaves
+R07/R08 application choices, named transition barriers, full observation-loss
+accounting, runner-driven collector/crash scenarios and final P9 target/formal
+qualification open. Seeded per-link decisions do not make OS process scheduling
+deterministic. No physical ESP32 or new formal qualification is claimed.
+
+The user subsequently clarified that every packet on a directed link must share
+the same policy. The relay now keys policy and random streams by `(source,
+destination)` only. Traffic-class labels remain diagnostic, and reverse
+directions remain independently configurable for asymmetric loss. With explicit
+approval, the affected P8 tests now check shared impairment and cleanup after
+restoring a failed link within the original allowance. The original P8 record remains historical;
+`verification/graph_core/link_policy_verification.json` records the correction.
+
+### P8 workload increment verified on 20 October 2026
+
+The restricted-ABI pipeline and feedback fixtures now run through the existing
+O/GraphRun/production-host path. Pipeline verifies 64-byte sequence/value/padding
+samples and `2*value+1` on three devices and co-located in the four-node profile.
+The distributed script requires successful removal of the original transform
+and its complete incidence before fresh addition, observes the replacement,
+then explicitly removes all nodes. The local script removes the transform and
+records source/sink as remaining at teardown: its four ordinary admissions fill
+the existing CoAP reply cache. No profile/cache limit was increased.
+
+Feedback uses one outstanding sequence with idempotent fixture retries and
+checks correlated responses locally and remotely. The remote case delays
+authority-to-initiator preparation and impairs the forward device link after
+startup. All packet types share each directed link policy; reverse directions
+remain independent. Faults are removed before the explicit cleanup phase.
+
+An optional shared-host callback observes successful guest PUT/GET boundaries;
+the guest ABI is unchanged. POSIX uses bounded nonblocking stdout writes with
+per-host sequence numbers and terminal attempt/drop counters after worker join.
+The evaluator marks missing observations inconclusive, verifies payloads and
+matching source-instance PUTs for GETs within each window, and uses a synthetic
+minimum of eight distinct output samples per 250 ms window. GET does not prove
+subsequent guest acceptance or actuation. These host-clock observations neither
+expose oracle time to guests nor qualify acquisition age or embedded timing.
+
+Replacement exposed a sparse removal admission bug under record pressure:
+`check_removal_binding_conflicts` received the candidate eviction slot rather
+than the retained record for the current operation. Its old scope could reject
+a valid fresh removal of the same logical channel. Passing `found` preserves
+all retained descriptor checks and failure atomicity. The new
+`admission_reuse_test.c` reproduces reuse and checks that changed descriptors and
+duplicate entries in the current removal remain rejected without mutation.
+
+The default suite passed 40/40 entries on 16 October (retained summary; its
+temporary binary hashes/detail log were not captured before interruption).
+The fresh four-node suite passes 14/14 entries, including all ten workload
+cases, on 20 October. Ruff lint/format pass. All 81 C/H/Python verification
+sources in the 16 October checkpoint match their hashes. No existing test case
+was edited to close this increment. Commands, source/artifact hashes and limits
+are in `verification/graph_core/workloads_verification.json`; the human code
+walkthrough is `guide/workload-walkthrough.md`.
+
+APP01 remains partial: periodic sampling, scheduled-miss accounting and explicit
+synthetic deadline/freshness evaluation are not implemented. APP02 has the
+declared fixture coverage, not a general application delivery guarantee.
+Named lifecycle fault barriers, broader loss accounting, crash/freeze/collector
+experiments and application alternative-channel examples remain P8 work.
+Ventilation behavior/model/service acceptance remains gated by R07/R08; no
+new physical target or composed formal qualification is claimed. Next implement
+the remaining deterministic application measurement slice after resolving its
+minimal clock/scheduling interface against Q19; do not infer periodicity from
+finite `event_wait` calls or infer freshness from successful graph startup.
+
+### P8 offline timing increment verified on 20 October 2026
+
+Compared two independent designs before implementation. A guest clock or new
+WASI time import would violate the current Q19 baseline. Relative event_wait
+cannot establish a periodic schedule or count scheduled acquisition misses.
+Externally paced input requires additional peripheral/source plumbing.
+Selected the smaller existing-trace evaluator; APP03 remains an independent
+next slice. No mandatory timestamp, guest API or production C change was made.
+
+The new sibling `graph_workload_timing.py` exposes
+`evaluate_timing(events, devices, workload, phases, *, budget_us)` and an offline
+CLI taking a saved run and explicit synthetic budget. It reuses existing
+value/instance validation, requires a complete channel trace, and checks ordered
+source PUT → expected transform/responder GET → PUT → final GET. Origins are
+first successful source publications over the entire trace; retries do not
+reset them. Concrete instance and sequence identify the short nonwrapping
+fixture's sample; embedded observer times determine order, not JSONL arrival.
+
+Per-window cohorts contain first publications in `[begin,end)` with
+`publication + budget < end`. The tail is uniformly excluded even for early
+deliveries. Elapsed `<= budget` passes; late or unobserved final GETs count as
+budget misses with unknown cause. Missing traces and empty cohorts are
+inconclusive. Min/max include delivered eligible samples only. Original graph
+reports and the eight-sample criterion remain separate from timing status.
+CLI output is exclusive-create and records hashes of all three inputs and both
+evaluator modules. Two successful replay invocations produce identical bytes.
+
+Review identified a draft attribution gap: source PUT and transform PUT could
+each precede final GET without being correctly ordered with each other. A new
+regression reproduced three invalid histories (output before origin, input GET
+before origin, absent transform GET). Ordered copy-boundary checks reject all
+three. These host observations still do not prove guest acceptance or physical
+execution. No acquisition-time or cross-device clock claim is introduced.
+
+Fresh ASan/UBSan CTest results: default 41/41 in 28.03 s; four-node 15/15 in
+11.38 s. All 13 new timing checks run in each profile. Ruff lint/format pass.
+The 81 pre-existing verification sources match their before-increment hashes.
+Only the new test file and CMake registration were added; no existing test case
+was changed. `verification/graph_core/timing_verification.json` retains hashes,
+commands, configurations, detailed logs and review disposition.
+
+The saved healthy pipeline's value check passes while its synthetic 50 ms
+budget fails: each window has 177 eligible publications, with 3/4 lacking an
+observed final GET. Preserve that failure as measurement evidence, not a claim
+that graph startup implies timed delivery. APP01 remains partial for periodic
+acquisition, scheduled misses and acquisition freshness; OBS09 skew/drift is
+also open. Next implement APP03 alternatives through explicit operations and
+existing guest imports. R07/R08 application acceptance and final P9 target/formal
+qualification remain separate gates.
+
+### P8 alternative-channel increment verified on 20 October 2026
+
+APP03 now has a restricted-ABI application fixture with source 10 and sinks
+20/30 on three hosts. Source addition carries two outgoing bindings and the
+existing `A OR B` predicate. The guest keeps two independent sequence counters,
+one sample buffer and cooperative event waits; DISABLED/FULL on one branch
+cannot suppress the other. No production C, guest API, pool/cache bound or
+protocol semantics changed.
+
+The new sibling `graph_alternatives.py` takes host/guest/output plus `first=A|B`
+and a seed. It starts both sinks, partitions source→the other sink before source
+authorization, and requires successful source startup with only the selected
+endpoint pair ACTIVE. It observes a single-branch window, restores the directed
+link, requires a later report with both pairs ACTIVE, then observes both branches.
+An explicit removal closes the initially working edge; a third window requires
+continued samples on the survivor and no successful copies on the removed edge.
+Source and sinks are explicitly removed afterward: seven successful operations.
+
+The first draft wrongly treated an absent post-ACK query as lost live-source
+evidence. Both process cases reproduced this. `core_admission_report_retained`
+intentionally suppresses an acknowledged unchanged revision while live records
+remain; a new revision can be queried when the optional branch advances.
+The runner now polls past empty queries/timeouts within its observation bound
+and requires actual fresh evidence. Existing GraphRun/core behavior is unchanged.
+
+The evaluator reuses complete channel-trace parsing, validates 64-byte values
+and padding, verifies concrete callers and preceding matching PUTs for every GET,
+and requires eight distinct sequences per active branch per 250 ms window.
+Inactive branches must have zero successful PUT/GET observations. Incomplete
+traces remain inconclusive; host copy-out is not guest acceptance or actuation.
+
+Default ASan/UBSan CTest passes 42/42 in 34.98 s; four-node passes 16/16 in
+18.10 s. Each runs all ten new tests (eight evaluator cases and A-first/B-first
+actual-host flows). All 82 pre-existing verification sources match baseline
+hashes; no existing cases were changed. Ruff passes. Separate standards/spec
+reviews found no blockers; numeric predicate/report semantics gained comments
+without a shared-runner framework. See `alternatives_verification.json` under
+`verification/graph_core/` for commands, hashes, retained runs and qualifications.
+
+APP03 late joining and explicit branch removal are covered within these fixture
+bounds. Optional-branch expiry/cleanup before joining is not application-tested
+by this increment. Next implement APP04 mixed input alternatives with required
+output using the same explicit-operation path. APP01 acquisition scheduling and
+freshness, OBS09 device clocks, broader lifecycle/failure observations, R07/R08
+ventilation criteria and P9 physical/formal qualification remain open.
+
+### P8 mixed-dependency increment verified on 20 October 2026
+
+APP04 now uses four hosts: sources 10/11 on hosts 2/3, transform 20 on host 1,
+and sink 30 on host 4. Transform addition carries input A, input B and output
+with `(A OR B) AND output`, using existing postfix tokens. The restricted guest
+has four roles, one sample buffer and one pending output. Even/odd sequence
+identities distinguish the input sources; the transform computes `2*sequence+1`.
+FULL retains the pending sample; DISABLED discards it. Existing imports and all
+production core/resource bounds remain unchanged.
+
+Two design agents compared a two-case diagonal with the four-case matrix.
+Both require fresh runs: partitioning an already prepared channel cannot
+retract its READY fact. Selected the four-case A/B × missing-output/inputs
+matrix through one runner and two explicit options, with no new scenario
+framework. Before release, require positive node/prepared-channel READY evidence,
+missing remote endpoint(s), Pending outcome and history 0. After release require
+Succeeded/history 39 and complete ACTIVE selected input plus output. Missing
+ACKed revisions and timeouts never satisfy the gate.
+
+Each run observes a serving window, explicitly removes the required output,
+and observes a second window with continued input consumption but zero output
+copies. The unused input path stays partitioned until cleanup. Restore it,
+remove the transform with remaining incidence, then remove all peers. All nine
+operations must report success before teardown. Initial startup success remains
+historical and separate from the second window's failed output-service criterion.
+
+The new sibling `graph_mixed.py` evaluator requires complete traces, exact
+caller/owner, source parity, values/padding and ordered source PUT → transform
+GET → transformed PUT → sink GET. Both 250 ms windows need eight distinct input
+reads; serving needs eight output reads, while the removed-output window needs
+zero output copies. Missing observations are inconclusive. The four saved runs
+have 123–208 distinct output samples while serving, then zero output copies
+with 197–212 distinct input reads after output removal.
+
+Default ASan/UBSan CTest passes 43/43 in 49.15 s; four-node passes 17/17 in
+30.70 s. Both execute all 13 new cases (nine oracle, four process). All 84
+pre-existing C/H/Python verification sources and 42 production core files
+match their baseline hashes. Existing tests were not changed. Ruff and separate
+standards/specification reviews pass without blockers. See
+`verification/graph_core/mixed_verification.json` for detailed evidence.
+
+APP04's fixture is covered; no physical actuator or application acceptance
+claim follows from GET. Simultaneous-input fairness and post-start input failover
+are not tested. APP01 acquisition scheduling/freshness, APP03 optional expiry
+before join, OBS09 device clocks and broader fault/observation coverage remain
+open. APP11 producer/consumer stalls are a possible next deterministic plumbing
+slice without choosing ventilation policy. APP05–APP10 application-specific
+behavior and acceptance still require R07/R08 decisions; final P9 target/formal
+qualification remains mandatory.
+
+### Native imports and remaining deterministic workload checks: 20 October 2026
+
+Implemented the agreed [native-import addendum](graph_native_imports_plan.md)
+through Python authorization, bounded request decoding, owned admission/runtime
+copies, restricted-profile validation and actual loaded Wasm import-type
+checking. The fixed `kaos_native` registry currently exposes one synthetic
+bounded sensor function. At most four distinct 1–32-byte names are granted;
+no-grant schema-4 bodies remain unchanged. The optional runtime callback is
+required for nonempty grants. Cancellation drains the synchronous native call
+before worker disposal and CLEANED. No physical acquisition or application
+sensor policy is selected by this interface.
+
+APP03 now covers optional expiry before joining in both A-first and B-first
+cases. Require successful startup before observing expiry; positively observe
+the unjoined branch's expiry and unresolved cleanup, restore its directed link,
+then require cleanup while historical startup success and selected-channel
+service persist. All six graph operations succeed. The final retained windows
+contain 159–171 distinct selected-branch samples each and zero optional copies.
+
+APP11's new real-WAMR/endpoint fixture covers stopped production, stopped
+consumption and paused transfer. It observes EMPTY after drain, receiver
+drop-incoming at capacity, and sender FULL, then cancels/disposes both guests
+and reclaims endpoints. It directly activates established endpoint fixtures;
+it does not prove coordinator-history behavior or choose validity/fallback
+rules that still depend on R07.
+
+Default sanitizer CTest passes 50/50 entries in 58.04 s; four-node passes 24/24
+in 42.36 s. Only the explicitly approved P5 designated-field initializer
+changes among 86 pre-existing C/H/Python verification sources. New Python
+files and the two extended simulator modules pass Ruff checks/formatting.
+The ESP32 four-node P7 firmware cross-build passes. Compiler layouts add
+3264 B to admission-pool storage and 544 B to runtime-slot storage; physical
+heap/stack/timing qualification remains open. See
+`verification/graph_core/continuation_verification.json` for retained evidence
+and [current decisions and engineering work](#current-decisions-and-dependencies) for decisions and engineering gaps.
+
+This closes these finite native-import and workload checks, not P8/P9 as a
+whole. The planned two-socket scheduler, broader observation/fault experiments,
+acquisition/freshness evidence, final Q14 composition and physical target
+qualification remain work. R07/R08 continue to gate ventilation acceptance.
+
+### Composed execution model progress: 20 October 2026
+
+Added `verification/graph_core/model/HostExecution.tla` and finite
+configurations joining worker startup/native ownership, physical endpoint
+state versus accepted facts, strict deadline/cutoff ordering, bounded packet
+and data queues, removal, exact revision ACKs and fresh-instance reuse.
+Independent review corrected the node CLEANED guard to require reclamation
+of incident local endpoints, matching `core_admission_release_node`.
+
+The reviewed no-channel runtime configuration exhaustively checks 18,340
+distinct states; the blocked-native configuration checks 2,040. Five expected
+reachability traces establish startup, blocked-native removal with unrelated
+cleanup, simultaneous native/packet/data pressure, stale traffic across reuse,
+and optional expiry overlapping removal. These witnesses show reachable
+interactions, not exhaustive acceptance of their larger configurations.
+
+Remote, mixed-predicate, reuse, partition and data-enabled exhaustive searches
+remain incomplete. Per-action fairness is assumed; actual control scans,
+worker availability and lock waits are not explicitly scheduled. Admission
+competition, independent concurrent-operation records and complete collector
+retirement still need modeling; abstract data queues do not prove FIFO payload
+semantics. Outcome progress permits cutoff/Unresolved rather than guaranteeing
+remote cleanup. Q14 is therefore still open. Exact runs, frozen sources,
+assumptions and handler mapping are in
+`verification/graph_core/model/HostExecution.md` and the continuation record.
+
 ### Adoption of the replacement
 
 Use an isolated build target while bringing up the new core. Switch the simulator's device executable and workloads to that target when a vertical slice includes its success, failure and cleanup behavior. Keep earlier artifacts as a comparison baseline where useful; the two implementations need not interoperate or share writable runtime records. When the new implementation meets the conformance gates, remove superseded build paths, wrappers and tests tied only to discarded internals, preserving tests of required observable behavior. Runtime cutover, record conversion and compatibility support are additional requirements only if later requested.
@@ -548,3 +1255,409 @@ Q05 supplies an explicit exception to that regression disposition: the forgotten
 | Restart, migration and recovery | Explicitly excluded by the verified scope. Record as future specification work under Q02/Q22, not as defects to patch into the six operations implicitly. |
 
 Completion means the six operations meet the selected requirements with Q05/Q08 deviations and Q12's trusted-marker convention explicit, every mandatory test passes within that scope, the final Q14 model checks and Q01 measurements are supplied, and application claims use the selected R07/R08 criteria. Classify deferred, blocked and known-limitation cases separately; a disposition alone is not a passing required test. Report post-retirement replay risks and authentication/duplicate-policy limits alongside results; do not claim full conformance to the stronger reference protocol. The current finite checks and planning audit do not establish implementation completion today.
+
+### 2026-10-20: OBS02 entry-barrier verification increment
+
+Selected the first actionable observation/fault work from the work register,
+now integrated under [agreed work](#agreed-work-that-can-proceed).
+Compared a manual runtime adapter harness with real WAMR entry guards and process
+report polling. Use existing `core_wamr_attach_entry_guard`: it establishes an
+actual worker boundary outside registry/mailbox locks without production API or
+storage changes. Manual adapters would provide weaker runtime evidence; report
+polling would not itself stop execution at a boundary.
+
+New `verification/graph_core/tests/lifecycle_barrier_test.c` covers before-configure
+and before-main gates with no fault, authorized no-edge removal, and exact
+controller-deadline expiry. An unrelated actual worker reaches accepted INIT
+while the target is held. Cancellation and retained charges are observed before
+release; denied entry, disposal, CLEANED and reclamation follow release. Positive
+startup controls prevent vacuous pass. Every case runs twice and compares an
+eight-event imposed partial order; this is not complete schedule replay. Gate
+waiting has a ten-second monotonic bound; controller observation loops have
+five-second bounds; CTest has a thirty-second outer limit.
+
+Default ASan/UBSan suite passed 51/51; four-node suite passed 25/25. All 87
+pre-existing C/H/Python verification sources in the recorded baseline are
+unchanged; `graph_core/` has no changes. Independent spec and standards reviews
+found no blockers. Simplified a redundant gate flag and bounded the worker wait
+following review. Evidence: `verification/graph_core/barrier_verification.json`,
+with hashes, full logs and event ledgers under `results/barriers/`. Historical
+continuation results remain separate.
+
+OBS02 remains partial: preparation and cleanup are observed outcomes rather than
+named fault gates. Expiry advances controller time and does not independently
+verify WAMR real-clock expiry. Runtime flags prove entry publication, not a guest
+instruction trace. This channel-free local fixture does not cover collector
+crashes, UDP observation loss, full replay, hardware qualification or all OBS03/
+OBS05 obligations. Next observation work is listed under [agreed work](#agreed-work-that-can-proceed).
+
+### 2026-10-20: OBS02 adapter preparation/disposal completion gates
+
+Continue the observation work with a separate core-only fixture:
+`verification/graph_core/tests/runtime_phase_barrier_test.c`. Compared real WAMR
+internal hooks against a manually scheduled `core_node_runtime` adapter. Existing
+WAMR hooks cover entry only; adding internal test gates would enlarge production
+interfaces. Choose the adapter contract for this increment and leave actual
+WAMR preparation/destruction and process barrier qualification open.
+
+Six cases combine no preparation fault/removal/exact addition expiry with
+cleanup release before cutoff or after exact cutoff. Artifact handoff is real;
+the adapter delays private arena allocation and preparation publication while
+another slot starts through real node-service INIT acceptance. Late preparation
+after cancellation cannot authorize dispatch. During disposal hold, execution
+has stopped but storage and worker ownership remain; just-before/equal-deadline
+outcomes are pending/unresolved. Freeing storage precedes disposed publication;
+only then can the core reclaim and report CLEANED. Eventual removal succeeds,
+failed addition becomes failed-clean, and historical addition success remains.
+An extra core step checks against repeated reclamation; the unrelated node is
+independently removed and total reservations reach zero.
+
+Spec and standards reviews found no blockers. Added assertions for the retained
+worker execution/action and removed ambiguous fault wording for the positive
+control. This is serialized adapter-contract evidence, not actual worker
+concurrency, WAMR internal allocation/destruction, preparation failure, channels,
+collector loss or full replay. The unrelated slot starts during preparation
+hold and is checked for continued liveness during disposal hold. Build/test
+results and preserved test-source baseline are in
+`verification/graph_core/adapter_barrier_verification.json`; old evidence stays
+historical. No production code or pre-existing test sources changed.
+
+Final validation for this adapter increment: ASan/UBSan default52/52 and
+four-node26/26 passed. All88 pre-existing test/fixture sources match their
+baseline. Initial focused failure exposed a fixture pool-budget mismatch
+(4096-byte generic pool versus128-byte expectation); corrected only the new
+fixture setup. No runtime defect was found in this slice.
+
+### 2026-10-20: OBS03 post-capture observation corruption
+
+Added a separate `graph_observation_loss` case in both host profiles using the
+existing real-host feedback workload and unchanged sample/timing evaluators.
+Sixteen copies (eight faults per device) remove first/middle/last/all records,
+remove a terminal summary, change its drop counter, duplicate a record or reorder
+two records. Every damaged copy must produce inconclusive sample and timing
+assessments. The untouched trace has successful sample evidence and successful
+operation reports; complete timing may pass or fail its budget. No claim of
+absence or cleanup is inferred from the damaged copy.
+
+The same new fixture supplies every proper prefix of one synthetic authorized
+snapshot to the collector adapter. All eleven prefixes are rejected without
+retention; a complete positive snapshot stores and receives the exact ACK; a
+later malformed duplicate cannot erase it. No collector implementation change
+was needed. Spec review found no blockers. Standards review caught fixed output
+directory reuse; corrected to unique retained run directories and reran against
+the same populated root successfully. Subsequent review found no blockers.
+
+Scope stays partial OBS03: synthetic drop-counter alteration is not live overflow
+or counter production; direct collector input is not network truncation. Kernel
+loss, relay overflow, injector lateness, collector crashes and full replay remain
+open. Retain healthy traces, per-copy assessments, suite logs and hashes in
+`verification/graph_core/observation_loss_verification.json` and
+`verification/graph_core/results/observation_loss/`. Production code and existing
+test sources remain unchanged.
+
+Final OBS03 slice validation: default53/53 and four-node27/27 ASan/UBSan suites
+passed. All89 prior C/H/Python test/fixture sources match the recorded baseline.
+Each profile retained the original successful run plus16 inconclusive corruption
+assessments and11 rejected snapshot prefixes; complete snapshot control passed.
+
+### 2026-10-21: MGMT14 collector crash boundaries
+
+Added `collector_crash_test.py` and its CTest registration in both host profiles.
+Compared channel-free runtime evidence with a two-host remote-channel topology;
+selected the latter to assert O retains nonempty possible incidence after loss.
+A spawned process owns the actual GraphCollector/GraphTransport RAM archive.
+The parent keeps O alive but deliberately delays querying/applying the removal
+result. The child alone obtains and stores a validated complete node/channel
+removal snapshot, then signals a pipe boundary without transferring the payload.
+
+Case one SIGKILLs after storage and before storage ACK. A later raw query returns
+the same snapshot hash; O retains incidence until it deliberately applies that
+report. Case two first requires CHANGED for the exact storage ACK, then SIGKILLs.
+The later O query returns NO_RETAINED_RESULT with empty current observations;
+O's possible incidence remains. Both assert collector exit -SIGKILL, successful
+peer node evidence, and a fresh addition/removal with the collector still dead.
+No sleep selects the crash phase: storage and ACK completion are observed before
+kill. Polling and process waits have finite failure bounds.
+
+This characterizes volatile DB evidence loss under MGMT14 with delayed O
+observation (MGMT13), not an O outage, archive durability/restart recovery,
+device crash or unrelated-channel data isolation. Original result bytes stay in
+the collector; observer metadata cannot be fed back to O as closure. Existing
+P4/P5 helper methods are reused without editing them and only new test methods
+are selected. Spec and standards reviews found no blockers; clarified the log
+field separating post-crash incidence before retrieval from final authority
+closure. New per-invocation output directories preserve repeated-run evidence.
+
+Evidence: `verification/graph_core/collector_crash_verification.json` and
+`results/collector_crash/`. Production sources and all prior test sources remain
+unchanged. Full suite results are recorded below when available.
+
+Final collector increment validation: default54/54 and four-node28/28 ASan/UBSan
+suites passed; both new SIGKILL cases passed in each profile. All90 prior C/H/
+Python test/fixture sources match the recorded baseline. No production defect
+was found and no production interface/storage change was needed.
+
+### 2026-10-21: OBS03 live relay overflow rejects run completion
+
+The next observation slice found a concrete gap: GraphRelay already recorded
+actual queue overflow, but GraphRun could exit normally and its callers could
+write a normal passing result. Added a small counter to the existing GraphRun
+log path (sibling `sim_env/sim_env/graph_run.py`). Count only `packet_dropped`
+with `reason=relay_overflow`, once per packet copy, under the existing log lock.
+After relay shutdown/join, append an error if nonzero and include the count in
+the existing teardown record. Existing context-manager failure handling prevents
+normal result writers from proceeding. Protocol evidence, O state and complete
+application trace semantics remain independent of this run-validity failure.
+
+Compared a shared offline assessor/all-evaluator changes, a new relay assessment
+API, and central GraphRun rejection. Chose the last: fewer interfaces and no
+conflation of complete channel observations with an invalid fault experiment.
+Standalone offline sample/timing evaluators still assess recorded application
+evidence; callers must also inspect run teardown errors for injector validity.
+
+The new `relay_overflow_test.py` uses a real host and real UDP relay, with the
+existing relay factory seam selecting capacity one. A positive query round trip
+precedes one delayed duplicated query. The original fills the queue, copy1
+positively reports overflow, and a bounded condition wait observes that event.
+The query timeout is caught inside a successful context body; independently,
+context exit must reject overflow. Its original gets run_ended at shutdown,
+which is not counted as overflow. A requested-loss control drops one packet but
+exits normally with zero overflow count. Original test first failed because no
+RuntimeError was raised (and no count existed), then passed after the fix.
+
+Spec and standards reviews found no blockers. Ruff formatting and lint passed.
+No graph_core production change or existing test-source modification. This
+covers a finite queue path, not default256-slot throughput, active graph data,
+kernel receive losses, injector lateness, device timing or full replay. Evidence
+and hashes are in `verification/graph_core/relay_overflow_verification.json` and
+`results/relay_overflow/`; the original simulator file is preserved with that
+record so the precise change is reviewable despite the pre-existing dirty tree.
+
+Final live-overflow validation: default55/55 and four-node29/29 ASan/UBSan suites
+passed, including sibling Python regression discovery in the default suite.
+Ruff lint/format passed for the changed simulator module and new test. All91
+pre-existing C/H/Python test/fixture sources match the captured baseline.
+
+### 2026-10-21: focused shared-host crash-stop (HOST03)
+
+Selected the next settled observation/fault item after live relay overflow.
+Compared a test-only GraphRun subclass that exempts killed processes with one
+public `GraphRun.crash(device)` operation. Chose the public operation: reusable
+explicit fault injection with one argument, no restart/freeze/recovery policy,
+and no graph-core production changes. A per-device management lock plus a
+process-state lock serializes kill/wait/classification with concurrent health
+checks. Require a live managed process, record intent, send SIGKILL, confirm
+exit within five seconds, then record completion. Only that confirmed exit is
+waived in health checks and teardown. Unknown or already-exited hosts reject;
+unrequested process death, stderr, reader failures and overflow remain errors.
+
+The new `host_crash_test.py` runs two actual WAMR hosts. Device1 hosts a source;
+device2 hosts two distinct sinks with required AND channels. Both sinks must
+positively produce GET observations before the crash. Device2's process death
+stops its node/endpoint/coordinator roles together. Queries to both failed
+coordinators time out. Source removal on the survivor reaches Unresolved: local
+node/endpoints CLEANED, remote endpoints not CLEANED. O's two possible incidence
+entries remain unchanged through teardown. Negative control directly kills an
+unrequested host and requires both health-check and context-exit rejection.
+New tests cover unknown/repeated crash calls without modifying old tests.
+
+Before implementation, the shared-host test failed on missing `crash`; the
+unexpected-exit control passed. Both then passed against the implementation.
+Separate spec/standards reviews found no blockers. Concurrent crash versus
+survivor management is inspected, not separately exercised by this fixture.
+Ruff requested combining nested context managers in the new negative control;
+that formatting-only simplification was applied and lint passes.
+
+Scope remains focused HOST03: no unrelated U/channel Z isolation, all-lifecycle
+fault schedules, complete sample/timing trace, freeze/resume, restart/recovery
+or hardware qualification. SIGKILL need not produce CHANNEL_END; buffered
+stdout can appear after crash completion, so log arrival order is not a causal
+execution barrier. Process death never supplies graph closure evidence.
+Evidence, original simulator snapshot and exact diff are retained under
+`verification/graph_core/results/host_crash/` and the verification manifest.
+
+Final HOST03 validation: default56/56 and four-node30/30 ASan/UBSan suites pass,
+including default sibling Python regression discovery. The two new cases pass
+again in each profile after the Ruff syntax-only correction. All92 previous
+C/H/Python test/fixture sources retain their captured hashes. No additional
+embedded resource, timing or target qualification is claimed.
+
+### 2026-10-21: OBS02 real WAMR preparation/destruction gates
+
+Continued the settled lifecycle observation slice with a new host-only fixture,
+`verification/graph_core/tests/wamr_phase_barrier_test.c`. No graph production
+code or existing C/H/Python test/fixture source was changed. The shared workload
+build includes a new CMake registration; it reuses the unchanged restricted node
+guest and links the unchanged production runtime and engine.
+
+Two independent design explorations compared production callbacks, including
+private source in a test translation unit, existing entry/notification callbacks,
+and link-time wrappers. Selected wrappers: no firmware interface, task, storage
+or conditional production build. Existing notification callbacks must remain
+bounded/nonblocking and cannot implement a held gate. The Linux qualification
+profile supports GNU ld `--wrap`; these fixtures are not target firmware.
+
+Chosen gates: after successful real `wasm_runtime_instantiate`, before KaOS
+assigns/publishes its instance; and before real `wasm_runtime_deinstantiate`,
+after execution-environment destruction but before instance/module/arena/artifact
+release. Submit the target alone, observe its first gate, then start the other
+worker. Match subsequent destruction by captured instance/module handles.
+Wrappers hold no registry/mailbox lock; all waits are bounded and monotonic.
+
+Cross no-fault/removal/exact addition expiry with immediate/after-cutoff disposal
+release. Positive startup controls must succeed. Fault schedules require zero
+target entry-guard attempts and no commit/dispatch/start/success history. At
+cleanup deadline-1 the closing operation remains Pending; at equality it becomes
+Unresolved with both charges, worker ticket and reservation retained. The other
+node must still be running and uncancelled before its independent removal, which
+must finish while target destruction remains held. This establishes fresh worker
+progress at both boundaries. Actual deinstantiate/unload completion is checked
+when CLEANED is observed, before service shutdown. The unload wrapper rejects
+premature disposed publication. Final charges/reservations reach zero; a repeated
+service pass cannot reclaim twice. Each of six schedules runs twice and its
+bounded ledger must follow the expected order and match its repeat (56 records).
+
+Review strengthened the original fixture with unrelated-liveness checks before
+removal, explicit expected ledger order, and destruction-order assertions before
+shutdown. No production defect was found. The implementation skills' incremental
+verification/review guidance fits; ticket-driven integration branches, automatic
+commits and generic abstraction suggestions were not adopted for this local
+verification slice. Fixed-storage embedded ownership remains the controlling
+design constraint.
+
+This is partial OBS02 qualification, not complete Q14 or P9 acceptance. Exact
+controller-time injection does not qualify WAMR wall-clock expiry. No allocation
+failure, network/collector interaction, arbitrary intra-WAMR instruction barrier,
+full process replay or physical target timing is covered. Evidence and baseline
+hashes are retained in `verification/graph_core/results/wamr_phase_barriers/` and
+`verification/graph_core/wamr_phase_barrier_verification.json`.
+
+Final validation: default 57/57 (63.04 s) and four-node 31/31 (47.01 s) ASan/UBSan
+CTest entries pass, including twelve new schedule executions in each profile.
+All 95 pre-existing test/fixture source hashes and all 47 production-file hashes
+match the baseline. General Python discovery retains 40 opt-in skips; the
+default three-node pipeline also remains skipped. The new fixture has no skips.
+The initial build required sandbox escalation for WAMR's generated version
+header in the sibling dependency tree; a sandboxed focused run hit LeakSanitizer's
+ptrace restriction. Authorized runs outside that sandbox retain leak checking
+and pass. No semantic implementation failure or existing-test change occurred.
+
+### 2026-10-21: Two-port transport scheduling
+
+Implemented the agreed P8/R04 transport increment. `core_host_platform` separates
+readiness from single-datagram nonblocking receive by class; send selects the
+class. Shared UDP code owns two sockets, class-specific peer attribution and
+source ports, partial-startup cleanup and the existing wake descriptor. Remote
+devices require both addresses; authority/collector remain management-only.
+POSIX arguments/readiness and ESP Kconfig change together; old single-port
+canonical-host launch commands are incompatible. Frozen P2 stays unchanged.
+
+One control task performs initial lifecycle decisions, application RX4,
+management RX1, staging, bounded application TX via the existing endpoint cursor,
+management replies plus a full finite peer pass, one eligible artifact attempt,
+and maintenance. Due timers are checked between inputs and before application
+sends. Accepted input gets paired pre/post lifecycle passes under the registry
+lock. Unknown, malformed and oversized datagrams consume receive budget; an
+exhausted batch requests an immediate next round without a new wake. Application
+submission failures remain dequeue-and-drop. Fixed saturating counters expose
+receipts, rejects, submissions, artifact attempts and local timing maxima.
+
+Chosen simplifications: retain existing endpoint cursor and task priorities;
+complete each finite management peer pass instead of adding a second cursor;
+reuse bounded reply storage directly; one artifact-attempt timestamp persists
+across blocks, failures, retries, restarts and new transfers. Production spacing
+is a provisional 1000 us, configurable through `artifact_interval_us`; test
+adapters explicitly select zero where their old 100-us deadlines require it.
+Terminal timeouts bypass pacing and all original deadlines remain authoritative.
+No per-endpoint task, new application retry queue, framing version or CRC change.
+
+Simulator routes are `addresses[owner][class]`, with class keys `management` and
+`application`. O has only management. Both classes retain the same directed-link
+policy/RNG and one global pending-copy heap/limit. Observations add `socket_class`
+while retaining `plane`; GraphRun records both routes and updates canonical-host
+launch/readiness. Three simulator fixtures and six C/local process fixture files
+were adapted under the user's explicit single-port-conflict approval. Existing
+behavioral assertions/deadlines remain. Collector/P7 device-ID argument positions
+needed correction after the first full run. Collector formatting preserves its
+AST. No other baseline test sources change.
+
+Ten new fake-clock scenarios cover budget exhaustion, malformed traffic,
+wrong-class input, bounded recurring service, continuation without wake,
+round-robin persistence for a non-dividing endpoint count, failed-send dequeue,
+removal/expiry before data, block/retry/terminal deadline behavior and failed-send/
+restart pacing. Real UDP checks extend existing routing/cleanup coverage.
+Final suites pass 58/58 default and 32/32 four-node under ASan/UBSan/LSan. Python
+lint/format pass on all ten changed Python files; 9 opt-in runtime process cases
+also pass. Default Python discovery has 171 entries and 41 expected opt-in skips;
+one three-node workload is skipped only in the smaller capacity profile.
+
+The retained `transport_contention.py` uses identical 64-byte feedback guests and
+16 KiB custom-section-padded artifacts for preserved single-port and new two-port
+host/runner pairs. All four captures have complete traces, successful node
+addition/removal and feedback GETs during the actual 64-block transfer. The new
+hosts record 63/default and 68/four GET copies during transfer. One run per
+profile/version is exploratory evidence, not latency acceptance or proof of a
+performance improvement. Exact p50/p95/max, transfer windows, counters and
+provenance are retained. The standalone unchanged CRC probe covers 256 B through
+64 KiB; median at 16 KiB is 0.335 ms, at 64 KiB 1.318 ms in this unsanitized -O2
+host run. Sanitized final-artifact-handler maxima of 1.454/1.738 ms include CRC,
+parsing and copying under the registry lock. Full lock-wait/hold instrumentation
+and isolated final-block correlation remain qualification work. No optimisation
+is justified against a declared application target yet.
+
+ESP-IDF v5.5 network-host cross-build passes with four-node profile, -Og and
+12288-byte main stack; binary is 917712 bytes. A same-command -fstack-usage probe
+reports 1232-byte frames for step and receive_batch; this excludes callees and
+is not a high-water measurement. No board was available for Wi-Fi execution.
+Continuous ready work can keep priority-3 control runnable ahead of priority-2
+workers. Target worker progress, stack/heap/network bounds, timer/lock timing,
+combined saturation, admitted workload targets and final composed Q14 checking
+remain open. These functional results do not close R05/P9.
+
+Evidence: `verification/graph_core/transport_scheduling_verification.json`,
+`results/transport_scheduling/`, and `guide/verification.md#two-port-transport-scheduling`.
+
+### 2026-10-22: Graph core simplification, steps 0–6
+
+Implemented the behavior-preserving portion of `graph_core_simplification_plan.md`.
+Shared UDP now sits beside protocol sources, with its header in `include/` and
+the socket build boundary preserved. Artifact option validation reuses CoAP's
+existing helper; control routing finds URI-Path once; host dispatch passes its
+borrowed decoded message into control. Raw callers retain their original entrypoint.
+Channel comparisons and descriptor encoding have one implementation each.
+Admission uses two read-only scope checks with publication/capacity visible in
+the main function; a larger temporary-plan alternative was compared and rejected.
+Named request modes replace three Boolean mode arguments. Endpoint closure,
+node handoff eligibility, host phases and WAMR teardown now expose ownership and
+ordering without new state, tasks, allocations or policies. Initial node cleanup
+and exactly two edge-then-node passes, clock/lock placement, original deadlines,
+receiver-first activation and partial-init/shutdown ordering remain intact.
+
+All 87 captured existing C/H/Python verification files are unchanged. Two new
+tests cover raw/decoded control equivalence and worker-startup unwind. Full
+sanitized suites pass 60/60 default (62.59 s), 34/34 four-node (45.58 s), and
+9/9 opt-in runtime process cases (1.069 s). Discovery retains 41 opt-in skips;
+the default local three-node pipeline remains skipped. Each profile also passes
+179,139 generated request/admission and 1,456 UDP-parser comparisons against
+the dirty-tree baseline. Protocol-only build/check and ESP-IDF v5.5 four-node
+network-host cross-build pass; ESP binary is 917856 bytes. No board run occurred.
+
+Eight fixed record types retain their sizes on native and ESP32 compilers in
+both profiles. Xtensa `-Og` step/receive frames remain 1232 bytes; the host's
+control-handler frame decreases by 224 bytes. Some extracted calls increase
+local stack use, including the retained raw control entrypoint's 64-byte increase
+in wrapper-plus-handler frames. All reports are recorded; these are not peak
+call-chain or physical high-water measurements and do not close target limits.
+Existing stack/capacity settings are unchanged. Sandbox failures were socket/
+LeakSanitizer restrictions, and WAMR configuration needed its generated sibling
+dependency header; authorized reruns passed. Implementation-skill tracker/commit
+workflows and codebase-design test-deletion advice were excluded because they
+conflict with this task's local scope or explicit test-preservation instruction.
+
+Application-CoAP slice P remains pending. The user clarified that maximum remote
+rate is to be measured, while required rate likely belongs in the manifest whose
+interface is still being designed. No rate cap or manifest fields were invented.
+MID reuse, response suppression and congestion behavior need that contract;
+existing host/simulator wire fixtures need specific approval before migration.
+Evidence: `verification/graph_core/simplification_verification.json`,
+`results/simplification/`, and `guide/verification.md#simplification-refactor-verification`.

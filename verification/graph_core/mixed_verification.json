@@ -1,0 +1,551 @@
+{
+  "date": "2026-10-20",
+  "scope": "P8 APP04 mixed input alternatives and required output: both missing-conjunct cases with A/B, separate synthetic service assessment after explicit output removal, full explicit cleanup. No full P8/P9 acceptance.",
+  "paths": "Source and retained-file keys relative to kaos_core; other result paths relative to verification/graph_core; artifact keys identify executed files.",
+  "head": "00de8fe2029e0e1e2025aa6389d199cc43b93ef0",
+  "working_tree": "Dirty before and after; unrelated work preserved, no commit created.",
+  "implementation": {
+    "guest": "mixed.c: input-A/input-B/transform/sink roles; one fixed sample buffer; existing init/put/get/event_get/event_wait imports; one pending output retained across FULL and discarded across DISABLED.",
+    "predicate": "(A OR B) AND output: 02 00 02 01 04 00 02 02 03 00",
+    "channels": {
+      "A": [
+        10,
+        20,
+        1
+      ],
+      "B": [
+        11,
+        20,
+        1
+      ],
+      "output": [
+        20,
+        30,
+        1
+      ]
+    },
+    "owners": {
+      "source10": 2,
+      "source11": 3,
+      "transform20": 1,
+      "sink30": 4,
+      "authority": 99
+    },
+    "sample": "64 bytes using existing sample format. A even/B odd uint32 sequences; source value=sequence; output value=2*sequence+1 modulo 2^32; 56 checked padding bytes.",
+    "runner": "run_mixed(host, guest, output, *, first='A', missing='output', seed=0); first A/B, missing output/inputs.",
+    "gate": "Before authorization partition coordinator-to-missing-peer links. Require node READY and complete READY available side, absent missing remote endpoint(s), Pending outcome and history0. Restore required link; require success/history39 and complete ACTIVE selected input plus output. ACKed missing reports/timeouts cannot satisfy gates.",
+    "phases": [
+      "250 ms serving",
+      "explicit output removal",
+      "250 ms continued input with zero output copies"
+    ],
+    "operation_count": 9,
+    "cleanup": "Restore unused input link, remove transform with complete remaining incidence, then three isolated peers. Actual successful cleanup reports retained before process teardown.",
+    "oracle": "Complete per-host traces, concrete caller and owner, input parity, values/padding, ordered source PUT -> transform GET -> transformed PUT -> sink GET. Both windows require >=8 distinct selected-input GETs. Serving requires >=8 distinct output GETs; after output removal no output copies. Expected experiment pass is separate from failed output-service criterion.",
+    "bounds": {
+      "payload_bytes": 64,
+      "queue_messages_per_endpoint": 2,
+      "guest_linear_memory_bytes": 65536,
+      "guest_stack_bytes": 4096,
+      "node_peak_request_bytes": 131072,
+      "node_addition_allowance_us": 10000000,
+      "channel_addition_allowance_us": 10000000,
+      "cleanup_allowance_us": 3000000,
+      "initial_gate_observation_timeout_s": 5,
+      "outcome_observation_timeout_s": 10
+    },
+    "production_core_changed": false,
+    "guest_abi_changed": false,
+    "pool_cache_bounds_changed": false
+  },
+  "checks": {
+    "default_profile": {
+      "passed": 43,
+      "total": 43,
+      "seconds": 49.15,
+      "new_tests_passed": 13,
+      "new_tests_skipped": 0,
+      "summary": "results/p8_mixed/host-ctest.log",
+      "details": "results/p8_mixed/host-test-details.log",
+      "cache": "results/p8_mixed/host-CMakeCache.txt"
+    },
+    "four_node_profile": {
+      "passed": 17,
+      "total": 17,
+      "seconds": 30.7,
+      "new_tests_passed": 13,
+      "new_tests_skipped": 0,
+      "summary": "results/p8_mixed/four-ctest.log",
+      "details": "results/p8_mixed/four-test-details.log",
+      "cache": "results/p8_mixed/four-CMakeCache.txt"
+    },
+    "sanitizers": "ASan and fail-fast UBSan. Existing WAMR fake-stack exception unchanged.",
+    "new_tests": {
+      "oracle": 9,
+      "actual_host": 4
+    },
+    "existing_verification_sources": {
+      "unchanged": 84,
+      "manifest": "results/p8_mixed/test_source_baseline.json"
+    },
+    "existing_core_sources": {
+      "unchanged": 42,
+      "comparison": "graph_core hashes in alternatives_verification.json"
+    },
+    "ruff": {
+      "status": "passed",
+      "log": "results/p8_mixed/ruff.log"
+    }
+  },
+  "retained_examples": {
+    "a-output": {
+      "result": "results/p8_mixed/a-output/result.json",
+      "events": "results/p8_mixed/a-output/events.jsonl",
+      "provenance": "results/p8_mixed/a-output/provenance.json",
+      "status": "passed",
+      "trace_complete": true,
+      "seed": 42,
+      "observations": 1277,
+      "blocked_report": [
+        4,
+        8,
+        3,
+        1,
+        5,
+        0,
+        0,
+        [
+          1,
+          1,
+          1,
+          0,
+          1,
+          1,
+          0
+        ]
+      ],
+      "startup_report": [
+        4,
+        8,
+        3,
+        1,
+        13,
+        1,
+        39,
+        [
+          1,
+          3,
+          3,
+          0,
+          1,
+          3,
+          3
+        ]
+      ],
+      "phases": [
+        {
+          "name": "serving",
+          "status": "passed",
+          "service_status": "passed",
+          "input_unique": 201,
+          "output_unique": 199,
+          "unexpected_copies": 0
+        },
+        {
+          "name": "output_removed",
+          "status": "passed",
+          "service_status": "failed",
+          "input_unique": 209,
+          "output_unique": 0,
+          "unexpected_copies": 0
+        }
+      ],
+      "successful_graph_operations": 9,
+      "remaining_instances_at_teardown": [],
+      "observed_directed_packet_drops": {
+        "1->3": 2,
+        "1->4": 1
+      }
+    },
+    "b-output": {
+      "result": "results/p8_mixed/b-output/result.json",
+      "events": "results/p8_mixed/b-output/events.jsonl",
+      "provenance": "results/p8_mixed/b-output/provenance.json",
+      "status": "passed",
+      "trace_complete": true,
+      "seed": 42,
+      "observations": 1046,
+      "blocked_report": [
+        4,
+        8,
+        3,
+        1,
+        5,
+        0,
+        0,
+        [
+          1,
+          0,
+          1,
+          1,
+          1,
+          1,
+          0
+        ]
+      ],
+      "startup_report": [
+        4,
+        8,
+        3,
+        1,
+        13,
+        1,
+        39,
+        [
+          1,
+          0,
+          1,
+          3,
+          3,
+          3,
+          3
+        ]
+      ],
+      "phases": [
+        {
+          "name": "serving",
+          "status": "passed",
+          "service_status": "passed",
+          "input_unique": 132,
+          "output_unique": 123,
+          "unexpected_copies": 0
+        },
+        {
+          "name": "output_removed",
+          "status": "passed",
+          "service_status": "failed",
+          "input_unique": 211,
+          "output_unique": 0,
+          "unexpected_copies": 0
+        }
+      ],
+      "successful_graph_operations": 9,
+      "remaining_instances_at_teardown": [],
+      "observed_directed_packet_drops": {
+        "1->2": 2,
+        "1->4": 1
+      }
+    },
+    "a-inputs": {
+      "result": "results/p8_mixed/a-inputs/result.json",
+      "events": "results/p8_mixed/a-inputs/events.jsonl",
+      "provenance": "results/p8_mixed/a-inputs/provenance.json",
+      "status": "passed",
+      "trace_complete": true,
+      "seed": 42,
+      "observations": 1282,
+      "blocked_report": [
+        4,
+        8,
+        3,
+        1,
+        5,
+        0,
+        0,
+        [
+          1,
+          0,
+          1,
+          0,
+          1,
+          1,
+          1
+        ]
+      ],
+      "startup_report": [
+        4,
+        8,
+        3,
+        1,
+        13,
+        1,
+        39,
+        [
+          1,
+          3,
+          3,
+          0,
+          1,
+          3,
+          3
+        ]
+      ],
+      "phases": [
+        {
+          "name": "serving",
+          "status": "passed",
+          "service_status": "passed",
+          "input_unique": 196,
+          "output_unique": 196,
+          "unexpected_copies": 0
+        },
+        {
+          "name": "output_removed",
+          "status": "passed",
+          "service_status": "failed",
+          "input_unique": 212,
+          "output_unique": 0,
+          "unexpected_copies": 0
+        }
+      ],
+      "successful_graph_operations": 9,
+      "remaining_instances_at_teardown": [],
+      "observed_directed_packet_drops": {
+        "1->2": 1,
+        "1->3": 2
+      }
+    },
+    "b-inputs": {
+      "result": "results/p8_mixed/b-inputs/result.json",
+      "events": "results/p8_mixed/b-inputs/events.jsonl",
+      "provenance": "results/p8_mixed/b-inputs/provenance.json",
+      "status": "passed",
+      "trace_complete": true,
+      "seed": 42,
+      "observations": 1315,
+      "blocked_report": [
+        4,
+        8,
+        3,
+        1,
+        5,
+        0,
+        0,
+        [
+          1,
+          0,
+          1,
+          0,
+          1,
+          1,
+          1
+        ]
+      ],
+      "startup_report": [
+        4,
+        8,
+        3,
+        1,
+        13,
+        1,
+        39,
+        [
+          1,
+          0,
+          1,
+          3,
+          3,
+          3,
+          3
+        ]
+      ],
+      "phases": [
+        {
+          "name": "serving",
+          "status": "passed",
+          "service_status": "passed",
+          "input_unique": 210,
+          "output_unique": 208,
+          "unexpected_copies": 0
+        },
+        {
+          "name": "output_removed",
+          "status": "passed",
+          "service_status": "failed",
+          "input_unique": 197,
+          "output_unique": 0,
+          "unexpected_copies": 0
+        }
+      ],
+      "successful_graph_operations": 9,
+      "remaining_instances_at_teardown": [],
+      "observed_directed_packet_drops": {
+        "1->2": 2,
+        "1->3": 1
+      }
+    }
+  },
+  "review": {
+    "standards": {
+      "blocking_findings": 0,
+      "documented_violations": 0,
+      "heuristic_findings": 0,
+      "scope": "New guest, runner, tests and shared CMake registration; existing dirty changes excluded."
+    },
+    "specification": {
+      "blocking_findings": 0,
+      "scope": "APP04 mixed startup gates and separately observed service after output removal.",
+      "qualifications": [
+        "Synthetic host copy-flow criterion only",
+        "No actuator execution, ventilation QoC, freshness, simultaneous-input fairness or post-start input failover qualification"
+      ]
+    },
+    "design_comparison": {
+      "shared": "Use fresh operations because READY evidence is monotonic; require positive Pending/READY reports before release.",
+      "alternatives": [
+        "Two diagonal cases cover both conjuncts and input alternatives with fewer launches.",
+        "Four cases cover the full A/B by missing-output/inputs matrix without adding guest functionality."
+      ],
+      "selected": "Four cases share one runner; two explicit CLI options keep the test conditions independent."
+    },
+    "skill_adaptation": "Used implement and parallel code-review guidance. Repository plans and new-file snapshot supplied scope in place of tracker/commit workflow. No generic framework or new embedded interface; no commit over pre-existing dirty work."
+  },
+  "commands": [
+    "cmake -S verification/graph_core -B /tmp/kaos-timing-host -G Ninja -DCORE_BUILD_HOST=ON -DCORE_BUILD_P2_HOST=ON -DCORE_SANITIZE=ON",
+    "cmake --build /tmp/kaos-timing-host -j4",
+    "cmake -S verification/graph_core/four -B /tmp/kaos-refactor-four -G Ninja -DCORE_SANITIZE=ON -DCMAKE_C_FLAGS=-fstack-usage",
+    "cmake --build /tmp/kaos-refactor-four -j4",
+    "ctest --test-dir /tmp/kaos-timing-host -R '^graph_p8_mixed$' --output-on-failure --output-log /home/karolina/Research/Code/kaos_core/verification/graph_core/results/p8_mixed/host-focused.log",
+    "ctest --test-dir /tmp/kaos-timing-host --output-on-failure --output-log /home/karolina/Research/Code/kaos_core/verification/graph_core/results/p8_mixed/host-ctest.log",
+    "ctest --test-dir /tmp/kaos-refactor-four --output-on-failure --output-log /home/karolina/Research/Code/kaos_core/verification/graph_core/results/p8_mixed/four-ctest.log",
+    "uv --directory /home/karolina/Research/Code/sim_env run --offline python -m sim_env.graph_mixed --host /tmp/kaos-timing-host/core/kaos_host --guest /tmp/kaos-timing-host/mixed.wasm --first A --missing output --seed 42 --output /home/karolina/Research/Code/kaos_core/verification/graph_core/results/p8_mixed/a-output",
+    "uv --directory /home/karolina/Research/Code/sim_env run --offline python -m sim_env.graph_mixed --host /tmp/kaos-timing-host/core/kaos_host --guest /tmp/kaos-timing-host/mixed.wasm --first B --missing output --seed 42 --output /home/karolina/Research/Code/kaos_core/verification/graph_core/results/p8_mixed/b-output",
+    "uv --directory /home/karolina/Research/Code/sim_env run --offline python -m sim_env.graph_mixed --host /tmp/kaos-timing-host/core/kaos_host --guest /tmp/kaos-timing-host/mixed.wasm --first A --missing inputs --seed 42 --output /home/karolina/Research/Code/kaos_core/verification/graph_core/results/p8_mixed/a-inputs",
+    "uv --directory /home/karolina/Research/Code/sim_env run --offline python -m sim_env.graph_mixed --host /tmp/kaos-timing-host/core/kaos_host --guest /tmp/kaos-timing-host/mixed.wasm --first B --missing inputs --seed 42 --output /home/karolina/Research/Code/kaos_core/verification/graph_core/results/p8_mixed/b-inputs"
+  ],
+  "tools": {
+    "compiler": "GCC 13.3.0",
+    "cmake": "3.28.3",
+    "python": "3.12.3",
+    "ruff": "0.16.6",
+    "wasi_clang": "14.0.4",
+    "wamr_commit": "b124f70345d712bead5c0c2393acb2dc583511de"
+  },
+  "limits": [
+    "Synthetic copy-flow criterion, not actuator execution, application acceptance, ventilation QoC or usable measurements.",
+    "No acquisition timestamps, periodic sampling guarantee, freshness or device-clock skew/drift qualification; observer uses common Linux monotonic clock.",
+    "Each run exercises only one input while serving. No simultaneous-input fairness or post-start input failover claim.",
+    "Runtime startup success remains historical after required output removal; it is not continuing service evidence.",
+    "Trace completeness is checked. Ordinary diagnostic stdout and kernel receive loss remain outside full observation accounting.",
+    "Seed fixes relay randomness conditional on packet arrival order; host scheduling is not deterministic replay. Tracing adds overhead.",
+    "R07/R08 final application/model criteria, broader failure/observation coverage and P9 physical/formal qualification remain open."
+  ],
+  "source_sha256": {
+    "../sim_env/sim_env/graph_alternatives.py": "ec71fb8096cf348adbe465136dc9cb7b3570615e9e94cb8d10c25caeae0f6b36",
+    "../sim_env/sim_env/graph_mixed.py": "64aa72e0597817ec3bff027e1b5b021eeda6aa59380ab261c117191ecf34a44e",
+    "../sim_env/sim_env/graph_protocol.py": "ec61153d4c7c402bc2732a801260d01d058511943e9573a7d8e158da78d9e1cd",
+    "../sim_env/sim_env/graph_relay.py": "76cbcb90c1a91a18b6702567c90605a20b0f334ff448619ee77b27d3edc2ef8b",
+    "../sim_env/sim_env/graph_run.py": "ee2f8ac83346469fdf6f5061ed7e6fab52274075dde8274ce2f3b16e40bbd76f",
+    "../sim_env/sim_env/graph_transport.py": "6ce56ab3840b5e3db7a79b89d2dcdd245df61eebf761c5abcd727b734c886e37",
+    "../sim_env/sim_env/graph_workloads.py": "2db93aaf807670b1ec793b9b7cc44a9168b6de0649898a392361df6b98518faf",
+    "../sim_env/sim_env/models.py": "c0d09d6d126a42ad4e4f7f3ee63b15b1a90fafe085940417eef5c5132ab2e14f",
+    "../sim_env/sim_env/orchestrator.py": "d4fecd890f4e02b23ef6e1d7988db8eb84872a93a1f1c4428cec793263f7cd94",
+    "../sim_env/tests/test_graph_alternatives.py": "8f01972906ad3b4ec776778807b677c4d35d52cfd9d261921058f5708c3a3bd4",
+    "../sim_env/tests/test_graph_mixed.py": "ad0d0f333678f762f422882fe34160c0daf0bb3d1f06906824796d3c4823c502",
+    "graph_core/CMakeLists.txt": "331852e8be1c0cc4457609d86e0ad76cbaccb01cd829518379eab6242ee18083",
+    "graph_core/include/kaos_admission.h": "6b6abaf8fc562aecc483b13a9587b9751bf77a2353051ffeada9702bea1a286f",
+    "graph_core/include/kaos_artifact.h": "b7c881a2c5d4bfe4863140c5f07adca6e531cb438484bbd647d131ef9805af66",
+    "graph_core/include/kaos_coap.h": "d325494043daa939025e6c76ad259496f7cd9f1ee8ffbe8ace64013f44701881",
+    "graph_core/include/kaos_control.h": "c8117f29956a34acb7da956993f185842c65ba60dd16afbd0f7c9848595bc540",
+    "graph_core/include/kaos_edge.h": "fbed64cb1c6321f02c6df40870a855b7370e4e9f0e47588f75f5c40b17e8960f",
+    "graph_core/include/kaos_endpoint.h": "4352573e910b43c1945b98903080d78c39ab80ec554a60549d082974530a661e",
+    "graph_core/include/kaos_graph.h": "8cedf2bf6a76987f6e4935d726c7740833a7cadefa66e9004cba6523233a9d2e",
+    "graph_core/include/kaos_host.h": "cf22ce62c7bd34e483d5bd02d0e59092ee35ec3c0d068ee30ecbccce9337d181",
+    "graph_core/include/kaos_host_platform.h": "38ebd53c8fb48f4e9d6350944cfd1d8a864488b2d4c42327d416e0fa687e0335",
+    "graph_core/include/kaos_limits.h": "cf78da6da9a38b7d967232401a3fbf4e2eef1c1acea1653b8d895d495ada3bbd",
+    "graph_core/include/kaos_node.h": "b4cefbdf42bfb2da7162b9f99ad2dcf40d217d193a0add90ea8351155b8a9d6a",
+    "graph_core/include/kaos_predicate.h": "da0a6b6e1281f32d604a0347daa556f0729f32e17e7bb8ca3bfa04be98d06221",
+    "graph_core/include/kaos_report.h": "f99c818857ae483e25a7e5878daa29a4b06717e68f2a1a52063610b74130a8d6",
+    "graph_core/include/kaos_runtime.h": "06a4c64e5e2c5575ac50d5b7c67dac96278e955fe416ea929f7d7ed549ba0edd",
+    "graph_core/include/kaos_wamr.h": "6abe1e110a8e7b60fa0821de8a7c23baf215145daf6a1dfccdd6cbd4b2c1ed4d",
+    "graph_core/kaos_admission.c": "e6c3b4399c222a98828d0b1ad4e5d751a4e7818c4b90d4c467e0213edd9d6ab4",
+    "graph_core/kaos_admission_internal.h": "3bd06ffee9208051364e4f89079533ce9fec1043407f417e1df62644631c6e7d",
+    "graph_core/kaos_artifact.c": "b82adb947e9b76f6706d13450cc67a7f2e59303b180be5f8a363e9e4afbfbfa1",
+    "graph_core/kaos_cbor.h": "31ef5d10a7914ab48d03356f1133d1c40452a93c9ddc57384956d46848fee131",
+    "graph_core/kaos_coap.c": "904ec321886c49dc39a70ed8661e1269551371dae9dab35387dcf0fc000424eb",
+    "graph_core/kaos_control.c": "ffc947c80ef9bbbbd93e0aded20e683d6db9d440464ef1964d5aebeb6b220980",
+    "graph_core/kaos_edge.c": "e935e7ad4e5195f5d768bb921d57141077d63d26f88a5aea6337583dd93b0501",
+    "graph_core/kaos_endpoint.c": "e57e108bafc22fc91d317b6c61a0b68f3f08ff14f511dff5e0cb987b2881a25f",
+    "graph_core/kaos_graph.c": "fc3e63bff1d5fa615fddd9e2b931274a0f610e19caa608dceffea6f256ceecac",
+    "graph_core/kaos_host.c": "119a80854e181391b99883104100fc4f3757a9ed7c8b750a76c5de502e0c288a",
+    "graph_core/kaos_node.c": "0e86538b31c9ff244d7b4cd90532dd1f540664838bc29307a4c5d44b8215ad94",
+    "graph_core/kaos_predicate.c": "f578bfd625987922f8dca4eeec43ee329e129eec12ea98f8c4412d27f27e9d2e",
+    "graph_core/kaos_report.c": "efcc3473b5657053aaba1e4c85ddccf22031d6fd740d131ca6d680ebdbd224d8",
+    "graph_core/kaos_request.c": "e450be5228b2ab2ca6218915dd81b21638e4ade8bb86a3b42d99feb0b60ddff9",
+    "graph_core/ports/clock_espidf.c": "d78583e5eb356cb200b84fde8536bb597c85cc887e66fe2117f2532b1577488c",
+    "graph_core/ports/clock_posix.c": "d6b83af5f0088cdb02d264a7c270e8311bd5df5b9d264f5baaa6ea45d148e458",
+    "graph_core/ports/espidf/CMakeLists.txt": "488d1ba8e3bca726178ae51faa144b0d02f63020d94c32419fc4927bb91dae87",
+    "graph_core/ports/espidf/app_main.c": "75663542324e4fd34e0942df9168ad19c226c5455a59b15d8ac9a5dd2c9fba02",
+    "graph_core/ports/espidf/main/CMakeLists.txt": "5c7c28ba47a48954c6c6604a5fdf313dc20d1238386ff41172e9d2fe8268c541",
+    "graph_core/ports/host_udp.c": "140d4c2f9a2ec14f24a5507eea50c63f5d56491511fd729b040604c73f0fbc02",
+    "graph_core/ports/host_udp.h": "1cada54040a3b7eb340a48ff77a29282bbade237db37716f4578cc8ef43ae7c5",
+    "graph_core/ports/posix/main.c": "0993959ade9220f6d94a2d7dd819b47d323c1fc3298a9729e463968ff0210c23",
+    "graph_core/runtime/CMakeLists.txt": "6d58e3919db5335c0d99499c83772d364f58dddf5b3314d916d26463533d4d5d",
+    "graph_core/runtime/kaos_wamr.c": "a48ae6b55b0061745a961d0474e14c75cbff16169940fa5594adb2a6f8066433",
+    "graph_core/runtime/profile.c": "06acfe92d9d30a45cadfa2ef96b48d03e65de648bd202622639f295459e63472",
+    "graph_core/runtime/wamr.cmake": "9fdafb52d97b808e6c45f0db0f9c9b531b35600e2e773b3d8d2295d707df6740",
+    "guide/README.md": "b8147dd04741bb036dec8677cdb7aeb8e2ad2e1eaa88435cdf2360696e73c1d6",
+    "guide/usage.md": "85423c77304ddc1c96738ba71bc24bd9e10cffe8380c3b9154c35dc2dbe5ca6c",
+    "guide/verification.md": "9ccdada28280a23fe1b68de1f66e6398ab5d082a7081f7d1592331bd452855bf",
+    "guide/workload-walkthrough.md": "236f493b424569010b48afe4d9e3570df68518f576a86faf31eda3fa118a82ad",
+    "implementation_rails/graph_operation_implementation_plan.md": "f9420fc9c657abc5c3fbe5c075689c84962498eae15680ee891eee5215da3130",
+    "implementation_rails/graph_operation_test_plan.md": "0e3f22a7df7d6c4ec1c83eadd03430a067b12308c224f4be7f73f30c22989024",
+    "verification/graph_core/CMakeLists.txt": "6abe92b8b2cda77ecb534e710895ea360a0af1e3d1853d6b0f38c999edf0b9e1",
+    "verification/graph_core/evidence.csv": "75d333ec2beacce46270f4d6e1783c37dd4094105f45e428555997a39eaac031",
+    "verification/graph_core/four/CMakeLists.txt": "5b3720cea5d0319cca1b50cf07b9c6dca3c2e398bd6d6b2aeeec59753a484ae2",
+    "verification/graph_core/guests/alternatives.c": "303724fc8d9f403a9c6a9659ca81f4fa361758af7f59f34af1725a31cd5347ca",
+    "verification/graph_core/guests/mixed.c": "5aa81fdc562b672a0a60a4f55dcfa5066df88fb7c9f0128fe59f8cbde2e55134",
+    "verification/graph_core/guests/workload.h": "28f1e4d04a116673461301c913612eb2d7ae0885e23abcccb8ee84c018d312b2",
+    "verification/graph_core/workloads.cmake": "cd87e1620b7a054bc0701fd3db5cf312c1acb55e5ce5f067a5becaa3c143af0b"
+  },
+  "artifact_sha256": {
+    "/tmp/kaos-timing-host/core/kaos_host": "8ba08dd6326d1075789f5c55f157229e97c1b2f1b90f48a63b34469961bc56e8",
+    "/tmp/kaos-timing-host/mixed.wasm": "b243e84e50869482554d37f2a344fb54f6490d636db648cdafdd6f52e5f6222b",
+    "/tmp/kaos-refactor-four/core/kaos_host": "77ffab9a938d6a9f52c34330520d9369bc63de3a4cfc7ae27bcb687339b9917a",
+    "/tmp/kaos-refactor-four/mixed.wasm": "b243e84e50869482554d37f2a344fb54f6490d636db648cdafdd6f52e5f6222b"
+  },
+  "retained_file_sha256": {
+    "verification/graph_core/results/p8_mixed/a-inputs/events.jsonl": "fd4bcb5463d7c07a454ec2bd7f9ca3c461e799a9a74d3bb4fb95b7be95d05399",
+    "verification/graph_core/results/p8_mixed/a-inputs/host-1.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/p8_mixed/a-inputs/host-2.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/p8_mixed/a-inputs/host-3.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/p8_mixed/a-inputs/host-4.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/p8_mixed/a-inputs/provenance.json": "08d4247911e58a98a9c3ad30beaec8613889be0e765db621fcee0eb21d8c943b",
+    "verification/graph_core/results/p8_mixed/a-inputs/result.json": "70b86a27d288fc697f32249f207726c401392ffc48031613b6b53ef650b6aee8",
+    "verification/graph_core/results/p8_mixed/a-output/events.jsonl": "276148735ae3b6e3e17421e4abd3e53819011a00a46d5f9469141da02206fc10",
+    "verification/graph_core/results/p8_mixed/a-output/host-1.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/p8_mixed/a-output/host-2.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/p8_mixed/a-output/host-3.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/p8_mixed/a-output/host-4.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/p8_mixed/a-output/provenance.json": "22bf9e2f218c6be44c129300a7a21e55f15f9aa581010330934d9b7788719a8f",
+    "verification/graph_core/results/p8_mixed/a-output/result.json": "1ee019fdf9caebd6199d91f6541c2967db01f0a4b151a4062c47f4485454d4e8",
+    "verification/graph_core/results/p8_mixed/b-inputs/events.jsonl": "2fb4ea18f7656bbd527bfc58b2fb45fc805aee559210ab91f005080debaf469d",
+    "verification/graph_core/results/p8_mixed/b-inputs/host-1.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/p8_mixed/b-inputs/host-2.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/p8_mixed/b-inputs/host-3.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/p8_mixed/b-inputs/host-4.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/p8_mixed/b-inputs/provenance.json": "9c638ae330323feb329368c20bff3fe7dab20926b8e5b6e0e789da15c7f5a268",
+    "verification/graph_core/results/p8_mixed/b-inputs/result.json": "40a6ea0dd3b89d9f9e0a2096ae1deb0b36a76da23ece7241aaf296ea6158383c",
+    "verification/graph_core/results/p8_mixed/b-output/events.jsonl": "775cae5dbcbbd1558c776ff3087ed3de65c73dc521a7316c81ac2ef8638ee7ab",
+    "verification/graph_core/results/p8_mixed/b-output/host-1.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/p8_mixed/b-output/host-2.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/p8_mixed/b-output/host-3.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/p8_mixed/b-output/host-4.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification/graph_core/results/p8_mixed/b-output/provenance.json": "4dd67345d8615a0ce0c62f4dd4f9cc66ab05f7d6400e503a100e08b47ab2d310",
+    "verification/graph_core/results/p8_mixed/b-output/result.json": "baf92c84433c341e0d3d9b8c93d7412b9ba160636c7f35045dc0710902057705",
+    "verification/graph_core/results/p8_mixed/four-CMakeCache.txt": "f55fc2e6e626501a8ffbebc34958ece587e54e2505f36673076aebbe17578d37",
+    "verification/graph_core/results/p8_mixed/four-build.log": "99f3c4aca4f6d06470e8b5e8e550ed3f6d62a91fad6356bb389ec472ad4d91a2",
+    "verification/graph_core/results/p8_mixed/four-ctest.log": "df49ca5c5c8668c7081e54cd47de31180ed609b97758cc21b7e1d761f8c0ac57",
+    "verification/graph_core/results/p8_mixed/four-test-details.log": "7508a2dfd5e2ec13ada6e7514539d1677284e4a5b9a1d06fe3e95b4b543086a6",
+    "verification/graph_core/results/p8_mixed/host-CMakeCache.txt": "7d39f058ffce0179d7318bda1e6f75e12633c2f976a853c25726f037f25f0262",
+    "verification/graph_core/results/p8_mixed/host-build.log": "c4417576c87b4d0930273034801fa6ff0605626a0d731ac426b69eea1b62e945",
+    "verification/graph_core/results/p8_mixed/host-ctest.log": "3c6775873efbc830ca9dfc81f29da45e3f4c5549ea35b01194d197e1b1a3f3e3",
+    "verification/graph_core/results/p8_mixed/host-focused-details.log": "b182b43a127b0b8e427e70ed867e07a964bb2c6416b335b7b738f82047ba7dc9",
+    "verification/graph_core/results/p8_mixed/host-focused.log": "0b5e1d4ed4f3f15e77d6818b18b72c3558be9573d67df5b313de86415b4d3233",
+    "verification/graph_core/results/p8_mixed/host-test-details.log": "3c0a14eba8fd720c8defae3390ac9f2370a0a75762b6ea9981a3c94eafba89d7",
+    "verification/graph_core/results/p8_mixed/review-disposition.json": "1cd0ba9dbf758d7d65a58680518b2a05707a1c4ce713eef25ac7872058042d2c",
+    "verification/graph_core/results/p8_mixed/review.diff": "6bbca34a36bc9ea868a8a016d47efe35c834307e55d5df4da13ca82d69807330",
+    "verification/graph_core/results/p8_mixed/ruff.log": "afa20b27dacc9bf0aba3c1d265964c21e04ab42f6e39e2dd4769718ceded003a",
+    "verification/graph_core/results/p8_mixed/test_source_baseline.json": "d04678ccbdd4bf8a5103a30bdf0a32f6ab114577b21dc6a819d99a0d3015b9c5"
+  }
+}

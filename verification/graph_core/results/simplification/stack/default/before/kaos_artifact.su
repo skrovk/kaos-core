@@ -1,0 +1,13 @@
+/tmp/kaos-simplification-20261022/before/graph_core/kaos_artifact.c:17:13:live	32	static
+/tmp/kaos-simplification-20261022/before/graph_core/kaos_artifact.c:68:29:invalid	32	static
+/tmp/kaos-simplification-20261022/before/graph_core/kaos_artifact.c:191:13:artifact_options	48	static
+/tmp/kaos-simplification-20261022/before/graph_core/kaos_artifact.c:5:10:core_artifact_crc32	32	static
+/tmp/kaos-simplification-20261022/before/graph_core/kaos_artifact.c:31:6:core_artifact_begin	64	static
+/tmp/kaos-simplification-20261022/before/graph_core/kaos_artifact.c:55:6:core_artifact_next	32	static
+/tmp/kaos-simplification-20261022/before/graph_core/kaos_artifact.c:74:22:core_artifact_receive	48	static
+/tmp/kaos-simplification-20261022/before/graph_core/kaos_artifact.c:136:6:core_artifact_restart	32	static
+/tmp/kaos-simplification-20261022/before/graph_core/kaos_artifact.c:161:6:core_artifact_take	32	static
+/tmp/kaos-simplification-20261022/before/graph_core/kaos_artifact.c:177:6:core_artifact_cancel	32	static
+/tmp/kaos-simplification-20261022/before/graph_core/kaos_artifact.c:214:23:core_artifact_client_next	1552	static
+/tmp/kaos-simplification-20261022/before/graph_core/kaos_artifact.c:247:22:core_artifact_client_receive	80	static
+/tmp/kaos-simplification-20261022/before/graph_core/kaos_artifact.c:263:6:core_artifact_client_restart	48	static

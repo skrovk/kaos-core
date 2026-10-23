@@ -1,0 +1,36 @@
+Start testing: Oct 14 17:07 CEST
+----------------------------------------------------------
+1/2 Testing: original_edge
+1/2 Test: original_edge
+Command: "/tmp/kaos-refactor-baseline-checks/edge"
+Directory: /tmp/kaos-refactor-baseline-checks
+"original_edge" start time: Oct 14 17:07 CEST
+Output:
+----------------------------------------------------------
+edges: receiver-first local/remote activation, scoped cleanup, cutoff and late evidence passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"original_edge" end time: Oct 14 17:07 CEST
+"original_edge" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/2 Testing: original_p7
+2/2 Test: original_p7
+Command: "/tmp/kaos-refactor-baseline-checks/p7"
+Directory: /tmp/kaos-refactor-baseline-checks
+"original_p7" start time: Oct 14 17:07 CEST
+Output:
+----------------------------------------------------------
+Q05 characterization: forgotten failed ADD admitted again and charged node capacity
+P7 retention: exact ACK, late closure, oldest eligible eviction, pressure and churn passed
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"original_p7" end time: Oct 14 17:07 CEST
+"original_p7" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 14 17:07 CEST

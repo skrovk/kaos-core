@@ -1,0 +1,24 @@
+--- a/README.md
++++ b/README.md
+@@ -51,6 +51,21 @@
+ `CORE_BUILD_P2_HOST` includes the historical artifact-only host used by regression
+ tests. `build/graph/core/kaos_host` is the complete current graph host.
+ For sanitizer checks, configure a separate build with `-DCORE_SANITIZE=ON`.
++
++The current host uses distinct management and application UDP ports. `GraphRun`
++allocates both and supplies the new command line automatically; rebuild the host
++and update the simulator together. Direct launch syntax is
++`kaos_host management_port application_port authority_port device_id authority_id`
++followed by `peer_id:management_port:application_port` for every remote device.
++Readiness is `LISTENING management_port application_port`. O and the collector
++use management-only routes. The historical P2 artifact-only fixture is unchanged.
++
++`run.network.addresses[device]["management"]` and `["application"]` expose the
++relay addresses. Both classes share the directed-link loss/delay/duplication
++policy and random stream, and all links/classes share one bounded pending-copy
++queue. Separate ports do not create independent impairment or Wi-Fi priorities.
++The host serves bounded application batches, management every round, and paced
++artifact requests; see the [scheduler and verification](../kaos_core/guide/verification.md#two-port-transport-scheduling).
+ 
+ ### Run all six graph operation kinds
+ 

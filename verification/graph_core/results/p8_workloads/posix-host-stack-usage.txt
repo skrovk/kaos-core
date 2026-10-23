@@ -1,0 +1,8 @@
+/home/karolina/Research/Code/kaos_core/graph_core/ports/posix/main.c:15:13:stop	32	static
+/home/karolina/Research/Code/kaos_core/graph_core/ports/posix/main.c:16:13:diagnostic	320	static
+/home/karolina/Research/Code/kaos_core/graph_core/ports/posix/main.c:27:13:channel_observation	1248	dynamic,bounded
+/home/karolina/Research/Code/kaos_core/graph_core/ports/posix/main.c:55:13:number	192	static
+/home/karolina/Research/Code/kaos_core/graph_core/ports/posix/main.c:66:27:address	48	static
+/home/karolina/Research/Code/kaos_core/graph_core/ports/posix/main.c:71:5:main	1312	static
+/home/karolina/Research/Code/kaos_core/graph_core/ports/posix/main.c:136:1:_sub_D_00099_0	16	static
+/home/karolina/Research/Code/kaos_core/graph_core/ports/posix/main.c:136:1:_sub_I_00099_1	16	static

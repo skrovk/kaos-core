@@ -1,0 +1,73 @@
+-- The C compiler identification is GNU 13.3.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE  
+-- WAMR version: 2.4.1
+CMake Error: Could not open file for write in copy operation /home/karolina/Research/Code/sim_env/.deps/wamr/core/version.h.tmp
+CMake Error: : System Error: Read-only file system
+CMake Error at /home/karolina/Research/Code/sim_env/.deps/wamr/build-scripts/version.cmake:16 (configure_file):
+  configure_file Problem configuring file
+Call Stack (most recent call first):
+  /home/karolina/Research/Code/sim_env/.deps/wamr/build-scripts/config_common.cmake:135 (include)
+  /home/karolina/Research/Code/sim_env/.deps/wamr/build-scripts/runtime_lib.cmake:170 (include)
+  /home/karolina/Research/Code/kaos_core/graph_core/runtime/wamr.cmake:42 (include)
+  /home/karolina/Research/Code/kaos_core/graph_core/runtime/CMakeLists.txt:36 (include)
+
+
+-- Build Configurations:
+     Build as target X86_64
+     Build for platform linux
+     CMAKE_BUILD_TYPE 
+     BUILD_SHARED_LIBS 
+     WAMR Interpreter enabled
+     Fast interpreter disabled
+     WAMR AOT disabled
+     WAMR Fast JIT disabled
+     WAMR LLVM ORC JIT disabled
+     Libc builtin disabled
+     Libc WASI disabled
+     Thread manager enabled
+     Multiple modules disabled
+     Hardware boundary check disabled
+     Wakeup of blocking operations enabled
+     GC performance profiling disabled
+     Write linear memory base addr to x86 GS register enabled
+     Shrunk memory enabled
+     Extended constant expression disabled
+-- About Wasm Proposals:
+     Always-on:
+       "Multi-value"
+       "Non-trapping float-to-int conversions"
+       "Sign-extension operators"
+       "WebAssembly C and C++ API"
+     Configurable. 0 is OFF. 1 is ON:
+       "Bulk Memory Operation" via WAMR_BUILD_BULK_MEMORY: 1
+       "Extended Constant Expressions" via WAMR_BUILD_EXTENDED_CONST_EXPR: 0
+       "Fixed-width SIMD" via WAMR_BUILD_SIMD: 0
+       "Garbage collection" via WAMR_BUILD_GC: 0
+       "Legacy Exception handling" via WAMR_BUILD_EXCE_HANDLING: 0
+       "Memory64" via WAMR_BUILD_MEMORY64: 0
+       "Multiple memories" via WAMR_BUILD_MULTI_MEMORY: 0
+       "Reference Types" via WAMR_BUILD_REF_TYPES: 0
+       "Reference-Typed Strings" via WAMR_BUILD_STRINGREF: 0
+       "Tail call" via WAMR_BUILD_TAIL_CALL: 0
+       "Threads" via WAMR_BUILD_SHARED_MEMORY: 0
+       "Typed Function References" via WAMR_BUILD_GC: 0
+     Unsupported (>= Phase4):
+       "Branch Hinting"
+       "Custom Annotation Syntax in the Text Format"
+       "Exception handling"
+       "Import/Export of Mutable Globals"
+       "JS String Builtins"
+       "Relaxed SIMD"
+
+-- The ASM compiler identification is GNU
+-- Found assembler: /usr/bin/cc
+-- Looking for mremap
+-- Looking for mremap - found
+-- Configuring incomplete, errors occurred!

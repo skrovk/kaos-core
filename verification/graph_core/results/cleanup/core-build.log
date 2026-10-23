@@ -1,0 +1,13 @@
+[1/13] Building C object CMakeFiles/kaos_graph_core.dir/kaos_predicate.c.o
+[2/13] Building C object CMakeFiles/kaos_graph_core.dir/kaos_graph.c.o
+[3/13] Building C object CMakeFiles/kaos_graph_core.dir/kaos_request.c.o
+[4/13] Building C object CMakeFiles/kaos_graph_core.dir/kaos_report.c.o
+[5/13] Building C object CMakeFiles/kaos_graph_core.dir/kaos_coap.c.o
+[6/13] Building C object CMakeFiles/kaos_graph_core.dir/kaos_artifact.c.o
+[7/13] Building C object CMakeFiles/kaos_graph_core.dir/kaos_admission.c.o
+[8/13] Building C object CMakeFiles/kaos_graph_core.dir/kaos_node.c.o
+[9/13] Building C object CMakeFiles/kaos_graph_core.dir/kaos_control.c.o
+[10/13] Building C object CMakeFiles/kaos_graph_core.dir/kaos_endpoint.c.o
+[11/13] Building C object CMakeFiles/kaos_graph_core.dir/ports/posix/clock.c.o
+[12/13] Building C object CMakeFiles/kaos_graph_core.dir/kaos_edge.c.o
+[13/13] Linking C static library libkaos_graph_core.a

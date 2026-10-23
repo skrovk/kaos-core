@@ -1,0 +1,509 @@
+diff --git a/home/karolina/Research/Code/kaos_core/verification/graph_core/guests/alternatives.c b/home/karolina/Research/Code/kaos_core/verification/graph_core/guests/alternatives.c
+new file mode 100644
+index 0000000..b47310f
+--- /dev/null
++++ b/home/karolina/Research/Code/kaos_core/verification/graph_core/guests/alternatives.c
+@@ -0,0 +1,31 @@
++#include "workload.h"
++
++static unsigned role;
++static const u64 channels[2][3] = {{10, 20, 1}, {10, 30, 1}};
++
++int kaos_configure(const unsigned char *bytes, unsigned size)
++{
++    if (size != 1 || bytes[0] > 2) return -1;
++    role = bytes[0]; /* source, sink A, sink B */
++    return 0;
++}
++
++void kaos_main(void)
++{
++    if (init() != 0) return;
++    unsigned sequences[2] = {0, 0};
++    sample s;
++    for (;;) {
++        if (role == 0) {
++            /* Each branch advances independently. DISABLED or FULL on one
++             * channel must not prevent trying the other channel. */
++            for (unsigned i = 0; i < 2; ++i) {
++                fill(&s, sequences[i]);
++                if (send(channels[i], &s) == 0) ++sequences[i];
++            }
++        } else {
++            (void)receive(channels[role - 1], &s, 0);
++        }
++        if (wait_next() < 0) return;
++    }
++}
+diff --git a/tmp/kaos-p8-alternatives-stage/sim_env/graph_alternatives.py b/tmp/kaos-p8-alternatives-stage/sim_env/graph_alternatives.py
+new file mode 100644
+index 0000000..22698f3
+--- /dev/null
++++ b/tmp/kaos-p8-alternatives-stage/sim_env/graph_alternatives.py
+@@ -0,0 +1,272 @@
++"""APP03: either outgoing channel starts a source; the other can join later."""
++
++import argparse
++import json
++import struct
++import time
++from pathlib import Path
++
++from .graph_protocol import Channel, Endpoint, Node, Port
++from .graph_run import GraphRun
++from .graph_transport import CREATED
++from .graph_workloads import read_trace
++
++CHANNELS = {"A": (10, 20, 1), "B": (10, 30, 1)}
++
++
++def evaluate_alternatives(events, devices, instances, phases):
++    """Check complete copy observations, payloads, identities and phase gates."""
++    records, complete = read_trace(events, devices)
++    if not complete:
++        return {
++            "status": "inconclusive",
++            "trace_complete": False,
++            "reason": "incomplete channel trace",
++        }
++    instances = {int(k): v for k, v in instances.items()}
++    puts = {}
++    for record in records:
++        channel, data = record["channel"], record["payload"]
++        if channel not in CHANNELS.values():
++            raise ValueError("unexpected channel")
++        logical = channel[0] if record["direction"] == "PUT" else channel[1]
++        if record["instance"] != instances[logical]:
++            raise ValueError("unexpected concrete instance")
++        if len(data) != 64:
++            raise ValueError("fixture sample must contain 64 bytes")
++        sequence, value = struct.unpack_from("<II", data)
++        if value != sequence or data[8:] != bytes(
++            (sequence + offset) & 255 for offset in range(56)
++        ):
++            raise ValueError("incorrect fixture value or padding")
++        if record["direction"] == "PUT":
++            key = (channel, data)
++            puts[key] = min(
++                puts.get(key, record["timestamp_us"]), record["timestamp_us"]
++            )
++    for record in records:
++        if record["direction"] == "GET":
++            sent = puts.get((record["channel"], record["payload"]))
++            if sent is None or sent > record["timestamp_us"]:
++                raise ValueError("GET without a preceding matching PUT")
++
++    results = []
++    for phase in phases:
++        active = set(phase["active"])
++        if not active or not active <= CHANNELS.keys():
++            raise ValueError("phase must name active branches A and/or B")
++        if not 0 <= phase["begin_us"] < phase["end_us"]:
++            raise ValueError("phase must have increasing nonnegative times")
++        branches, unexpected = {}, 0
++        for name, channel in CHANNELS.items():
++            copies = [
++                r
++                for r in records
++                if r["channel"] == channel
++                and phase["begin_us"] <= r["timestamp_us"] < phase["end_us"]
++            ]
++            received = [
++                struct.unpack_from("<I", r["payload"])[0]
++                for r in copies
++                if r["direction"] == "GET"
++            ]
++            branches[name] = {
++                "received": len(received),
++                "unique_sequences": len(set(received)),
++            }
++            if name not in active:
++                unexpected += len(copies)
++        good = not unexpected and all(
++            branches[name]["unique_sequences"] >= 8 for name in active
++        )
++        results.append(
++            {
++                "name": phase["name"],
++                "status": "passed" if good else "failed",
++                "branches": branches,
++                "unexpected_copies": unexpected,
++            }
++        )
++    return {
++        "status": "passed"
++        if results and all(p["status"] == "passed" for p in results)
++        else "failed",
++        "trace_complete": True,
++        "observations": len(records),
++        "phases": results,
++        "scope": "eight distinct samples per active branch; no successful copies on inactive branches",
++    }
++
++
++def run_alternatives(host, guest, output, *, first="A", seed=0):
++    """Fresh three-device run: one branch, both branches, then the other only."""
++    if first not in CHANNELS:
++        raise ValueError("first must be A or B")
++    first_index = 0 if first == "A" else 1
++    other = "B" if first == "A" else "A"
++    cold_owner = 3 if first == "A" else 2
++    outcomes, phases = [], []
++    with GraphRun(host, output, (1, 2, 3), seed=seed, trace_channels=True) as run:
++        size, crc = run.add_artifact(b"alternatives", Path(guest).read_bytes())
++
++        def complete(request):
++            if run.submit(request).code != CREATED:
++                raise RuntimeError("alternative workload operation was not admitted")
++            report = run.wait(request)
++            outcomes.append(
++                {
++                    "operation": request.operation.value,
++                    "kind": int(request.kind),
++                    "report": report,
++                }
++            )
++            if report[5] != 1:
++                raise RuntimeError(
++                    f"alternative workload operation did not succeed: {report}"
++                )
++            return request
++
++        def node(logical, owner, role):
++            return Node(
++                logical,
++                owner,
++                b"alternatives",
++                size,
++                crc,
++                131072,
++                bytes([role]),
++                5_000_000,
++                3_000_000,
++                (Port(1, 0, 1, 64), Port(2, 1, 1, 64)),
++            )
++
++        def phase(name, active):
++            begin = time.monotonic_ns() // 1000
++            run.emit("workload_phase_begin", name=name, active=active)
++            time.sleep(0.25)
++            end = time.monotonic_ns() // 1000
++            run.emit("workload_phase_end", name=name)
++            phases.append(
++                {"name": name, "begin_us": begin, "end_us": end, "active": active}
++            )
++
++        def live_source(report):
++            if (
++                report is None
++                or report[5] != 1
++                or report[6] & 39 != 39
++                or len(report[7]) != 5
++                or report[7][0] != 1
++            ):
++                raise RuntimeError(f"missing live source startup evidence: {report}")
++
++        sink_a = complete(run.o.add_node(node(20, 2, 1)))
++        sink_b = complete(run.o.add_node(node(30, 3, 2)))
++        # Apply the partition before authorization; every packet type shares
++        # this directed policy. The reverse direction remains at its default.
++        run.network.set_link(1, cold_owner, loss=1)
++        channels = tuple(
++            Channel(
++                Endpoint(10, None, 1, 2),
++                Endpoint(logical, sink.instance, owner, 1),
++                1,
++                1,
++                64,
++                2,
++                5_000_000,
++            )
++            for logical, owner, sink in ((20, 2, sink_a), (30, 3, sink_b))
++        )
++        source = complete(
++            run.o.add_node(
++                node(10, 1, 0),
++                channels=channels,
++                predicate_tokens=b"\x02\x00\x02\x01\x04\x00",
++            )
++        )
++        startup = outcomes[-1]["report"]
++        live_source(startup)
++        active_flags = startup[7][1 + 2 * first_index : 3 + 2 * first_index]
++        pending_flags = startup[7][3 - 2 * first_index : 5 - 2 * first_index]
++        if active_flags != [3, 3] or any(f not in (0, 1) for f in pending_flags):
++            raise RuntimeError(f"expected only branch {first} active: {startup}")
++        phase("single", [first])
++
++        run.network.set_link(1, cold_owner)
++        deadline = time.monotonic() + 5
++        while time.monotonic() < deadline:
++            # wait() already returns Succeeded while optional edges are pending.
++            # An acknowledged unchanged report can disappear until new facts.
++            # Neither a missing report nor timeout proves that the branch joined.
++            try:
++                joined = run.query(source, allowance_us=250_000)
++            except TimeoutError:
++                joined = None
++            if joined is not None:
++                live_source(joined)
++                if joined[7][1:] == [3, 3, 3, 3]:
++                    break
++                if any(f & 252 for f in joined[7][1:]):
++                    raise RuntimeError(f"optional branch did not join: {joined}")
++            time.sleep(0.01)
++        else:
++            raise TimeoutError("no observed evidence that both branches joined")
++        phase("both", ["A", "B"])
++
++        complete(run.o.remove_edge(source.bindings[first_index], cleanup_us=3_000_000))
++        phase("remaining", [other])
++        complete(run.o.remove_node(source.instance, cleanup_us=3_000_000))
++        complete(
++            run.o.remove_node(sink_a.instance, cleanup_us=3_000_000, no_edges=True)
++        )
++        complete(
++            run.o.remove_node(sink_b.instance, cleanup_us=3_000_000, no_edges=True)
++        )
++        instances = {
++            "10": source.instance.value,
++            "20": sink_a.instance.value,
++            "30": sink_b.instance.value,
++        }
++
++    events = [
++        json.loads(line)
++        for line in (Path(output) / "events.jsonl").read_text().splitlines()
++    ]
++    result = evaluate_alternatives(events, (1, 2, 3), instances, phases)
++    result.update(
++        first=first,
++        instances=instances,
++        windows=phases,
++        startup_report=startup,
++        joined_report=joined,
++        outcomes=outcomes,
++        remaining_instances_at_teardown=[],
++        limitations=[
++            "GET observes host copy-out, not application acceptance or actuation",
++            "Synthetic sample counts; no periodic or freshness claim",
++            "Optional join demonstrated within its original allowance; no restart after expiry",
++        ],
++    )
++    (Path(output) / "result.json").write_text(json.dumps(result, indent=2) + "\n")
++    return result
++
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("--host", type=Path, required=True)
++    parser.add_argument("--guest", type=Path, required=True)
++    parser.add_argument("--output", type=Path, required=True)
++    parser.add_argument("--first", choices=("A", "B"), default="A")
++    parser.add_argument("--seed", type=int, default=0)
++    args = parser.parse_args()
++    try:
++        result = run_alternatives(**vars(args))
++    except (OSError, RuntimeError, ValueError) as error:
++        parser.exit(2, f"alternative workload failed: {error}\n")
++    print(json.dumps(result, indent=2))
++    if result["status"] != "passed":
++        parser.exit(1)
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/tmp/kaos-p8-alternatives-stage/tests/test_graph_alternatives.py b/tmp/kaos-p8-alternatives-stage/tests/test_graph_alternatives.py
+new file mode 100644
+index 0000000..12eaadb
+--- /dev/null
++++ b/tmp/kaos-p8-alternatives-stage/tests/test_graph_alternatives.py
+@@ -0,0 +1,163 @@
++"""APP03 application copies and explicit graph evidence for either OR branch."""
++
++import json
++import os
++import struct
++import tempfile
++import unittest
++from pathlib import Path
++
++from sim_env.graph_alternatives import evaluate_alternatives, run_alternatives
++
++INSTANCES = {"10": 2, "20": 0, "30": 1}
++
++
++def trace(branches=("A", "B"), *, complete=True):
++    rows = []
++    for branch in branches:
++        destination, instance = (20, 0) if branch == "A" else (30, 1)
++        for sequence in range(8):
++            payload = (
++                struct.pack("<II", sequence, sequence)
++                + bytes((sequence + i) & 255 for i in range(56))
++            ).hex()
++            for caller, direction in ((2, "PUT"), (instance, "GET")):
++                index = len(rows) + 1
++                rows.append(
++                    {
++                        "kind": "host_stdout",
++                        "device": 1,
++                        "line": f"CHANNEL {index} {100 + index} {caller} {direction} 10 {destination} 1 {payload}",
++                    }
++                )
++    if complete:
++        rows.append(
++            {"kind": "host_stdout", "device": 1, "line": f"CHANNEL_END {len(rows)} 0"}
++        )
++    return rows
++
++
++def phase(active):
++    return {"name": "test", "begin_us": 100, "end_us": 200, "active": list(active)}
++
++
++class AlternativeOracleTests(unittest.TestCase):
++    def evaluate(self, events, active=("A", "B")):
++        return evaluate_alternatives(events, (1,), INSTANCES, [phase(active)])
++
++    def test_both_branches_validate_independent_samples(self):
++        result = self.evaluate(trace())
++        self.assertEqual(result["status"], "passed")
++        self.assertEqual(result["phases"][0]["branches"]["A"]["unique_sequences"], 8)
++        self.assertEqual(result["phases"][0]["branches"]["B"]["unique_sequences"], 8)
++
++    def test_either_single_branch_passes_without_the_other(self):
++        for branch in ("A", "B"):
++            with self.subTest(branch=branch):
++                result = self.evaluate(trace((branch,)), (branch,))
++                self.assertEqual(result["status"], "passed")
++                self.assertEqual(result["phases"][0]["unexpected_copies"], 0)
++
++    def test_inactive_branch_copies_and_missing_active_branch_fail(self):
++        self.assertEqual(self.evaluate(trace(), ("A",))["status"], "failed")
++        self.assertEqual(self.evaluate(trace(("A",)))["status"], "failed")
++        self.assertEqual(self.evaluate(trace(()))["status"], "failed")
++
++    def test_corrupt_sample_is_rejected(self):
++        events = trace(("A",))
++        events[0]["line"] = events[0]["line"][:-2] + "ff"
++        with self.assertRaisesRegex(ValueError, "value or padding"):
++            self.evaluate(events, ("A",))
++
++    def test_wrong_instance_and_channel_are_rejected(self):
++        for old, new in ((" 2 PUT ", " 9 PUT "), (" 10 20 1 ", " 11 20 1 ")):
++            with self.subTest(change=new):
++                events = trace(("A",))
++                events[0]["line"] = events[0]["line"].replace(old, new)
++                with self.assertRaisesRegex(ValueError, "instance|channel"):
++                    self.evaluate(events, ("A",))
++
++    def test_complete_trace_with_unmatched_get_is_rejected(self):
++        events = trace(("A",))
++        # Preserve sequence completeness but replace the matching first PUT.
++        events[0]["line"] = events[0]["line"].replace(" 2 PUT ", " 0 GET ")
++        with self.assertRaisesRegex(ValueError, "preceding matching PUT"):
++            self.evaluate(events, ("A",))
++
++    def test_observation_loss_is_inconclusive(self):
++        result = self.evaluate(trace(complete=False))
++        self.assertEqual(result["status"], "inconclusive")
++        self.assertFalse(result["trace_complete"])
++
++    def test_repeated_get_does_not_satisfy_distinct_sample_requirement(self):
++        events = trace(("A",))
++        first_put, first_get = events[0]["line"], events[1]["line"]
++        for i, event in enumerate(events[:-1]):
++            fields = event["line"].split()
++            fields[-1] = (first_put if i % 2 == 0 else first_get).split()[-1]
++            event["line"] = " ".join(fields)
++        result = self.evaluate(events, ("A",))
++        self.assertEqual(result["status"], "failed")
++        self.assertEqual(result["phases"][0]["branches"]["A"]["unique_sequences"], 1)
++
++
++@unittest.skipUnless(
++    os.environ.get("KAOS_WORKLOAD_HOST"), "requires actual host and guests"
++)
++class AlternativeProcessTests(unittest.TestCase):
++    def check_flow(self, first):
++        with tempfile.TemporaryDirectory(prefix="kaos-alternatives-test-") as directory:
++            output = Path(directory) / "run"
++            result = run_alternatives(
++                os.environ["KAOS_WORKLOAD_HOST"],
++                Path(os.environ["KAOS_WORKLOAD_GUESTS"]) / "alternatives.wasm",
++                output,
++                first=first,
++                seed=42,
++            )
++            self.assertEqual(result["status"], "passed", result)
++            self.assertTrue(result["trace_complete"])
++            self.assertEqual(len(result["outcomes"]), 7)
++            self.assertTrue(all(o["report"][5] == 1 for o in result["outcomes"]))
++            initial = result["startup_report"]
++            joined = result["joined_report"]
++            self.assertEqual(initial[6] & 39, 39)  # commit/dispatch/start/success
++            self.assertEqual(joined[5], 1)
++            self.assertGreater(joined[4], initial[4])
++            first_index = 0 if first == "A" else 1
++            first_flags = initial[7][1 + 2 * first_index : 3 + 2 * first_index]
++            other_flags = initial[7][3 - 2 * first_index : 5 - 2 * first_index]
++            self.assertTrue(all(flags & 3 == 3 for flags in first_flags))
++            self.assertTrue(all(flags & 2 == 0 for flags in other_flags))
++            self.assertTrue(all(flags & 3 == 3 for flags in joined[7][1:]))
++            removed = result["outcomes"][3]["report"]
++            self.assertTrue(all(flags & 56 == 56 for flags in removed[7]))
++            other = "B" if first == "A" else "A"
++            self.assertEqual(
++                [p["active"] for p in result["windows"]], [[first], ["A", "B"], [other]]
++            )
++            self.assertEqual(result["remaining_instances_at_teardown"], [])
++            self.assertEqual(json.loads((output / "result.json").read_text()), result)
++            events = [
++                json.loads(line)
++                for line in (output / "events.jsonl").read_text().splitlines()
++            ]
++            cold_owner = 3 if first == "A" else 2
++            self.assertTrue(
++                any(
++                    e["kind"] == "packet_dropped"
++                    and e.get("source") == 1
++                    and e.get("destination") == cold_owner
++                    for e in events
++                )
++            )
++
++    def test_a_starts_b_joins_then_a_is_removed(self):
++        self.check_flow("A")
++
++    def test_b_starts_a_joins_then_b_is_removed(self):
++        self.check_flow("B")
++
++
++if __name__ == "__main__":
++    unittest.main()
+diff --git a/tmp/kaos-p8-alternatives-stage/workloads-before.cmake b/home/karolina/Research/Code/kaos_core/verification/graph_core/workloads.cmake
+index 4ce4042..45ded66 100644
+--- a/tmp/kaos-p8-alternatives-stage/workloads-before.cmake
++++ b/home/karolina/Research/Code/kaos_core/verification/graph_core/workloads.cmake
+@@ -1,6 +1,6 @@
+ # Shared by the default and four-node host qualification builds.
+ set(CORE_WASI_CLANG "/opt/wasi-sdk/bin/clang" CACHE FILEPATH "WASI clang for restricted test guests")
+-foreach(guest pipeline feedback)
++foreach(guest pipeline feedback alternatives)
+     add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${guest}.wasm"
+         COMMAND "${CORE_WASI_CLANG}" --target=wasm32 -O1 -nostdlib -Wall -Wextra -Werror
+             -Wl,--no-entry -Wl,--export=kaos_configure -Wl,--export=kaos_main
+@@ -11,9 +11,10 @@ foreach(guest pipeline feedback)
+             "${CMAKE_CURRENT_LIST_DIR}/guests/workload.h" VERBATIM)
+ endforeach()
+ add_custom_target(graph_workload_guests ALL DEPENDS
+-    "${CMAKE_CURRENT_BINARY_DIR}/pipeline.wasm" "${CMAKE_CURRENT_BINARY_DIR}/feedback.wasm")
++    "${CMAKE_CURRENT_BINARY_DIR}/pipeline.wasm" "${CMAKE_CURRENT_BINARY_DIR}/feedback.wasm"
++    "${CMAKE_CURRENT_BINARY_DIR}/alternatives.wasm")
+ find_program(CORE_UV uv REQUIRED)
+-foreach(fixture workloads workload_timing)
++foreach(fixture workloads workload_timing alternatives)
+     add_test(NAME graph_p8_${fixture} COMMAND "${CMAKE_COMMAND}" -E env
+         "KAOS_WORKLOAD_HOST=$<TARGET_FILE:kaos_host>"
+         "KAOS_WORKLOAD_GUESTS=${CMAKE_CURRENT_BINARY_DIR}"

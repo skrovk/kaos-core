@@ -1,0 +1,226 @@
+{
+  "status": "passed",
+  "trace_complete": true,
+  "observations": 2081,
+  "phases": [
+    {
+      "name": "before",
+      "received": 207,
+      "unique_sequences": 71,
+      "duplicates": 136,
+      "observed_sequence_gaps": 0,
+      "first_sequence": 3,
+      "last_sequence": 73,
+      "duration_us": 250161,
+      "source_put_to_final_get": {
+        "count": 71,
+        "p50_us": 3466,
+        "p95_us": 4605,
+        "max_us": 4976
+      }
+    },
+    {
+      "name": "artifact",
+      "received": 88,
+      "unique_sequences": 26,
+      "duplicates": 62,
+      "observed_sequence_gaps": 0,
+      "first_sequence": 74,
+      "last_sequence": 99,
+      "duration_us": 119971,
+      "source_put_to_final_get": {
+        "count": 26,
+        "p50_us": 4717,
+        "p95_us": 5911,
+        "max_us": 5914
+      }
+    },
+    {
+      "name": "after",
+      "received": 202,
+      "unique_sequences": 72,
+      "duplicates": 130,
+      "observed_sequence_gaps": 0,
+      "first_sequence": 99,
+      "last_sequence": 170,
+      "duration_us": 250296,
+      "source_put_to_final_get": {
+        "count": 72,
+        "p50_us": 3459,
+        "p95_us": 4864,
+        "max_us": 5848
+      }
+    }
+  ],
+  "artifact_block_transfer": {
+    "begin_us": 172982098505,
+    "end_us": 172982202780,
+    "duration_us": 104275,
+    "requests": 64,
+    "responses": 64,
+    "feedback_gets_during_block_transfer": 78
+  },
+  "transport": {
+    "1": {
+      "available": false,
+      "reason": "no TRANSPORT stdout summary"
+    },
+    "2": {
+      "available": false,
+      "reason": "no TRANSPORT stdout summary"
+    }
+  },
+  "workload": "two-device 64-byte feedback plus 16KiB artifact on initiator host",
+  "script_sha256": "ce1b4b388a90444af6562cb920748722906b03a40d15283ee84f03b7fbdee636",
+  "padded_artifact": {
+    "bytes": 16384,
+    "sha256": "9d8984de87e727f1638f39bec54f38ec21bc047f331b4bbcf0abf57d1a2e0560"
+  },
+  "outcomes": [
+    {
+      "operation": 0,
+      "kind": 1,
+      "report": [
+        4,
+        8,
+        0,
+        2,
+        4,
+        1,
+        39,
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "operation": 1,
+      "kind": 2,
+      "report": [
+        4,
+        8,
+        1,
+        1,
+        12,
+        1,
+        39,
+        [
+          1,
+          3,
+          3,
+          3,
+          3
+        ]
+      ]
+    },
+    {
+      "operation": 2,
+      "kind": 1,
+      "report": [
+        4,
+        8,
+        2,
+        1,
+        4,
+        1,
+        39,
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "operation": 3,
+      "kind": 4,
+      "report": [
+        4,
+        8,
+        3,
+        1,
+        2,
+        1,
+        8,
+        [
+          56
+        ]
+      ]
+    },
+    {
+      "operation": 4,
+      "kind": 5,
+      "report": [
+        4,
+        8,
+        4,
+        1,
+        10,
+        1,
+        8,
+        [
+          56,
+          56,
+          56,
+          56,
+          56
+        ]
+      ]
+    },
+    {
+      "operation": 5,
+      "kind": 4,
+      "report": [
+        4,
+        8,
+        5,
+        2,
+        2,
+        1,
+        8,
+        [
+          56
+        ]
+      ]
+    }
+  ],
+  "windows": [
+    {
+      "name": "before",
+      "begin_us": 172981845712,
+      "end_us": 172982095873,
+      "instances": {
+        "10": 1,
+        "20": 0
+      }
+    },
+    {
+      "name": "artifact",
+      "begin_us": 172982096092,
+      "end_us": 172982216063,
+      "instances": {
+        "10": 1,
+        "20": 0
+      }
+    },
+    {
+      "name": "after",
+      "begin_us": 172982216247,
+      "end_us": 172982466543,
+      "instances": {
+        "10": 1,
+        "20": 0
+      }
+    }
+  ],
+  "remaining_instances_at_teardown": [],
+  "clock": "common POSIX host CLOCK_MONOTONIC microseconds",
+  "latency_boundary": "first successful source PUT to first final feedback GET per sequence",
+  "latency_cohort": "first final GET for each sequence within each phase; origin may precede phase",
+  "limitations": [
+    "One traced process run; host and relay scheduling are not deterministic",
+    "Observed GET latency excludes missing samples and is not a delivery guarantee",
+    "GET is a copy to guest memory, not guest acceptance or physical execution",
+    "No acquisition time, cross-machine synchronization, ESP32 timing or workload acceptance target",
+    "Instrumentation overhead and lower-layer socket loss are not isolated",
+    "Artifact operation window also includes runtime preparation and report observation"
+  ]
+}

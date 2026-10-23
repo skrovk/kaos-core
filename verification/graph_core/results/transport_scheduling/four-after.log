@@ -1,0 +1,258 @@
+{
+  "status": "passed",
+  "trace_complete": true,
+  "observations": 1951,
+  "phases": [
+    {
+      "name": "before",
+      "received": 211,
+      "unique_sequences": 86,
+      "duplicates": 125,
+      "observed_sequence_gaps": 0,
+      "first_sequence": 2,
+      "last_sequence": 87,
+      "duration_us": 250356,
+      "source_put_to_final_get": {
+        "count": 86,
+        "p50_us": 2492,
+        "p95_us": 3560,
+        "max_us": 4784
+      }
+    },
+    {
+      "name": "artifact",
+      "received": 73,
+      "unique_sequences": 24,
+      "duplicates": 49,
+      "observed_sequence_gaps": 0,
+      "first_sequence": 88,
+      "last_sequence": 111,
+      "duration_us": 98056,
+      "source_put_to_final_get": {
+        "count": 24,
+        "p50_us": 3671,
+        "p95_us": 5284,
+        "max_us": 5846
+      }
+    },
+    {
+      "name": "after",
+      "received": 179,
+      "unique_sequences": 55,
+      "duplicates": 124,
+      "observed_sequence_gaps": 0,
+      "first_sequence": 111,
+      "last_sequence": 165,
+      "duration_us": 250229,
+      "source_put_to_final_get": {
+        "count": 55,
+        "p50_us": 3471,
+        "p95_us": 10517,
+        "max_us": 12077
+      }
+    }
+  ],
+  "artifact_block_transfer": {
+    "begin_us": 173067638939,
+    "end_us": 173067727233,
+    "duration_us": 88294,
+    "requests": 64,
+    "responses": 64,
+    "feedback_gets_during_block_transfer": 68
+  },
+  "transport": {
+    "1": {
+      "available": true,
+      "rounds": 1126,
+      "rx_app": 488,
+      "rx_mgmt": 106,
+      "drop_app": 0,
+      "drop_mgmt": 0,
+      "invalid_app": 0,
+      "invalid_mgmt": 0,
+      "sent_app": 501,
+      "sent_mgmt": 106,
+      "send_fail_app": 0,
+      "send_fail_mgmt": 0,
+      "endpoint_drops": 12,
+      "artifact_requests": 68,
+      "max_round_us": 1931,
+      "max_management_gap_us": 19197,
+      "artifact_receive_max_us": 1738,
+      "artifact_complete_max_us": 1738
+    },
+    "2": {
+      "available": true,
+      "rounds": 992,
+      "rx_app": 501,
+      "rx_mgmt": 26,
+      "drop_app": 0,
+      "drop_mgmt": 0,
+      "invalid_app": 0,
+      "invalid_mgmt": 0,
+      "sent_app": 488,
+      "sent_mgmt": 26,
+      "send_fail_app": 0,
+      "send_fail_mgmt": 0,
+      "endpoint_drops": 12,
+      "artifact_requests": 4,
+      "max_round_us": 669,
+      "max_management_gap_us": 12406,
+      "artifact_receive_max_us": 117,
+      "artifact_complete_max_us": 117
+    }
+  },
+  "workload": "two-device 64-byte feedback plus 16KiB artifact on initiator host",
+  "script_sha256": "ce1b4b388a90444af6562cb920748722906b03a40d15283ee84f03b7fbdee636",
+  "padded_artifact": {
+    "bytes": 16384,
+    "sha256": "9d8984de87e727f1638f39bec54f38ec21bc047f331b4bbcf0abf57d1a2e0560"
+  },
+  "outcomes": [
+    {
+      "operation": 0,
+      "kind": 1,
+      "report": [
+        4,
+        8,
+        0,
+        2,
+        4,
+        1,
+        39,
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "operation": 1,
+      "kind": 2,
+      "report": [
+        4,
+        8,
+        1,
+        1,
+        12,
+        1,
+        39,
+        [
+          1,
+          3,
+          3,
+          3,
+          3
+        ]
+      ]
+    },
+    {
+      "operation": 2,
+      "kind": 1,
+      "report": [
+        4,
+        8,
+        2,
+        1,
+        4,
+        1,
+        39,
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "operation": 3,
+      "kind": 4,
+      "report": [
+        4,
+        8,
+        3,
+        1,
+        2,
+        1,
+        8,
+        [
+          56
+        ]
+      ]
+    },
+    {
+      "operation": 4,
+      "kind": 5,
+      "report": [
+        4,
+        8,
+        4,
+        1,
+        10,
+        1,
+        8,
+        [
+          56,
+          56,
+          56,
+          56,
+          56
+        ]
+      ]
+    },
+    {
+      "operation": 5,
+      "kind": 4,
+      "report": [
+        4,
+        8,
+        5,
+        2,
+        2,
+        1,
+        8,
+        [
+          56
+        ]
+      ]
+    }
+  ],
+  "windows": [
+    {
+      "name": "before",
+      "begin_us": 173067385319,
+      "end_us": 173067635675,
+      "instances": {
+        "10": 1,
+        "20": 0
+      }
+    },
+    {
+      "name": "artifact",
+      "begin_us": 173067635887,
+      "end_us": 173067733943,
+      "instances": {
+        "10": 1,
+        "20": 0
+      }
+    },
+    {
+      "name": "after",
+      "begin_us": 173067734082,
+      "end_us": 173067984311,
+      "instances": {
+        "10": 1,
+        "20": 0
+      }
+    }
+  ],
+  "remaining_instances_at_teardown": [],
+  "clock": "common POSIX host CLOCK_MONOTONIC microseconds",
+  "latency_boundary": "first successful source PUT to first final feedback GET per sequence",
+  "latency_cohort": "first final GET for each sequence within each phase; origin may precede phase",
+  "limitations": [
+    "One traced process run; host and relay scheduling are not deterministic",
+    "Observed GET latency excludes missing samples and is not a delivery guarantee",
+    "GET is a copy to guest memory, not guest acceptance or physical execution",
+    "No acquisition time, cross-machine synchronization, ESP32 timing or workload acceptance target",
+    "Instrumentation overhead and lower-layer socket loss are not isolated",
+    "Artifact operation window also includes runtime preparation and report observation"
+  ]
+}

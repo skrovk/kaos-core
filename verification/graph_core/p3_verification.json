@@ -1,0 +1,203 @@
+{
+  "date": "2026-10-09",
+  "scope": "Host P3 no-edge operation engine, bounded WAMR workers, restricted inert artifact/guest ABI, real UDP/artifact integration and approved schema-3 fixture migration.",
+  "status": "Host slice verified; P3 remains open for ESP32 runtime adapter and physical qualification.",
+  "source_sha256": {
+    "../sim_env/tests/test_graph_core_process.py": "d1db245e5df95053263445d6bcc10417886f02cdee1df3ba5dba33d987a5345e",
+    "../sim_env/tests/test_graph_orchestrator.py": "045e994128e15e703e9964b7c167574cc0dd2bad23895cae4cb7b2b536bb51a9",
+    "../sim_env/tests/test_graph_runtime_process.py": "ac7eb0e3f95c79f872bda05b11b86dae3426729ea0cf1887c158d24734be3f5b",
+    "../sim_env/tests/test_graph_transport.py": "b84d62541dd93d474614ee66cdf0bbc09ced76e75c742876a9b39bcf57fd1a6c",
+    "docs/graph_operation_implementation_plan.md": "00f8f20ce248ec1c6202e81d3378b03f3a5c750bb7f0dbe16864986ea5021d4b",
+    "docs/graph_p2_contract.md": "b2a2b88bf21b245426d793f9a31071a4869f70f475e362203781334081fe926e",
+    "docs/graph_p3_contract.md": "658c130270e851a7657ec7b54c8bb0eabaa0c0d38258f7e25d5cdae6738e227b",
+    "graph_core/CMakeLists.txt": "2807676394025fa61cb7fba22ceb012edce0ed7418555662127e60c9f231e411",
+    "graph_core/include/kaos_admission.h": "6f4871695e862b0a8a1cace6ecf3b0923b5358150f24add15e7ce61b763355bd",
+    "graph_core/include/kaos_artifact.h": "47d5bc337ad97c9c7b8c7b31f9727c86814630f20ff230361cd795fef7b6ae5e",
+    "graph_core/include/kaos_coap.h": "9c898cfbe7eb5e0337d431b5306d4788d8af37efcb2cff9b4536fdd9cdab91eb",
+    "graph_core/include/kaos_control.h": "123a9f15c4159a738cec7f0f9440f3d186da6d765e0ef958150f9de2ba6bcffd",
+    "graph_core/include/kaos_graph.h": "d063484e3124b2e45423072e46cb8ac913d98c36d932d0a1844509be8c831f12",
+    "graph_core/include/kaos_node.h": "880e9259af8c8d9efc249669643fa14ed20287a5c76169ca6b41b393f1954d48",
+    "graph_core/include/kaos_predicate.h": "da0a6b6e1281f32d604a0347daa556f0729f32e17e7bb8ca3bfa04be98d06221",
+    "graph_core/include/kaos_report.h": "b5e12c94d9cd2e3a93da157b156081eeab0d5e6fcbe96f413b02a31e3e6fdd5b",
+    "graph_core/include/kaos_runtime.h": "06a4c64e5e2c5575ac50d5b7c67dac96278e955fe416ea929f7d7ed549ba0edd",
+    "graph_core/include/kaos_wamr.h": "ed411046e4c4dc952f2958e402fac2f1cdb9fa71e21bcd2d2557cf6a951a2b9b",
+    "graph_core/kaos_admission.c": "8581a85508a42b82161633867f9728379a1bd544fac87d045f38105cea03b7ca",
+    "graph_core/kaos_admission_internal.h": "d3347da53cd66d62d97c96d9a9f040fa9beab881d084255a88e801ee0cd5fb2b",
+    "graph_core/kaos_artifact.c": "dcd8b148a9fd85f465aa25b1d3b82ffeaeecb657794cfa4bf4fefc9f36f4fc37",
+    "graph_core/kaos_cbor.h": "31ef5d10a7914ab48d03356f1133d1c40452a93c9ddc57384956d46848fee131",
+    "graph_core/kaos_coap.c": "496fb6984da8a0647d712d87226953ec907dc6f53436223e6a553e4dc85420c6",
+    "graph_core/kaos_control.c": "beadfa3f9ed505a44bbd97e859c20362d17b050a2ce3e25c8d5a3095673dfecd",
+    "graph_core/kaos_graph.c": "fc3e63bff1d5fa615fddd9e2b931274a0f610e19caa608dceffea6f256ceecac",
+    "graph_core/kaos_node.c": "cc0f738912f277049a718623b8e659ad41905053c55025438801ba37a02cbbe0",
+    "graph_core/kaos_predicate.c": "f578bfd625987922f8dca4eeec43ee329e129eec12ea98f8c4412d27f27e9d2e",
+    "graph_core/kaos_report.c": "f2b5df97bd95005f902f8eefa40df06f6dd4e8abaecb651186223ed0cf8343b9",
+    "graph_core/kaos_request.c": "82a5d0bd8bb1b2436fbb18c559719c9e0d71c5b7445aa40100bbcb0d10e6450e",
+    "graph_core/ports/clock_espidf.c": "d78583e5eb356cb200b84fde8536bb597c85cc887e66fe2117f2532b1577488c",
+    "graph_core/ports/clock_posix.c": "d6b83af5f0088cdb02d264a7c270e8311bd5df5b9d264f5baaa6ea45d148e458",
+    "graph_core/ports/p2_host.c": "27f9a20eb388ad2e2962342bafcb224b84c32be0b844d6b1a5f147313895dc37",
+    "graph_core/runtime/CMakeLists.txt": "f21bff1751fe50874a59643cf2bc964e040597cb726456c962cadad2b6454382",
+    "graph_core/runtime/kaos_wamr.c": "ef05233f38de0113040eabff79f4796fd1acb614267a29087cb4cbf011c207d1",
+    "graph_core/runtime/profile.c": "8d5d5ca4540714e72df6bd3b214d1a3ca9569075829f373aa4fa70693676f36f",
+    "verification/graph_core/CMakeLists.txt": "2399274d46e4e17b048ffa6446d299c414c9ff32fb32dbbf410b3cea5c0ac622",
+    "verification/graph_core/guests/node.c": "de8c848986dbe1cc78568a1b5f7ad87b0f93dd301ec8f3cea8462feaf1c01f78",
+    "verification/graph_core/model/NodeRuntime.cfg": "79c28e1bbd2c4cf3c2b7fc29d66ac9f0f16144321b9c75a6d6e5370df03bd27e",
+    "verification/graph_core/model/NodeRuntime.md": "b33329a94e43179c291bd24a5c7c1a1ae1eaf17fe69c3cee993d608b192d8354",
+    "verification/graph_core/model/NodeRuntime.tla": "83972cadfefede5e97e63391b3ede511f2875b85247ca824cb76a6595271c105",
+    "verification/graph_core/tests/admission_fixture.h": "fbaf1626fc63be3f18e8238f71959e73c567400a30cca3a8758438da3ea3ed87",
+    "verification/graph_core/tests/node_test.c": "ebec8d4731540896a33ea91af19d05f15abdc8f362f1c0cd54af504ef91f7263",
+    "verification/graph_core/tests/object_facts_test.c": "1eb26306c43e3abd19302744ad6a6eed71d75012f31d5a4ea9596c32cd7a8a11",
+    "verification/graph_core/tests/runtime_guest.c": "42a6be5c16eeb6cfd37f1ef52926eac3f7daf05596f888fc5945f9d29715aade",
+    "verification/graph_core/tests/wamr_test.c": "0fb5c460de9edcfd8feb3f59d74bce7ab62e038568a58bc4f59956cba9f2f84b"
+  },
+  "runtime": {
+    "upstream_revision": "b124f70345d712bead5c0c2393acb2dc583511de",
+    "profile": "Linux x86_64 classic interpreter with thread manager; no guest threads, WASI/libc, AOT/JIT, shared memory or implicit startup.",
+    "synchronization_fix": "Exact-match correction in a generated thread_manager.c: serialize final exec-env list removal with concurrent cluster lookup; release cluster lock before destroying cluster under global list lock. Dependency checkout unchanged.",
+    "generated_thread_manager_sha256": "4f6b38a59fc13267c0d4cc49ff0a2ac1f0f529bf3056cc49047ffeead89eb103",
+    "bounds": {
+      "nodes": 2,
+      "native_stack_bytes_per_worker": 262144,
+      "global_arena_bytes": 32768,
+      "max_node_arena_bytes": 131072,
+      "host_artifact_plus_arena_quota": 131072,
+      "declared_guest_memory_bytes": 65536,
+      "appended_application_heap_bytes": 4096,
+      "max_configuration_bytes": 64,
+      "max_error_events": 4,
+      "max_event_wait_us": 1000000
+    },
+    "ownership": "One retained access ticket from artifact dispatch until actual worker disposal acceptance. Artifact and arena charged until freed; other accesses must drain before disposal. Persistent native stacks/global arena and OS overhead are separate host infrastructure."
+  },
+  "c": {
+    "command": "ctest --test-dir /tmp/kaos-p3-build --output-on-failure",
+    "passed": 13,
+    "failed": 0,
+    "seconds": 0.51,
+    "sanitizers": "AddressSanitizer, UndefinedBehaviorSanitizer and LeakSanitizer; graph_wamr alone sets ASAN_OPTIONS=detect_stack_use_after_return=0 due to pinned WAMR native-stack address checks. WAMR and adapter code instrumented; deterministic core tests retain default fake-stack settings.",
+    "log": "verification/graph_core/results/p3/ctest.log"
+  },
+  "python": {
+    "command": "UV_CACHE_DIR=/tmp/kaos-p3-uv-cache PYTHONDONTWRITEBYTECODE=1 KAOS_P2_HOST=/tmp/kaos-p3-build/core/kaos_p2_host KAOS_P3_HOST=/tmp/kaos-p3-build/core/kaos_p3_host KAOS_P3_GUEST=/tmp/kaos-p3-build/node.wasm uv --directory ../sim_env run --offline python -m unittest discover -s tests",
+    "run": 86,
+    "passed": 66,
+    "skipped": 20,
+    "seconds": 7.474,
+    "notes": "All nine new P3 process cases passed; 20 pre-existing opt-in integration cases skipped. Only P3 child hosts disable ASan fake stacks. Final subsequent import-spacing-only Ruff correction changes no test behavior."
+  },
+  "thread_sanitizer": {
+    "command": "/tmp/kaos-p3-tsan-review/build/wamr_review /tmp/kaos-p3-runtime-test/guest.wasm",
+    "result": "All runtime lifecycle cases and 200 concurrent cross-node cancellation/disposal cycles passed with no warnings. Original upstream race was reproduced before correction.",
+    "attempts": [
+      {
+        "attempt": 1,
+        "exit_code": 66,
+        "environment_mapping_failure": true,
+        "seconds": 0.015968413994414732
+      },
+      {
+        "attempt": 2,
+        "exit_code": 0,
+        "environment_mapping_failure": false,
+        "seconds": 0.19550923100905493
+      }
+    ],
+    "log": "verification/graph_core/results/p3/runtime_tsan.log",
+    "startup_failure_log": "verification/graph_core/results/p3/runtime_tsan_startup_failure.log",
+    "limits": "One launch failed before main with unexpected memory mapping; subsequent exact-source run passed. ThreadSanitizer is sampling evidence, not proof of race freedom.",
+    "runner": "Python runner retries only a ThreadSanitizer unexpected-memory-mapping failure before main; all other failures stop immediately."
+  },
+  "model": {
+    "date": "2026-10-09",
+    "command": "java -XX:+UseParallelGC -Xmx2g -cp /opt/TLA+Toolbox/tla2tools.jar tlc2.TLC -workers 1 -seed 42 -metadir /tmp/kaos-p3-node-tlc-final -config verification/graph_core/model/NodeRuntime.cfg verification/graph_core/model/NodeRuntime.tla",
+    "version": "TLC2 Version 2.19 of 08 August 2024 (rev: 5a47802)",
+    "java": "Ubuntu 21.0.12.1, amd64 Linux",
+    "fingerprint_polynomial": 74,
+    "seed": 42,
+    "workers": 1,
+    "heap_limit": "2 GiB",
+    "outcome": "No errors; complete finite state space and temporal properties checked.",
+    "generated_states": 3061705,
+    "distinct_states": 496008,
+    "remaining_states": 0,
+    "depth": 40,
+    "elapsed_seconds": 731,
+    "invariants": [
+      "TypeOK",
+      "BoundedReservations",
+      "RetainedLifetime",
+      "WorkerPinned",
+      "SafeReclamation",
+      "SafeDisposal",
+      "AuthorizedExecution",
+      "ReservedEvidence",
+      "CutoffBeforeLateClosure"
+    ],
+    "properties": [
+      "AcceptedWhileUsable",
+      "HistoricalSuccess",
+      "NoEntryAfterClose",
+      "ChargesUntilDisposed",
+      "CleanupProgress",
+      "OutcomeProgress"
+    ],
+    "bounds": {
+      "nodes": 2,
+      "workers_per_node": 1,
+      "reserved_mailboxes_per_node": 1,
+      "worker_tickets_per_dispatched_node": 1,
+      "allocation_classes_per_node": 2,
+      "additional_accesses_per_node": 1,
+      "ordinary_queue_capacity": 1
+    },
+    "assumptions": "Live host; fair monotonic deadline advancement and control service; eventual worker completion, cancellation/termination, disposal, and access drainage. No INIT emission, successful preparation, removal authorization or delivery assumption. No physical latency bound.",
+    "limits": "Finite hand-written abstraction; no machine-checked C refinement, WAMR memory/interrupt verification, ESP32 measurement, replacement-slot identity reuse, channels or aggregate ACK/eviction. Shared local cleanup modeled once per instance; individual creator/removal report records and deadline values remain concrete engine-test obligations. Historical success denotes creator startup.",
+    "source_sha256": {
+      "verification/graph_core/model/NodeRuntime.tla": "83972cadfefede5e97e63391b3ede511f2875b85247ca824cb76a6595271c105",
+      "verification/graph_core/model/NodeRuntime.cfg": "79c28e1bbd2c4cf3c2b7fc29d66ac9f0f16144321b9c75a6d6e5370df03bd27e"
+    },
+    "log": "verification/graph_core/results/p3/node_tlc.log",
+    "witness": {
+      "purpose": "Reachable pending INIT followed by actual exit before acceptance. Intentional negated-witness invariant violation in temporary one-node copy, not a production safety failure.",
+      "actions": [
+        "Init",
+        "Admit",
+        "Dispatch",
+        "BeginPrepare",
+        "Prepared",
+        "AuthorizeStart",
+        "BeginRun",
+        "EnterMain",
+        "EmitInit",
+        "Exit"
+      ],
+      "final": {
+        "initPending": true,
+        "phase": "exited",
+        "success": false,
+        "held": true,
+        "charges": 2
+      },
+      "generated_states": 880,
+      "distinct_states": 302,
+      "depth": 10,
+      "elapsed_seconds": 1,
+      "log": "verification/graph_core/results/p3/node_witness.log",
+      "regression": "verification/graph_core/tests/node_test.c:marker_exit_race"
+    },
+    "sandbox": "Initial sandbox TLC run failed to create local Java RMI socket. Approved unsandboxed final run completed successfully. Earlier draft run was deliberately stopped to align final worker/removal/deadline guards."
+  },
+  "esp32": {
+    "command": ". /home/karolina/esp/esp-idf/export.sh; cmake --build /tmp/kaos-p2-esp32 -j 4",
+    "result": "Shared engine and foundation firmware cross-build passed with ESP-IDF 5.5 / Xtensa GCC14.2.0. Firmware fixture executes foundations only; no WAMR target port or hardware execution claimed."
+  },
+  "style": "Ruff lint and format checks passed on four changed/new Python test files; git diff --check passed.",
+  "test_changes": "Existing tests changed only under explicit approval for schema-3 field/constructor/wire migration. All P3 behavior cases, guests and NodeRuntime model/configuration are new.",
+  "limits": [
+    "Linux host runtime only; ESP32 worker/interrupt/allocator adaptation still required.",
+    "No physical native-stack, heap/flash/overlap, radio or deadline/scheduling measurements.",
+    "ASan stack-use-after-return checking disabled specifically for runtime execution; other selected sanitizer checks remain enabled.",
+    "Finite TLC abstraction does not model WAMR internals, slot reuse or independent creator/removal deadline values; concrete tests cover those lifecycle boundaries.",
+    "P4 endpoint execution, P5 multi-channel addition, P6 full distributed removal and P7 collector/ACK/eviction remain future work.",
+    "Q05 post-retirement replay limitation and trusted first-main-entry INIT convention remain unchanged."
+  ]
+}

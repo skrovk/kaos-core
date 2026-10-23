@@ -1,0 +1,115 @@
+{
+  "date": "2026-10-21",
+  "head": "b8372d8c61fe9ff4531048a7bfcdaf825d439c57",
+  "scope": "OBS02 partial: real WAMR preparation/destruction call gates with cancellation, exact controller expiry, cleanup cutoff and unrelated actual worker progress.",
+  "production_changes": false,
+  "existing_test_sources_unchanged": 95,
+  "production_files_unchanged": 47,
+  "baseline": "results/wamr_phase_barriers/baseline.json",
+  "gates": [
+    "After real wasm_runtime_instantiate returns, before KaOS assigns the instance/resolves entries/publishes preparation",
+    "Before real wasm_runtime_deinstantiate, after execution-environment destruction; instance/module/arena/artifact remain owned"
+  ],
+  "mechanism": "GNU ld wrappers confined to new Linux test executable; unchanged production runtime and restricted guest. Unload wrapper checks !disposed before/after actual unload and records completion.",
+  "schedules": {
+    "preparation_fault": [
+      "none",
+      "authorized removal",
+      "exact addition deadline expiry"
+    ],
+    "cleanup_cutoff": [
+      false,
+      true
+    ]
+  },
+  "oracle": [
+    "Target preparation gate reached before submitting second artifact",
+    "Other actual worker reaches accepted INIT while preparation held",
+    "Removal/expiry applied before release; zero target entry attempts and no startup history for faults",
+    "Both allocation charges, reservation and live worker access retained while disposal blocked",
+    "Pending at cleanup deadline-1; Unresolved at equality; no CLEANED from deadline passage",
+    "Other node remains running/uncancelled until separate removal and completes actual cleanup while target held",
+    "Deinstantiate/unload return before observed disposed/CLEANED; all charges/reservations released",
+    "No-fault startup succeeds; late cleanup preserves historical success or resolves failed addition/removal appropriately",
+    "Expected event order and identical repeat, finite ledger checked for overflow; repeated control pass does not double reclaim"
+  ],
+  "reviews": {
+    "spec": "Strengthened unload ordering and checked destructor completion at CLEANED, before shutdown. No remaining blocking finding.",
+    "simplicity_and_concurrency": "Strengthened unrelated liveness immediately before removal and explicit expected ledger order. No production API or embedded storage added."
+  },
+  "runs": [
+    {
+      "profile": "default",
+      "passed": 57,
+      "failed": 0,
+      "duration_seconds": 63.04,
+      "new_schedules": 6,
+      "executions_per_schedule": 2,
+      "compared_event_records": 56,
+      "build_command": "cmake --build /tmp/kaos-timing-host -j4",
+      "test_command": "ctest --test-dir /tmp/kaos-timing-host --output-on-failure -j1 --output-log /home/karolina/Research/Code/kaos_core/verification/graph_core/results/wamr_phase_barriers/default-ctest.log",
+      "executable_sha256": "5c1d150021655813cb045afe9683d56676bbc5446901f500a0ffd2b3ad52b460",
+      "guest_sha256": "9d64a687167fe2521aa1172a7faf874ad5afec7e1144275ab8d38234139cb006"
+    },
+    {
+      "profile": "four",
+      "passed": 31,
+      "failed": 0,
+      "duration_seconds": 47.01,
+      "new_schedules": 6,
+      "executions_per_schedule": 2,
+      "compared_event_records": 56,
+      "build_command": "cmake --build /tmp/kaos-refactor-four -j4",
+      "test_command": "ctest --test-dir /tmp/kaos-refactor-four --output-on-failure -j1 --output-log /home/karolina/Research/Code/kaos_core/verification/graph_core/results/wamr_phase_barriers/four-ctest.log",
+      "executable_sha256": "9db0561bc92291306d2e317b48a2deba2957b2adea994b4c965a0d8639589989",
+      "guest_sha256": "9d64a687167fe2521aa1172a7faf874ad5afec7e1144275ab8d38234139cb006"
+    }
+  ],
+  "sanitizers": [
+    "address",
+    "undefined",
+    "leak (ASan default)"
+  ],
+  "skips": {
+    "new_fixture": 0,
+    "default_python_discovery": {
+      "discovered": 168,
+      "skipped_opt_in": 40
+    },
+    "default_workloads": "One three-node local pipeline skipped in two-node profile; runs in four-node profile"
+  },
+  "sandbox_notes": [
+    "Initial CMake regeneration blocked writing WAMR generated version header in sibling dependency tree; authorized build passed.",
+    "Sandboxed focused test encountered LeakSanitizer ptrace restriction; authorized focused/full runs outside sandbox passed with leak checking enabled.",
+    "default-focused.log precedes review-only assertions; full-suite logs correspond to final source hashes."
+  ],
+  "limitations": [
+    "Linux host call boundaries, not arbitrary internal WAMR instruction gates",
+    "Controller deadline injection does not establish real-clock timing, latency or ESP32 behavior",
+    "No allocation/preparation-failure injection",
+    "No channel, UDP, collector or whole-process fault/replay scenario",
+    "Ledger records imposed partial order, not complete loss-accounted concurrent runtime observations",
+    "Does not close Q14/P9 or the transport scheduling increment"
+  ],
+  "source_sha256": {
+    "verification/graph_core/tests/wamr_phase_barrier_test.c": "a26f51812a4c0ad724bb666bc693a18f2861a3718e057944f6fd89715bb85f9f",
+    "verification/graph_core/wamr_phase_barriers.cmake": "7d4d08f40383c11220a5c1443a25f8146ba514e3f0209a50c415387b3063ab14",
+    "verification/graph_core/workloads.cmake": "1e9265dfa561e8bf0ca51dcecc0e470de1da58abb89164a3a3624c9e28fad149",
+    "guide/lifecycle-barriers.md": "91e930de655d32a183844e636d6f372ad51a069ad7824a3a9d4fd11bacd49294",
+    "guide/open-work.md": "748f920fea6f6037995d4a2c6b6ae02293640c6e83a146ee4efd0d86e68ab419",
+    "guide/verification.md": "294504d97e3bd7ba01b045713f58610629381a94cdfeda084365a0568888faef",
+    "implementation_rails/graph_operation_implementation_plan.md": "f895e9bbbcb1dd06003f2183fe2d26dd7632978a9fdab3fc1bd8b8971b4b2604"
+  },
+  "retained_sha256": {
+    "verification/graph_core/results/wamr_phase_barriers/baseline.json": "afacba8eeee8b82d87b22d49a24c29fbd990749591bdb3c3438c2790b1162e8e",
+    "verification/graph_core/results/wamr_phase_barriers/default-CMakeCache.txt": "7d39f058ffce0179d7318bda1e6f75e12633c2f976a853c25726f037f25f0262",
+    "verification/graph_core/results/wamr_phase_barriers/default-LastTest.log": "82ba2803a4603fce72d1468253954af5978bf0063215467e852caaa4fe036737",
+    "verification/graph_core/results/wamr_phase_barriers/default-ctest.log": "e6da7b2364ca89a62203ff772d5fbce2457cd1b65a7d56da2367720ff48617cb",
+    "verification/graph_core/results/wamr_phase_barriers/default-events.jsonl": "14f00a8b1fb49b4d2828bf0fda3f04d7e5ef27d4b5e29ac21b947bbd23c17541",
+    "verification/graph_core/results/wamr_phase_barriers/default-focused.log": "ecbe2a5d27946bbb58badcbe3c90d195566347e03ea4957aa0ac2e61ad97594d",
+    "verification/graph_core/results/wamr_phase_barriers/four-CMakeCache.txt": "f55fc2e6e626501a8ffbebc34958ece587e54e2505f36673076aebbe17578d37",
+    "verification/graph_core/results/wamr_phase_barriers/four-LastTest.log": "55166135dadd97050e2cc6fe8ec8ba5d1f3606f0732cb88f7c616e7250d6a339",
+    "verification/graph_core/results/wamr_phase_barriers/four-ctest.log": "b4c191227e053d594f5042efabe294a5c8d2074d7d61a782be40119cb6652181",
+    "verification/graph_core/results/wamr_phase_barriers/four-events.jsonl": "14f00a8b1fb49b4d2828bf0fda3f04d7e5ef27d4b5e29ac21b947bbd23c17541"
+  }
+}
